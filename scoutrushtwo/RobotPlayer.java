@@ -1,9 +1,10 @@
-package scoutrush;
+package scoutrushtwo;
 
 import battlecode.common.BulletInfo;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
@@ -45,21 +46,57 @@ public strictfp class RobotPlayer {
 	private static void runScout() throws GameActionException {
 		Direction move = randomDirection();
 		Team enemy = rc.getTeam().opponent();
+		MapLocation destination = null;
+		boolean reconMode = true;
 		try {
 			while (true) {
+				if (rc.senseNearbyBullets().length > 0 || rc.senseNearbyRobots(-1, enemy).length > 0) {
+					reconMode = false;
+				} else{
+					reconMode = true;
+				}
 
-				RobotInfo[] robots = rc.senseNearbyRobots(-1, enemy);
-
-				if (robots.length != 0) {
-					if (rc.canFireSingleShot()) {
-						rc.fireSingleShot(rc.getLocation().directionTo(robots[0].location));
+				if (reconMode) {
+					if (rc.readBroadcast(0) != -1) {
+						destination = new MapLocation(rc.readBroadcast(0), rc.readBroadcast(1));
+					}
+					if (destination == null) {
+						if (rc.canMove(move)) {
+							rc.move(move);
+						} else {
+							for (int count = 0; count < 100 && !rc.canMove(move); count++) {
+								move = randomDirection();
+							}
+							if (rc.canMove(move)) {
+								rc.move(move);
+							}
+						}
+					} else {
+						if (rc.canSenseLocation(destination)) {
+							destination = null;
+						} else {
+							move = rc.getLocation().directionTo(destination);
+							if (rc.canMove(move)) {
+								rc.move(move);
+							} else {
+								boolean foundMoveAngle = false;
+								for (float deltaAngle = 0; deltaAngle < 180 && !foundMoveAngle; deltaAngle += 45) {
+									if(rc.canMove(move.rotateLeftDegrees(deltaAngle))){
+										move = move.rotateLeftDegrees(deltaAngle);
+										foundMoveAngle = true;
+									}
+								}
+							}
+						}
 					}
 				}
 
-				if (rc.canMove(move)) {
-					rc.move(move);
-				} else {
-					move = randomDirection();
+				else {
+					//Combat micro here
+					//TODO: bullet evasion
+					//TODO: targeting
+					//TODO: firing
+					//TODO: maintaining a good distance.
 				}
 				Clock.yield();
 			}
@@ -71,7 +108,7 @@ public strictfp class RobotPlayer {
 
 	private static void runGardener() throws GameActionException {
 		Direction move = randomDirection();
-		int treeCount = 2;
+		int treeCount = 3;
 		int roundsToSettle = (int) (Math.random() * 20);
 		try {
 			while (true) {
@@ -125,6 +162,8 @@ public strictfp class RobotPlayer {
 	}
 
 	private static void runArchon() throws GameActionException {
+		rc.broadcast(0, -1);
+		rc.broadcast(1, -1);
 		int numGardeners = 7;
 		Direction move = randomDirection();
 		while (true) {
@@ -143,6 +182,47 @@ public strictfp class RobotPlayer {
 			Clock.yield();
 		}
 
+	}
+
+	// 0 means that the bullet will not hit anything in your line of sight.
+	// 1 means that the bullet will hit an opponent
+	// -1 means that the bullet will hit an ally
+	// The bullet ignores hitting you, as this method should be used to
+	// determine if a bullet should be fired at a given angle.
+	// Generally, you should only fire a bullet if a 1 is returned.
+	private static int fireBulletImpact(Direction dir, MapLocation location, float speed) throws GameActionException {
+		while (rc.canSenseLocation(location)) {
+			if (rc.isLocationOccupied(location)) {
+				if (rc.isLocationOccupiedByTree(location)) {
+					return 0;
+				} else if (rc.isLocationOccupiedByRobot(location)) {
+					if (rc.senseRobotAtLocation(location).team == rc.getTeam().opponent()) {
+						return 1;
+					} else if (rc.senseRobotAtLocation(location).ID != rc.getID()) {
+						return -1;
+					}
+				}
+			}
+			location = location.add(dir, speed);
+		}
+		return 0;
+	}
+
+	// Returns true if the bot will be hit by the bullet if it is at playerLocation.
+	static boolean willBeHitByBullet(BulletInfo info, MapLocation playerLocation) throws GameActionException {
+		MapLocation location = info.location;
+		while (rc.canSenseLocation(location)) {
+			if (rc.isLocationOccupiedByTree(location)) {
+				return false;
+			} else if (rc.isLocationOccupiedByRobot(location)) {
+				if (rc.senseRobotAtLocation(location).ID == rc.getID()) {
+					return true;
+				}
+				return false;
+			}
+			location.add(info.dir, info.speed);
+		}
+		return false;
 	}
 
 	static Direction randomDirection() {
