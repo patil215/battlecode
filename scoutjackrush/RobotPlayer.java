@@ -60,7 +60,7 @@ public strictfp class RobotPlayer {
 						rc.strike();
 					}
 				} else {
-					chopIfTreeInTheWay();
+					chopIfTreeInTheWay(targetDirection);
 				}
 			} else {
 				if (rc.readBroadcast(1) != -1) {
@@ -68,7 +68,7 @@ public strictfp class RobotPlayer {
 					if (rc.canMove(move)) {
 						rc.move(move);
 					} else {
-						chopIfTreeInTheWay();
+						chopIfTreeInTheWay(move);
 					}
 				} else {
 					move = RobotPlayer.moveWithRandomBounce(move);
@@ -78,15 +78,22 @@ public strictfp class RobotPlayer {
 		}
 	}
 
-	private static void chopIfTreeInTheWay() throws GameActionException {
+	private static void chopIfTreeInTheWay(Direction targetDirection) throws GameActionException {
 		TreeInfo[] trees = rc.senseNearbyTrees();
+		float lowestHealth = Float.MAX_VALUE;
+		int lowestHealthID = -1;
 		boolean foundTreeToChop = false;
 		for (int index = 0; index < trees.length && !foundTreeToChop; index++) {
 			// TODO: Make sure that this is a tree in the way
-			if (trees[index].team != rc.getTeam() && rc.canChop(trees[index].ID)) {
-				foundTreeToChop = true;
-				rc.chop(trees[index].ID);
+			if (trees[index].team != rc.getTeam() && rc.canChop(trees[index].ID)
+					&& rc.getLocation().directionTo(trees[index].location).degreesBetween(targetDirection) < 90
+					&& trees[index].health < lowestHealth) {
+				lowestHealth = trees[index].health;
+				lowestHealthID = trees[index].ID;
 			}
+		}
+		if (lowestHealthID != -1) {
+			rc.chop(lowestHealthID);
 		}
 	}
 
@@ -118,6 +125,14 @@ public strictfp class RobotPlayer {
 								rc.move(threatDirection);
 							}
 						}
+					} else {
+						RobotInfo closestEconTarget = RobotPlayer.findNearestEnemyChar(foes);
+						if (closestEconTarget != null) {
+							Direction toMove = RobotPlayer.moveTowards(closestEconTarget.location);
+							if (rc.canMove(toMove)) {
+								rc.move(toMove);
+							}
+						}
 					}
 				} else {
 					if (rc.readBroadcast(1) != -1) {
@@ -145,7 +160,10 @@ public strictfp class RobotPlayer {
 			boolean isDead = false;
 			Direction move = randomDirection();
 			int turnCount = 20;
-			if (rc.getTreeCount() < 10 || Math.round(rc.getTeamBullets()) % 10 < 3) {
+			// Right now, this is a pure econ strategy. Remove the || true and
+			// replace with something like Math.random > .5 to return to a scout
+			// strategy.
+			if (rc.getTreeCount() < 10 || true) {
 				while (true) {
 					if (!isDead && rc.getHealth() < 5) {
 						isDead = true;
@@ -161,9 +179,9 @@ public strictfp class RobotPlayer {
 							move = moveWithRandomBounce(move);
 						}
 					} else {
-						Direction plant = randomDirection();
-						for (int count = 0; count < 20 && !rc.canPlantTree(plant); count++) {
-							plant = randomDirection();
+						Direction plant = Direction.getNorth();
+						for (int deg = 5; deg < 360 && !rc.canPlantTree(plant); deg += 5) {
+							plant = Direction.getNorth().rotateLeftDegrees(deg);
 						}
 						if (rc.canPlantTree(plant)) {
 							rc.plantTree(plant);
@@ -196,7 +214,8 @@ public strictfp class RobotPlayer {
 						rc.broadcast(0, rc.readBroadcast(0) - 1);
 					}
 					move = RobotPlayer.moveWithRandomBounce(move);
-					if (Math.random()>.2) {
+					//Change to something possible to add lumberjacks to the strategy.
+					if (Math.random() > 1) {
 						if (rc.canBuildRobot(RobotType.LUMBERJACK, move.opposite())) {
 							rc.buildRobot(RobotType.LUMBERJACK, move.opposite());
 						}
