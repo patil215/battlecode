@@ -6,6 +6,7 @@ import battlecode.common.BulletInfo;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
@@ -20,7 +21,6 @@ public strictfp class RobotPlayer {
 	 * run() is the method that is called when a robot is instantiated in the
 	 * Battlecode world. If this method returns, the robot dies!
 	 **/
-	@SuppressWarnings("unused")
 	public static void run(RobotController rc) throws GameActionException {
 
 		// This is the RobotController object. You use it to perform actions
@@ -128,9 +128,12 @@ public strictfp class RobotPlayer {
 					} else {
 						RobotInfo closestEconTarget = RobotPlayer.findNearestEnemyChar(foes);
 						if (closestEconTarget != null) {
-							Direction toMove = RobotPlayer.moveTowards(closestEconTarget.location);
-							if (rc.canMove(toMove)) {
-								rc.move(toMove);
+							if (RobotPlayer.fireBulletImpact(rc.getLocation().directionTo(closestEconTarget.location),
+									rc.getLocation(), (float) 1.5) <= 0) {
+								Direction toMove = RobotPlayer.moveTowards(closestEconTarget.location);
+								if (rc.canMove(toMove)) {
+									rc.move(toMove);
+								}
 							}
 						}
 					}
@@ -163,7 +166,7 @@ public strictfp class RobotPlayer {
 			// Right now, this is a pure econ strategy. Remove the || true and
 			// replace with something like Math.random > .5 to return to a scout
 			// strategy.
-			if (rc.getTreeCount() < 10 || true) {
+			if ((rc.getTreeCount() < 6 || Math.random() > .2)) {
 				while (true) {
 					if (!isDead && rc.getHealth() < 5) {
 						isDead = true;
@@ -202,7 +205,7 @@ public strictfp class RobotPlayer {
 							rc.water(minHealthID);
 						}
 					}
-					if (rc.getTeamBullets() > 9999) {
+					if (rc.getTeamBullets() >= 10000) {
 						rc.donate(10000);
 					}
 					Clock.yield();
@@ -214,14 +217,15 @@ public strictfp class RobotPlayer {
 						rc.broadcast(0, rc.readBroadcast(0) - 1);
 					}
 					move = RobotPlayer.moveWithRandomBounce(move);
-					//Change to something possible to add lumberjacks to the strategy.
-					if (Math.random() > 1) {
-						if (rc.canBuildRobot(RobotType.LUMBERJACK, move.opposite())) {
-							rc.buildRobot(RobotType.LUMBERJACK, move.opposite());
-						}
-					} else {
+					// Change to something possible to add lumberjacks to the
+					// strategy.
+					if (Math.random() < 1 && rc.getTeamBullets() >= 80) {
 						if (rc.canBuildRobot(RobotType.SCOUT, move.opposite())) {
 							rc.buildRobot(RobotType.SCOUT, move.opposite());
+						}
+					} else {
+						if (rc.canBuildRobot(RobotType.LUMBERJACK, move.opposite())) {
+							rc.buildRobot(RobotType.LUMBERJACK, move.opposite());
 						}
 					}
 					Clock.yield();
@@ -249,7 +253,7 @@ public strictfp class RobotPlayer {
 				rc.broadcast(0, numGardeners + 1);
 			}
 			move = moveWithRandomBounce(move);
-			if (rc.getTeamBullets() > 9999) {
+			if (rc.getTeamBullets() >= 10000) {
 				rc.donate(10000);
 			}
 			Clock.yield();
@@ -342,18 +346,19 @@ public strictfp class RobotPlayer {
 	}
 
 	private static int fireBulletImpact(Direction dir, MapLocation location, float speed) throws GameActionException {
+		location = location.add(dir, rc.senseRobot(rc.getID()).getRadius() + GameConstants.BULLET_SPAWN_OFFSET);
 		while (rc.canSenseLocation(location)) {
 			if (rc.isLocationOccupied(location)) {
 				if (rc.isLocationOccupiedByTree(location)) {
 					if (rc.senseTreeAtLocation(location).team == rc.getTeam().opponent()) {
-						return 1;
+						return 0;
 					} else {
 						return 0;
 					}
 				} else if (rc.isLocationOccupiedByRobot(location)) {
 					if (rc.senseRobotAtLocation(location).team == rc.getTeam().opponent()) {
 						return 1;
-					} else if (rc.senseRobotAtLocation(location).ID != rc.getID()) {
+					} else {
 						return -1;
 					}
 				}
@@ -374,7 +379,7 @@ public strictfp class RobotPlayer {
 		for (int index = 0; index < enemies.length; index++) {
 			double priority = enemies[index].getType().attackPower / enemies[index].health;
 
-			if (priority > maxPriority
+			if ((priority > maxPriority || (maxPriority == 0 && enemies[index].health < enemies[maxIndex].health))
 					&& RobotPlayer.fireBulletImpact(rc.getLocation().directionTo(enemies[index].location),
 							rc.getLocation(), (float) 1.5) > 0) {
 				maxIndex = index;
