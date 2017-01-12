@@ -98,6 +98,7 @@ public strictfp class RobotPlayer {
 	}
 
 	private static void runScout() throws GameActionException {
+		System.out.println("I am a scout");
 		try {
 			Direction move = randomDirection();
 			while (true) {
@@ -134,11 +135,17 @@ public strictfp class RobotPlayer {
 								if (rc.canMove(toMove)) {
 									rc.move(toMove);
 								}
+							} else if (rc.canFireSingleShot()) {
+								rc.fireSingleShot(rc.getLocation().directionTo(closestEconTarget.location));
 							}
 						}
 					}
 				} else {
 					if (rc.readBroadcast(1) != -1) {
+						if(rc.canSenseLocation(new MapLocation(rc.readBroadcast(1), rc.readBroadcast(2)))){
+							rc.broadcast(1,-1);
+							rc.broadcast(2,-1);
+						}
 						move = RobotPlayer.moveTowards(new MapLocation(rc.readBroadcast(1), rc.readBroadcast(2)));
 						if (rc.canMove(move)) {
 							rc.move(move);
@@ -163,75 +170,79 @@ public strictfp class RobotPlayer {
 			boolean isDead = false;
 			Direction move = randomDirection();
 			int turnCount = 20;
-			// Right now, this is a pure econ strategy. Remove the || true and
-			// replace with something like Math.random > .5 to return to a scout
-			// strategy.
-			if ((rc.getTreeCount() < 6 || Math.random() > .2)) {
-				while (true) {
-					if (!isDead && rc.getHealth() < 5) {
-						isDead = true;
-						rc.broadcast(0, rc.readBroadcast(0) - 1);
-					}
-					if (move != null) {
-						System.out.println(rc.getLocation());
-						if (turnCount == 0
-								|| rc.isCircleOccupiedExceptByThisRobot(rc.getLocation().add(0, (float) .01), 3)) {
-							move = null;
-						} else {
-							turnCount--;
-							move = moveWithRandomBounce(move);
-						}
-					} else {
-						Direction plant = Direction.getNorth();
-						for (int deg = 5; deg < 360 && !rc.canPlantTree(plant); deg += 5) {
-							plant = Direction.getNorth().rotateLeftDegrees(deg);
-						}
-						if (rc.canPlantTree(plant)) {
-							rc.plantTree(plant);
-						}
-					}
-					TreeInfo[] trees = rc.senseNearbyTrees();
-
-					if (trees.length > 0) {
-						int minHealthID = -1;
-						float minHealth = Float.MAX_VALUE;
-						for (int count = 0; count < trees.length; count++) {
-							if (rc.canWater(trees[count].ID) && trees[count].health < minHealth) {
-								minHealth = trees[count].health;
-								minHealthID = trees[count].ID;
-							}
-						}
-						if (rc.canWater(minHealthID)) {
-							rc.water(minHealthID);
-						}
-					}
-					if (rc.getTeamBullets() >= 10000) {
-						rc.donate(10000);
-					}
-					Clock.yield();
-				}
-			} else {
-				while (true) {
-					if (!isDead && rc.getHealth() < 5) {
-						isDead = true;
-						rc.broadcast(0, rc.readBroadcast(0) - 1);
-					}
-					move = RobotPlayer.moveWithRandomBounce(move);
-					// Change to something possible to add lumberjacks to the
-					// strategy.
-					if (Math.random() < 1 && rc.getTeamBullets() >= 80) {
-						if (rc.canBuildRobot(RobotType.SCOUT, move.opposite())) {
-							rc.buildRobot(RobotType.SCOUT, move.opposite());
-						}
-					} else {
-						if (rc.canBuildRobot(RobotType.LUMBERJACK, move.opposite())) {
-							rc.buildRobot(RobotType.LUMBERJACK, move.opposite());
-						}
-					}
-					Clock.yield();
-				}
+			int treeCount = 0;
+			boolean didStopGardenerProduction = false;
+			if (rc.readBroadcast(3) <= 0) {
+				rc.broadcast(4, 1);
+				didStopGardenerProduction = true;
 			}
-		} catch (Exception e) {
+			while (rc.readBroadcast(3) < 1) {
+				if (rc.canBuildRobot(RobotType.SCOUT, move)) {
+					rc.buildRobot(RobotType.SCOUT, move);
+					rc.broadcast(3, rc.readBroadcast(3) + 1);
+				}
+				move = RobotPlayer.moveWithRandomBounce(move);
+				Clock.yield();
+			}
+			while (true) {
+				if (!isDead && rc.getHealth() < 5) {
+					isDead = true;
+					rc.broadcast(0, rc.readBroadcast(0) - 1);
+				}
+				if (move != null) {
+					if (turnCount == 0
+							|| (!rc.isCircleOccupiedExceptByThisRobot(rc.getLocation().add(0, (float) .01), 3))
+									&& rc.onTheMap(rc.getLocation().add(0, (float) .01), 3)) {
+						move = null;
+					} else {
+						turnCount--;
+						move = moveWithRandomBounce(move);
+					}
+				} else {
+					Direction temp = rc.getLocation()
+							.directionTo(rc.getInitialArchonLocations(rc.getTeam().opponent())[0])
+							.rotateLeftRads((float) (Math.PI / 3)).opposite();
+					Direction plant = new Direction(temp.radians);
+					for (int deg = 0; deg < 360 && !rc.canPlantTree(plant); deg += 10) {
+						plant = temp.rotateLeftDegrees(deg);
+					}
+					if (rc.canPlantTree(plant) && treeCount < 5) {
+						rc.plantTree(plant);
+						treeCount++;
+					} else if (rc.canBuildRobot(RobotType.SCOUT, plant) && rc.getRobotCount() < 50) {
+						if (didStopGardenerProduction) {
+							rc.broadcast(4, 0);
+							didStopGardenerProduction = false;
+						}
+						rc.buildRobot(RobotType.SCOUT, plant);
+					} else if (didStopGardenerProduction && rc.isBuildReady()) {
+						rc.broadcast(4, 0);
+						didStopGardenerProduction = false;
+					}
+				}
+				TreeInfo[] trees = rc.senseNearbyTrees();
+
+				if (trees.length > 0) {
+					int minHealthID = -1;
+					float minHealth = Float.MAX_VALUE;
+					for (int count = 0; count < trees.length; count++) {
+						if (rc.canWater(trees[count].ID) && trees[count].health < minHealth) {
+							minHealth = trees[count].health;
+							minHealthID = trees[count].ID;
+						}
+					}
+					if (rc.canWater(minHealthID)) {
+						rc.water(minHealthID);
+					}
+				}
+				if (rc.getTeamBullets() >= 10000) {
+					rc.donate(10000);
+				}
+				Clock.yield();
+			}
+		} catch (
+
+		Exception e) {
 			System.out.println(e);
 			e.printStackTrace();
 		}
@@ -239,16 +250,17 @@ public strictfp class RobotPlayer {
 	}
 
 	private static void runArchon() throws GameActionException {
+		if (rc.readBroadcast(1) != 0) {
+			Clock.yield();
+			Clock.yield();
+		}
 		rc.broadcast(1, -1);
 		rc.broadcast(2, -1);
 		Direction move = randomDirection();
 		while (true) {
-			if (Math.round(rc.getTeamBullets()) % 20 == 0) {
-				rc.broadcast(1, -1);
-				rc.broadcast(2, -1);
-			}
 			int numGardeners = rc.readBroadcast(0);
-			if ((rc.readBroadcast(0) < 12 || Math.random() > .1) && rc.canHireGardener(move.opposite())) {
+			if ((rc.readBroadcast(0) < 12) && rc.canHireGardener(move.opposite())
+					&& (rc.readBroadcast(4) == 0 || rc.getTreeCount() >= 5)) {
 				rc.hireGardener(move.opposite());
 				rc.broadcast(0, numGardeners + 1);
 			}
@@ -377,7 +389,12 @@ public strictfp class RobotPlayer {
 		double maxPriority = -1;
 
 		for (int index = 0; index < enemies.length; index++) {
-			double priority = enemies[index].getType().attackPower / enemies[index].health;
+			double priority;
+			if (enemies[index].getType().canAttack()) {
+				priority = enemies[index].getType().attackPower / Math.max(enemies[index].health, 1);
+			} else {
+				priority = 0;
+			}
 
 			if ((priority > maxPriority || (maxPriority == 0 && enemies[index].health < enemies[maxIndex].health))
 					&& RobotPlayer.fireBulletImpact(rc.getLocation().directionTo(enemies[index].location),
@@ -390,6 +407,7 @@ public strictfp class RobotPlayer {
 		if (maxIndex >= 0) {
 			return enemies[maxIndex];
 		}
+		// TODO: actually handle
 		return null;
 	}
 }
