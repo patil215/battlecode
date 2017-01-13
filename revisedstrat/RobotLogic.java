@@ -43,7 +43,7 @@ public abstract class RobotLogic {
 	
 	// If it is possible to move towards the target, then this method returns
 	// the best angle to do so with. Otherwise, null is returned.
-	public static Direction moveTowards(RobotController rc, MapLocation destination) {
+	public Direction moveTowards(MapLocation destination) {
 		Direction toMove = rc.getLocation().directionTo(destination);
 		if (rc.canMove(toMove)) {
 			return toMove;
@@ -58,5 +58,18 @@ public abstract class RobotLogic {
 		}
 		return null;
 	}
+	
+	protected void tryAndShakeATree() throws GameActionException {
+		if (rc.canShake()) {
+			TreeInfo[] trees = rc.senseNearbyTrees();
+			for (TreeInfo t : trees) {
+				if (rc.canShake(t.ID)) {
+					rc.shake(t.ID);
+					break;
+				}
+			}
+		}
+	}
+
 
 }

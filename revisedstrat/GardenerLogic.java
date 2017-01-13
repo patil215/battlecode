@@ -48,7 +48,7 @@ public class GardenerLogic extends RobotLogic {
                 }
 
                 waterLowestHealthTree();
-
+                tryAndShakeATree();
                 Clock.yield();
             }
 

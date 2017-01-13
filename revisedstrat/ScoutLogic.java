@@ -8,6 +8,7 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import battlecode.common.TreeInfo;
 
 /**
  * Created by patil215 on 1/12/17.
@@ -49,9 +50,12 @@ public class ScoutLogic extends RobotLogic {
 					handleRecon();
 					System.out.println("Recon");
 				}
+
+				tryAndShakeATree();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+
 			Clock.yield();
 		}
 	}
@@ -65,7 +69,7 @@ public class ScoutLogic extends RobotLogic {
 				int broadcastIndex = (int) Math.random() * broadcastLocations.length;
 				destination = broadcastLocations[broadcastIndex];
 			} else {
-				Direction move = moveTowards(rc, getRandomEnemyInitialArchonLocation());
+				Direction move = moveTowards(getRandomEnemyInitialArchonLocation());
 				if (move != null) {
 					rc.move(move);
 				}
@@ -73,7 +77,7 @@ public class ScoutLogic extends RobotLogic {
 		}
 
 		if (destination != null) {
-			Direction toMove = moveTowards(rc, destination);
+			Direction toMove = moveTowards(destination);
 			if (toMove != null) {
 				rc.move(toMove);
 			}
@@ -85,15 +89,15 @@ public class ScoutLogic extends RobotLogic {
 	private void handleHarass(RobotInfo[] foes) throws GameActionException {
 		RobotInfo target = getPriorityEconTarget(foes);
 		if (target != null) {
-			Direction toMove = moveTowards(rc, target.location);
+			Direction toMove = moveTowards(target.location);
 			if (toMove != null) {
 				rc.move(toMove);
 			}
 			Direction towards = rc.getLocation().directionTo(target.getLocation());
 
-			// TODO: clean up
-			RobotInfo potentialTarget = rc.senseRobotAtLocation(
-					rc.getLocation().add(towards, rc.getType().bodyRadius + GameConstants.BULLET_SPAWN_OFFSET));
+			// TODO: clean up or replace with actual line of sight check.
+			RobotInfo potentialTarget = rc.senseRobotAtLocation(rc.getLocation().add(towards,
+					rc.getType().bodyRadius + GameConstants.BULLET_SPAWN_OFFSET + rc.getType().bulletSpeed));
 			if (potentialTarget != null && potentialTarget.getTeam() == getEnemyTeam() && rc.canFireSingleShot()) {
 				rc.fireSingleShot(towards);
 			}

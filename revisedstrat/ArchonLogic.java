@@ -29,6 +29,7 @@ public class ArchonLogic extends RobotLogic {
                 // Try to move in random direction
                 rc.move(pickNextLocation());
 
+                tryAndShakeATree();
                 Clock.yield();
             }
 
