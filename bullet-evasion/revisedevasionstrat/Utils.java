@@ -21,4 +21,28 @@ public class Utils {
     public static Direction randomDirection() {
         return new Direction((float) Math.random() * 2 * (float) Math.PI);
     }
+
+    public static double getStrideRadius(RobotType rt) {
+        switch (rt) {
+            case ARCHON:
+            case TANK:
+            case SOLDIER: {
+                return 1;
+            }
+
+            case GARDENER: {
+                return 2;
+            }
+
+            case SCOUT: {
+                return 2.5;
+            }
+
+            case LUMBERJACK: {
+                return 1.5;
+            }
+
+            default: return 1;
+        }
+    }
 }
