@@ -1,6 +1,7 @@
 package revisedstrat;
 
 import battlecode.common.*;
+import revisedstrat.BroadcastManager.LocationInfoType;
 
 /**
  * Created by patil215 on 1/12/17.
@@ -28,7 +29,15 @@ public class ArchonLogic extends RobotLogic {
                 }
                 // Try to move in random direction
                 rc.move(pickNextLocation());
+                
+                RobotInfo[] foes = rc.senseNearbyRobots(-1,getEnemyTeam());
+                
+                if(foes.length>0){
+                	BroadcastManager.saveLocation(rc, foes[0].location, LocationInfoType.ARCHON_HELP);
+                }
 
+                tryAndShakeATree();
+                econWinIfPossible();
                 Clock.yield();
             }
 
@@ -64,7 +73,7 @@ public class ArchonLogic extends RobotLogic {
 
     // TODO: Make this mathematically based on the number of bullets, robots (bullet demand), and trees
     private boolean shouldSpawnGardener() {
-        if (rc.getRoundNum() > 100) {
+        if (rc.getRoundNum() > 150) {
             if (rc.getTreeCount() < 15) {
                 return true;
             }
