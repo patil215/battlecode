@@ -1,4 +1,4 @@
-package bulletevasion;
+package scoutrushevasion;
 
 import battlecode.common.BulletInfo;
 import battlecode.common.Clock;
@@ -48,6 +48,25 @@ public strictfp class RobotPlayer {
         float measure = bullet.getDamage() * angle * bullet.location.distanceTo(rc.getLocation());
 
         return measure;
+    }
+
+    private static BulletInfo findMostDangerousBullet() {
+        BulletInfo[] bullets = rc.senseNearbyBullets();
+        if (bullets.length > 0) {
+            // Move perpendicular to the most dangerous bullet
+            float maxDanger = danger(bullets[0]);
+            BulletInfo mostDangerous = bullets[0];
+            for (BulletInfo bullet : bullets) {
+                float danger = danger(bullet);
+                if (danger > maxDanger) {
+                    mostDangerous = bullet;
+                    maxDanger = danger;
+                }
+            }
+            return mostDangerous;
+        }
+
+        return null;
     }
 
     private static void runScout() throws GameActionException {
