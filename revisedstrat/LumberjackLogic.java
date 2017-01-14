@@ -1,12 +1,17 @@
 package revisedstrat;
 
+import battlecode.common.BodyInfo;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.GameConstants;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
 import battlecode.common.Team;
 import battlecode.common.TreeInfo;
+import revisedstrat.BroadcastManager.LocationInfoType;
 
 /**
  * Created by patil215 on 1/12/17.
@@ -29,20 +34,47 @@ public class LumberjackLogic extends RobotLogic {
 					if (enemyTrees.length > 0) {
 						handleTrees(enemyTrees);
 					} else {
-						TreeInfo[] neutralTrees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
-						if (neutralTrees.length > 0) {
-							handleTrees(neutralTrees);
+						MapLocation gardenerHelp = BroadcastManager.getRecentLocation(rc,
+								LocationInfoType.GARDENER_HELP);
+						if (gardenerHelp != null) {
+							handleHelp(gardenerHelp);
 						} else {
-							handleRecon();
+							MapLocation archonHelp = BroadcastManager.getRecentLocation(rc,
+									LocationInfoType.ARCHON_HELP);
+							if (archonHelp != null) {
+								handleHelp(archonHelp);
+							} else {
+								TreeInfo[] neutralTrees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
+								if (neutralTrees.length > 0) {
+									handleTrees(neutralTrees);
+								} else {
+									handleRecon();
+								}
+
+							}
 						}
 					}
 				}
+				if (!rc.hasMoved() && !rc.hasAttacked()) {
+					moveWithRandomBounce(Utils.randomDirection());
+				}
 				tryAndShakeATree();
+				econWinIfPossible();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 			Clock.yield();
 		}
+	}
+
+	private void handleHelp(MapLocation helpNeeded) throws GameActionException {
+		Direction toMove = moveTowards(helpNeeded);
+		if(toMove !=null&&rc.canMove(toMove)){
+			rc.move(toMove);
+		} else{
+			handleTreesInWayToDesiredLocation(rc.getLocation().directionTo(helpNeeded));
+		}
+		
 	}
 
 	private void handleRecon() throws GameActionException {
@@ -51,8 +83,8 @@ public class LumberjackLogic extends RobotLogic {
 	}
 
 	private void handleTrees(TreeInfo[] neutralTrees) throws GameActionException {
-		TreeInfo closest = findClosestTree(neutralTrees);
-		Direction toMove = moveTowards(closest.location);
+		TreeInfo closest = (TreeInfo) getClosestBody(neutralTrees);
+		Direction toMove = moveTowards(closest.getLocation());
 		if (toMove != null && rc.canMove(toMove)) {
 			rc.move(toMove);
 		}
@@ -61,21 +93,40 @@ public class LumberjackLogic extends RobotLogic {
 		}
 	}
 
-	private TreeInfo findClosestTree(TreeInfo[] trees) {
-		TreeInfo closestTree = trees[0];
-		float distance = rc.getLocation().distanceTo(trees[0].location);
-		for (int index = 1; index < trees.length; index++) {
-			float distanceToTree = rc.getLocation().distanceTo(trees[index].location);
-			if (distance > distanceToTree) {
-				closestTree = trees[index];
-				distance = distanceToTree;
-			}
+	private void handleAttack(RobotInfo[] enemies) throws GameActionException {
+		RobotInfo target = (RobotInfo) getClosestBody(enemies);
+		Direction toMove = moveTowards(target.location);
+		if (toMove != null && rc.canMove(toMove)) {
+			rc.move(toMove);
+		} else {
+			Direction desired = rc.getLocation().directionTo(target.location);
+			handleTreesInWayToDesiredLocation(desired);
 		}
-		return closestTree;
+		// TODO: replace with actual evaluation about striking.
+		if (rc.canStrike() && rc.getLocation().distanceTo(target.location) < GameConstants.LUMBERJACK_STRIKE_RADIUS
+				+ RobotType.LUMBERJACK.bodyRadius) {
+			rc.strike();
+		}
 	}
 
-	private void handleAttack(RobotInfo[] enemies) {
-		// TODO Auto-generated method stub
+	//TODO: refactor
+	private void handleTreesInWayToDesiredLocation(Direction desired) throws GameActionException {
+		TreeInfo inWay = rc.senseTreeAtLocation(
+				rc.getLocation().add(desired, rc.getType().bodyRadius + GameConstants.NEUTRAL_TREE_MIN_RADIUS));
+		if (inWay != null && rc.canChop(inWay.ID)) {
+			rc.chop(inWay.ID);
+		} else {
+			desired = desired.rotateLeftDegrees(15);
+			inWay = rc.senseTreeAtLocation(
+					rc.getLocation().add(desired, rc.getType().bodyRadius + GameConstants.NEUTRAL_TREE_MIN_RADIUS));
+			if (inWay != null && rc.canChop(inWay.ID)) {
+				rc.chop(inWay.ID);
+			} else {
+				desired = desired.rotateRightDegrees(30);
+				inWay = rc.senseTreeAtLocation(rc.getLocation().add(desired,
+						rc.getType().bodyRadius + GameConstants.NEUTRAL_TREE_MIN_RADIUS));
 
+			}
+		}
 	}
 }

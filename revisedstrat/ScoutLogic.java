@@ -1,5 +1,7 @@
 package revisedstrat;
 
+import battlecode.common.BodyInfo;
+import battlecode.common.BulletInfo;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -9,6 +11,7 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.TreeInfo;
+import revisedstrat.BroadcastManager.LocationInfoType;
 
 /**
  * Created by patil215 on 1/12/17.
@@ -37,10 +40,8 @@ public class ScoutLogic extends RobotLogic {
 					if (isAttackUnit) {
 						// We need to deal with attack units, if they exist.
 						handleAttack(foes);
-						System.out.println("Attack");
 					} else {
 						// Otherwise, we can harass the enemy.
-						System.out.println("Harass");
 						handleHarass(foes);
 					}
 				}
@@ -48,10 +49,10 @@ public class ScoutLogic extends RobotLogic {
 				// There are no enemies in sight
 				else {
 					handleRecon();
-					System.out.println("Recon");
 				}
 
 				tryAndShakeATree();
+				econWinIfPossible();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -64,14 +65,19 @@ public class ScoutLogic extends RobotLogic {
 	// initial archon locations are abandoned.
 	private void handleRecon() throws GameActionException {
 		if (destination == null) {
-			MapLocation[] broadcastLocations = rc.senseBroadcastingRobotLocations();
-			if (broadcastLocations.length != 0) {
-				int broadcastIndex = (int) Math.random() * broadcastLocations.length;
-				destination = broadcastLocations[broadcastIndex];
+			MapLocation recentEnemyLocation = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY);
+			if (recentEnemyLocation != null) {
+				destination = recentEnemyLocation;
 			} else {
-				Direction move = moveTowards(getRandomEnemyInitialArchonLocation());
-				if (move != null) {
-					rc.move(move);
+				MapLocation[] broadcastLocations = rc.senseBroadcastingRobotLocations();
+				if (broadcastLocations.length != 0) {
+					int broadcastIndex = (int) Math.random() * broadcastLocations.length;
+					destination = broadcastLocations[broadcastIndex];
+				} else {
+					Direction move = moveTowards(getRandomEnemyInitialArchonLocation());
+					if (move != null) {
+						rc.move(move);
+					}
 				}
 			}
 		}
@@ -81,6 +87,9 @@ public class ScoutLogic extends RobotLogic {
 			if (toMove != null) {
 				rc.move(toMove);
 			}
+			if(rc.canSenseLocation(destination)&&rc.senseNearbyRobots(-1, getEnemyTeam()).length==0){
+				destination = null;
+			}
 		}
 	}
 
@@ -89,6 +98,7 @@ public class ScoutLogic extends RobotLogic {
 	private void handleHarass(RobotInfo[] foes) throws GameActionException {
 		RobotInfo target = getPriorityEconTarget(foes);
 		if (target != null) {
+			BroadcastManager.saveLocation(rc, target.location, LocationInfoType.ENEMY);
 			Direction toMove = moveTowards(target.location);
 			if (toMove != null) {
 				rc.move(toMove);
@@ -104,13 +114,58 @@ public class ScoutLogic extends RobotLogic {
 		}
 	}
 
-	private void handleAttack(RobotInfo[] foes) {
-		// TODO Auto-generated method stub
+	private void handleAttack(RobotInfo[] foes) throws GameActionException {
+		BulletInfo[] bullets = rc.senseNearbyBullets();
+		BulletInfo toDodge = getTargetingBullet(bullets);
+		RobotInfo threat = (RobotInfo) getClosestBody(foes);
+		if (toDodge != null) {
+			dodge(toDodge);
+		} else {
+			if (rc.getLocation().distanceTo(threat.location) <= 7) {
+				// We are too close to the enemy. They can see us.
+				Direction toMove = moveTowards(rc.getLocation().directionTo(threat.location).opposite());
+				if (toMove != null) {
+					rc.move(toMove);
+				}
+			}
+		}
+		RobotInfo target = getHighestPriorityTarget(foes);
+		if (target != null && rc.canFireSingleShot()) {
+			rc.fireSingleShot(rc.getLocation().directionTo(target.location));
+		}
+		if (!rc.hasAttacked() && !rc.hasMoved()) {
+			Direction towardsThreat = rc.getLocation().directionTo(threat.location);
+			Direction toMove = moveTowards(towardsThreat.rotateLeftDegrees(90));
+			if (toMove != null && rc.canMove(toMove)) {
+				rc.move(toMove);
+			} else {
+				toMove = moveTowards(towardsThreat.rotateRightDegrees(90));
+				if (toMove != null && rc.canMove(toMove)) {
+					rc.move(toMove);
+				}
+			}
+		}
+	}
 
+	private void dodge(BulletInfo toDodge) throws GameActionException {
+		Direction toBullet = rc.getLocation().directionTo(toDodge.location);
+		Direction toMove;
+		for (int angle = 90; angle <= 180; angle += 10) {
+			toMove = toBullet.rotateLeftDegrees(angle);
+			if (rc.canMove(toMove)) {
+				rc.move(toMove);
+				return;
+			}
+			toMove = toBullet.rotateRightDegrees(angle);
+			if (rc.canMove(toMove)) {
+				rc.move(toMove);
+				return;
+			}
+		}
 	}
 
 	private RobotInfo getPriorityEconTarget(RobotInfo[] foes) {
-		return getClosestEconTarget(foes);
+		return (RobotInfo) getClosestBody(foes);
 	}
 
 	private RobotInfo getLowestHealthEconTarget(RobotInfo[] foes) {
@@ -126,23 +181,5 @@ public class ScoutLogic extends RobotLogic {
 		}
 
 		return lowestHealthEnemy;
-	}
-
-	private RobotInfo getClosestEconTarget(RobotInfo[] foes) {
-		if (foes.length == 0) {
-			return null;
-		}
-
-		RobotInfo closestEnemy = foes[0];
-		float closestDistance = rc.getLocation().distanceTo(foes[0].location);
-		for (RobotInfo enemy : foes) {
-			float dist = rc.getLocation().distanceTo(enemy.location);
-			if (dist < closestDistance) {
-				closestEnemy = enemy;
-				closestDistance = dist;
-			}
-		}
-
-		return closestEnemy;
 	}
 }
