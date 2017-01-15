@@ -1,6 +1,7 @@
 package revisedstrat;
 
 import battlecode.common.BodyInfo;
+import battlecode.common.BulletInfo;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -37,12 +38,12 @@ public class LumberjackLogic extends RobotLogic {
 						MapLocation gardenerHelp = BroadcastManager.getRecentLocation(rc,
 								LocationInfoType.GARDENER_HELP);
 						if (gardenerHelp != null) {
-							handleHelp(gardenerHelp);
+							handleHelp(gardenerHelp, LocationInfoType.ARCHON_HELP);
 						} else {
 							MapLocation archonHelp = BroadcastManager.getRecentLocation(rc,
 									LocationInfoType.ARCHON_HELP);
 							if (archonHelp != null) {
-								handleHelp(archonHelp);
+								handleHelp(archonHelp, LocationInfoType.ARCHON_HELP);
 							} else {
 								TreeInfo[] neutralTrees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
 								if (neutralTrees.length > 0) {
@@ -67,14 +68,13 @@ public class LumberjackLogic extends RobotLogic {
 		}
 	}
 
-	private void handleHelp(MapLocation helpNeeded) throws GameActionException {
+	private void handleHelp(MapLocation helpNeeded, LocationInfoType info) throws GameActionException {
 		Direction toMove = moveTowards(helpNeeded);
-		if(toMove !=null&&rc.canMove(toMove)){
+		if (toMove != null && rc.canMove(toMove)) {
 			rc.move(toMove);
-		} else{
+		} else {
 			handleTreesInWayToDesiredLocation(rc.getLocation().directionTo(helpNeeded));
 		}
-		
 	}
 
 	private void handleRecon() throws GameActionException {
@@ -94,13 +94,19 @@ public class LumberjackLogic extends RobotLogic {
 	}
 
 	private void handleAttack(RobotInfo[] enemies) throws GameActionException {
+		BulletInfo[] bullets = rc.senseNearbyBullets();
+		BulletInfo toDodge = getTargetingBullet(bullets);
 		RobotInfo target = (RobotInfo) getClosestBody(enemies);
 		Direction toMove = moveTowards(target.location);
-		if (toMove != null && rc.canMove(toMove)) {
-			rc.move(toMove);
+		if (toDodge != null) {
+			dodge(toDodge);
 		} else {
-			Direction desired = rc.getLocation().directionTo(target.location);
-			handleTreesInWayToDesiredLocation(desired);
+			if (toMove != null && rc.canMove(toMove)) {
+				rc.move(toMove);
+			} else {
+				Direction desired = rc.getLocation().directionTo(target.location);
+				handleTreesInWayToDesiredLocation(desired);
+			}
 		}
 		// TODO: replace with actual evaluation about striking.
 		if (rc.canStrike() && rc.getLocation().distanceTo(target.location) < GameConstants.LUMBERJACK_STRIKE_RADIUS
@@ -109,23 +115,25 @@ public class LumberjackLogic extends RobotLogic {
 		}
 	}
 
-	//TODO: refactor
+	// TODO: refactor
 	private void handleTreesInWayToDesiredLocation(Direction desired) throws GameActionException {
 		TreeInfo inWay = rc.senseTreeAtLocation(
 				rc.getLocation().add(desired, rc.getType().bodyRadius + GameConstants.NEUTRAL_TREE_MIN_RADIUS));
-		if (inWay != null && rc.canChop(inWay.ID)) {
+		if (inWay != null && rc.canChop(inWay.ID) && inWay.team != rc.getTeam()) {
 			rc.chop(inWay.ID);
 		} else {
 			desired = desired.rotateLeftDegrees(15);
 			inWay = rc.senseTreeAtLocation(
 					rc.getLocation().add(desired, rc.getType().bodyRadius + GameConstants.NEUTRAL_TREE_MIN_RADIUS));
-			if (inWay != null && rc.canChop(inWay.ID)) {
+			if (inWay != null && rc.canChop(inWay.ID) && inWay.team != rc.getTeam()) {
 				rc.chop(inWay.ID);
 			} else {
 				desired = desired.rotateRightDegrees(30);
-				inWay = rc.senseTreeAtLocation(rc.getLocation().add(desired,
-						rc.getType().bodyRadius + GameConstants.NEUTRAL_TREE_MIN_RADIUS));
-
+				inWay = rc.senseTreeAtLocation(
+						rc.getLocation().add(desired, rc.getType().bodyRadius + GameConstants.NEUTRAL_TREE_MIN_RADIUS));
+				if (inWay != null && rc.canChop(inWay.ID) && inWay.team != rc.getTeam()) {
+					rc.chop(inWay.ID);
+				}
 			}
 		}
 	}

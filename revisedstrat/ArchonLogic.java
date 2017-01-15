@@ -17,6 +17,10 @@ public class ArchonLogic extends RobotLogic {
 
         // TODO move try/catch to while loop
         try {
+        	System.out.println(rc.getLocation());
+        	BroadcastManager.saveLocation(rc, rc.getLocation(),LocationInfoType.ARCHON_HELP);
+        	System.out.println(BroadcastManager.getRecentLocation(rc, LocationInfoType.ARCHON_HELP));
+        	
             // Spawn a gardener on the first move
             if (shouldSpawnInitialGardener()) {
                 spawnGardener();

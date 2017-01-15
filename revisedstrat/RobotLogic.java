@@ -304,5 +304,22 @@ public abstract class RobotLogic {
 			rc.donate(rc.getTeamBullets());
 		}
 	}
+	
+	protected void dodge(BulletInfo toDodge) throws GameActionException {
+		Direction toBullet = rc.getLocation().directionTo(toDodge.location);
+		Direction toMove;
+		for (int angle = 90; angle <= 180; angle += 10) {
+			toMove = toBullet.rotateLeftDegrees(angle);
+			if (rc.canMove(toMove)) {
+				rc.move(toMove);
+				return;
+			}
+			toMove = toBullet.rotateRightDegrees(angle);
+			if (rc.canMove(toMove)) {
+				rc.move(toMove);
+				return;
+			}
+		}
+	}
 
 }

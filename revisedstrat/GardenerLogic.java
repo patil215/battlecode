@@ -42,7 +42,6 @@ public class GardenerLogic extends RobotLogic {
 						Direction spawnDir = rc.getLocation()
 								.directionTo(rc.getInitialArchonLocations(getEnemyTeam())[0]).opposite()
 								.rotateRightDegrees(60);
-						System.out.println(spawnDir.getAngleDegrees());
 						int degreesRotated = 0;
 						while (degreesRotated < 360
 								&& !rc.canPlantTree(spawnDir.rotateLeftDegrees(degreesRotated))) {
@@ -50,8 +49,6 @@ public class GardenerLogic extends RobotLogic {
 						}
 
 						spawnDir = spawnDir.rotateLeftDegrees(degreesRotated);
-						System.out.println(degreesRotated);
-						System.out.println(spawnDir.getAngleDegrees());
 						// If can spawn tree, spawn tree
 						if (degreesRotated <= 240 && rc.canPlantTree(spawnDir)) {
 							rc.plantTree(spawnDir);

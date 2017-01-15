@@ -24,9 +24,15 @@ public strictfp class RobotPlayer {
             case SCOUT:
                 logic = new ScoutLogic(rc);
                 break;
+            case TANK:
+                logic = new TankLogic(rc);
+                break;
+            case SOLDIER:
+            	logic = new SoldierLogic(rc);
+            	break;
             default:
-                logic = new ScoutLogic(rc);
-        }
+            	logic = new ScoutLogic(rc);
+       }
 
         logic.run();
     }
