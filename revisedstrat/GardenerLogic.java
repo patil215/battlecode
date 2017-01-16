@@ -2,6 +2,7 @@ package revisedstrat;
 
 import battlecode.common.*;
 import revisedstrat.BroadcastManager.LocationInfoType;
+import revisedstrat.BroadcastManager.UnitCountInfoType;
 
 /**
  * Created by patil215 on 1/12/17.
@@ -27,42 +28,75 @@ public class GardenerLogic extends RobotLogic {
 				tryAndBuildUnit(RobotType.SCOUT);
 			}
 
-			while (true) {
-				if (!settled && numRoundsSettling < 20) {
-					moveTowardsGoodSpot();
-					numRoundsSettling++;
-				} else if (!settled) {
-					settled = true;
+			while (!settled && numRoundsSettling < 20) {
+				moveTowardsGoodSpot();
+				numRoundsSettling++;
+				Clock.yield();
+			}
+
+			Direction base = Direction.getNorth();
+
+			for (int count = 0; count < 3; count++) {
+				while (rc.getBuildCooldownTurns() != 0 || rc.getTeamBullets() < 50) {
+					Clock.yield();
 				}
-
-				if (settled) {
-					// Look for a place to spawn a tree
-
-					if (rc.getBuildCooldownTurns() == 0) {
-						Direction spawnDir = rc.getLocation()
-								.directionTo(rc.getInitialArchonLocations(getEnemyTeam())[0]).opposite()
-								.rotateRightDegrees(60);
-						int degreesRotated = 0;
-						while (degreesRotated < 360
-								&& !rc.canPlantTree(spawnDir.rotateLeftDegrees(degreesRotated))) {
-							degreesRotated += 10;
-						}
-
-						spawnDir = spawnDir.rotateLeftDegrees(degreesRotated);
-						// If can spawn tree, spawn tree
-						if (degreesRotated <= 240 && rc.canPlantTree(spawnDir)) {
-							rc.plantTree(spawnDir);
-						} else if (rc.canPlantTree(spawnDir)) {
-							spawnUnit(spawnDir);
-						}
+				if (rc.canPlantTree(base.rotateLeftDegrees(90))) {
+					System.out.println("Planting left tree");
+					rc.plantTree(base.rotateLeftDegrees(90));
+				}
+				while (rc.getBuildCooldownTurns() != 0 || rc.getTeamBullets() < 50) {
+					Clock.yield();
+				}
+				if (rc.canPlantTree(base.rotateRightDegrees(90))) {
+					rc.plantTree(base.rotateRightDegrees(90));
+					System.out.println("Planting right tree");
+				}
+				if (count < 2) {
+					if (rc.canMove(base.rotateLeftDegrees(180))) {
+						rc.move(base.rotateLeftDegrees(180));
+						System.out.println("Moving down");
+						Clock.yield();
+					}
+					if (rc.canMove(base.rotateLeftDegrees(180))) {
+						rc.move(base.rotateLeftDegrees(180));
+						System.out.println("Moving down");
+						Clock.yield();
+					}
+					if (rc.canMove(base.rotateLeftDegrees(180), .1f)) {
+						rc.move(base.rotateLeftDegrees(180), .1f);
+						System.out.println("Moving down");
+						Clock.yield();
+					}
+				} else {
+					if (rc.canMove(base)) {
+						rc.move(base);
+						System.out.println("Moving down");
+						Clock.yield();
+					}
+					if (rc.canMove(base)) {
+						rc.move(base);
+						System.out.println("Moving down");
+						Clock.yield();
 					}
 				}
-				
-                RobotInfo[] foes = rc.senseNearbyRobots(-1,getEnemyTeam());
-                
-                if(foes.length>0){
-                	BroadcastManager.saveLocation(rc, foes[0].location, LocationInfoType.GARDENER_HELP);
-                }
+			}
+
+			while (rc.getBuildCooldownTurns() != 0 || rc.getTeamBullets() < 50) {
+				Clock.yield();
+			}
+			if (rc.canPlantTree(base.rotateLeftDegrees(180))) {
+				rc.plantTree(base.rotateLeftDegrees(180));
+			}
+
+			while (true) {
+
+				spawnUnit(base);
+
+				RobotInfo[] foes = rc.senseNearbyRobots(-1, getEnemyTeam());
+
+				if (foes.length > 0) {
+					BroadcastManager.saveLocation(rc, foes[0].location, LocationInfoType.GARDENER_HELP);
+				}
 
 				waterLowestHealthTree();
 				tryAndShakeATree();
@@ -104,16 +138,20 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private void spawnUnit(Direction direction) throws GameActionException {
-		if (rc.canBuildRobot(RobotType.LUMBERJACK, direction)) {
-			double random = Math.random();
-			if (Math.random() < .33) {
+		if (rc.canBuildRobot(RobotType.LUMBERJACK, direction) && rc.getBuildCooldownTurns() == 0
+				&& rc.getTeamBullets() >= 100) {
+			System.out.println("Can build");
+			System.out.println("We have around " + BroadcastManager.getUnitCount(rc, UnitCountInfoType.ALLY_SCOUT) + "Scouts");
+			if (BroadcastManager.getUnitCount(rc, UnitCountInfoType.ALLY_SCOUT) < 3) {
 				rc.buildRobot(RobotType.SCOUT, direction);
-			} else if(Math.random() < .67){
-				rc.buildRobot(RobotType.LUMBERJACK, direction);
 			}
-			else{
+			else if (Math.random() > .67) {
+				rc.buildRobot(RobotType.LUMBERJACK, direction);
+			} else {
 				rc.buildRobot(RobotType.SOLDIER, direction);
 			}
+		} else{
+			System.out.println("Can't build");
 		}
 	}
 

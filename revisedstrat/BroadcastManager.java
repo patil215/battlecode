@@ -147,6 +147,7 @@ public class BroadcastManager {
 
 	public static void incrementUnitCount(RobotController rc, UnitCountInfoType type) throws Exception {
 		checkValidUnitType(type);
+		System.out.println("We are trying to communicate on channel " + type.unitCountIndex + " for incrementing.");
 		int current = rc.readBroadcast(type.unitCountIndex);
 		current++;
 		rc.broadcast(type.unitCountIndex, current);
