@@ -105,10 +105,14 @@ public class GardenerLogic extends RobotLogic {
 
 	private void spawnUnit(Direction direction) throws GameActionException {
 		if (rc.canBuildRobot(RobotType.LUMBERJACK, direction)) {
-			if (Math.random() < .5) {
+			double random = Math.random();
+			if (Math.random() < .33) {
 				rc.buildRobot(RobotType.SCOUT, direction);
-			} else {
+			} else if(Math.random() < .67){
 				rc.buildRobot(RobotType.LUMBERJACK, direction);
+			}
+			else{
+				rc.buildRobot(RobotType.SOLDIER, direction);
 			}
 		}
 	}

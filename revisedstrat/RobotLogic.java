@@ -11,6 +11,8 @@ import static revisedstrat.Utils.randomDirection;
 public abstract class RobotLogic {
 
 	public RobotController rc;
+	
+	private static int ARCHON_IGNORE_ROUND = 200;
 
 	public RobotLogic(RobotController rc) {
 		this.rc = rc;
@@ -119,7 +121,7 @@ public abstract class RobotLogic {
 		for (TreeInfo tree : trees) {
 			float distance = getIntersectionDistance(location, direction, tree);
 
-			if (distance < minTreeDistance && distance >= 0) {
+			if (distance < minTreeDistance && distance != Float.NEGATIVE_INFINITY) {
 				hitTree = tree;
 				minTreeDistance = distance;
 			}
@@ -134,12 +136,12 @@ public abstract class RobotLogic {
 		for (RobotInfo robot : robots) {
 			float distance = getIntersectionDistance(location, direction, robot);
 
-			if (distance < minRobotDistance && distance >= 0) {
+			if (distance < minRobotDistance && distance != Float.NEGATIVE_INFINITY) {
 				hitRobot = robot;
 				minRobotDistance = distance;
 			}
 		}
-
+		
 		// If nothing is hit, return neutral
 		if (hitTree == null && hitRobot == null) {
 			return Team.NEUTRAL;
@@ -152,13 +154,13 @@ public abstract class RobotLogic {
 
 		// If only trees are intersected, return the nearest tree's team
 		else if (hitTree != null && hitRobot == null) {
-			return hitTree.getTeam();
+			return Team.NEUTRAL;
 		}
 
 		// If both are intersected, return the team of whichever is closer
 		else {
 			if (minTreeDistance < minRobotDistance) {
-				return hitTree.getTeam();
+				return Team.NEUTRAL;
 			} else {
 				return hitRobot.getTeam();
 			}
@@ -167,17 +169,23 @@ public abstract class RobotLogic {
 
 	/*
 	 * This method returns a bullet that will hit the player in its current
-	 * position. If multiple bullets will hit the target, only one is returned.
-	 * Returns null if no bullet will hit the target.
+	 * position. If multiple bullets will hit the target, only the closest bullet 
+	 * is returned. Returns null if no bullet will hit the target.
 	 */
 	protected BulletInfo getTargetingBullet(BulletInfo[] bullets) {
 		RobotInfo player = new RobotInfo(-1, null, rc.getType(), rc.getLocation(), 1, 1, 1);
+		
+		float minDistance = Float.MAX_VALUE;
+		BulletInfo closestBullet = null;
+		
 		for (BulletInfo bullet : bullets) {
-			if (getIntersectionDistance(bullet.location, bullet.dir, player) != -1) {
-				return bullet;
+			float distance = rc.getLocation().distanceTo(bullet.getLocation());
+			if (distance < minDistance && getIntersectionDistance(bullet.location, bullet.dir, player) != -1) {
+				closestBullet = bullet;
+				minDistance = distance;
 			}
 		}
-		return null;
+		return closestBullet;
 	}
 
 	/*
@@ -225,7 +233,7 @@ public abstract class RobotLogic {
 		// If the shortest distance is too large, the bullet won't ever
 		// intersect the target
 		if (dist > targetRadius) {
-			return -1;
+			return -Float.NEGATIVE_INFINITY;
 		}
 
 		// Compute the distance the bullet travels to get to the point of
@@ -242,7 +250,8 @@ public abstract class RobotLogic {
 
 	/*
 	 * Code used to find the highest priority target. If no sutable targets are
-	 * found, null is returned.
+	 * found, null is returned. This method only returns a target if it can be 
+	 * fired at from the robot's current position.
 	 */
 	RobotInfo getHighestPriorityTarget(RobotInfo[] enemies) throws GameActionException {
 		if (enemies.length == 0) {
@@ -252,17 +261,29 @@ public abstract class RobotLogic {
 		int maxIndex = -1;
 		double maxPriority = -1;
 
+		loop:
 		for (int index = 0; index < enemies.length; index++) {
 
-			double priority = enemies[index].getType().attackPower / Math.max(enemies[index].health, 1);
-
+			double priority = 0;
+			
+			if(enemies[index].getType().canAttack()){
+				priority = enemies[index].getType().attackPower / Math.max(enemies[index].health, 1);
+			}
+						
 			// TODO: Refactor
 			if ((priority > maxPriority || (maxPriority == 0 && enemies[index].health < enemies[maxIndex].health))) {
-
+				
+				//Don't attack archons at the start of the game.
+				if(enemies[index].type == RobotType.ARCHON && rc.getRoundNum() < ARCHON_IGNORE_ROUND){
+					continue loop;
+				}
+							
 				Direction toEnemy = rc.getLocation().directionTo(enemies[index].location);
 				float spawnOffset = rc.getType().bodyRadius + GameConstants.BULLET_SPAWN_OFFSET;
+								
 				MapLocation bulletSpawnPoint = rc.getLocation().add(toEnemy, spawnOffset);
-				
+								
+				//Only attack if we will hit an enemy.
 				if (getFirstHitTeam(bulletSpawnPoint, toEnemy) == getEnemyTeam()) {
 					maxIndex = index;
 					maxPriority = priority;
@@ -286,9 +307,20 @@ public abstract class RobotLogic {
 			return null;
 		}
 
-		BodyInfo closestEnemy = foes[0];
-		float closestDistance = rc.getLocation().distanceTo(foes[0].getLocation());
+		BodyInfo closestEnemy = null;
+		float closestDistance = Float.MAX_VALUE;
+		
+		loop:
 		for (BodyInfo enemy : foes) {
+			//Ignore enemy archons at the start of the game.
+			if(enemy instanceof RobotInfo){
+				
+				RobotInfo robot = (RobotInfo)enemy;
+				if(robot.type == RobotType.ARCHON && rc.getRoundNum() < ARCHON_IGNORE_ROUND){
+					continue loop;
+				}
+			}
+			
 			float dist = rc.getLocation().distanceTo(enemy.getLocation());
 			if (dist < closestDistance) {
 				closestEnemy = enemy;
