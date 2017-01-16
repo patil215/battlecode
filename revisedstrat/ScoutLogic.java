@@ -12,6 +12,7 @@ import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.TreeInfo;
 import revisedstrat.BroadcastManager.LocationInfoType;
+import revisedstrat.BroadcastManager.UnitCountInfoType;
 
 import java.util.Map;
 
@@ -27,8 +28,19 @@ public class ScoutLogic extends RobotLogic {
 
 	@Override
 	public void run() {
+		boolean isDead = false;
+		int birthRound = rc.getRoundNum();
 		while (true) {
 			try {
+				System.out.println(rc.getRoundNum()-birthRound);
+				if(rc.getRoundNum()-birthRound==20){
+					BroadcastManager.incrementUnitCount(rc, UnitCountInfoType.ALLY_SCOUT);
+					System.out.println("Reported being alive");
+				}
+				if(rc.getHealth()< RobotType.SCOUT.maxHealth/5 && rc.getRoundNum()-birthRound>=20 && !isDead){
+					BroadcastManager.decrementUnitCount(rc, UnitCountInfoType.ALLY_SCOUT);
+					isDead=true;
+				}
 				// Check if we have company
 				RobotInfo[] foes = rc.senseNearbyRobots(-1, getEnemyTeam());
 				if (foes.length != 0) {
