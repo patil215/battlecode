@@ -142,9 +142,6 @@ public abstract class RobotLogic {
 			}
 		}
 		
-		System.out.println(minTreeDistance);
-		System.out.println(minRobotDistance);
-
 		// If nothing is hit, return neutral
 		if (hitTree == null && hitRobot == null) {
 			return Team.NEUTRAL;
@@ -267,25 +264,25 @@ public abstract class RobotLogic {
 		loop:
 		for (int index = 0; index < enemies.length; index++) {
 
-			double priority = enemies[index].getType().attackPower / Math.max(enemies[index].health, 1);
-
+			double priority = 0;
+			
+			if(enemies[index].getType().canAttack()){
+				priority = enemies[index].getType().attackPower / Math.max(enemies[index].health, 1);
+			}
+						
 			// TODO: Refactor
 			if ((priority > maxPriority || (maxPriority == 0 && enemies[index].health < enemies[maxIndex].health))) {
-
+				
 				//Don't attack archons at the start of the game.
 				if(enemies[index].type == RobotType.ARCHON && rc.getRoundNum() < ARCHON_IGNORE_ROUND){
 					continue loop;
 				}
-				
-				System.out.println(enemies[index].location);
-				
+							
 				Direction toEnemy = rc.getLocation().directionTo(enemies[index].location);
 				float spawnOffset = rc.getType().bodyRadius + GameConstants.BULLET_SPAWN_OFFSET;
 								
 				MapLocation bulletSpawnPoint = rc.getLocation().add(toEnemy, spawnOffset);
-				
-				System.out.println(bulletSpawnPoint);
-				
+								
 				//Only attack if we will hit an enemy.
 				if (getFirstHitTeam(bulletSpawnPoint, toEnemy) == getEnemyTeam()) {
 					maxIndex = index;

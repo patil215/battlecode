@@ -98,13 +98,20 @@ public class ScoutLogic extends RobotLogic {
 	private void handleHarass(RobotInfo[] foes) throws GameActionException {
 		RobotInfo target = getPriorityEconTarget(foes);
 		if (target != null) {
+			int bytecode = Clock.getBytecodeNum();
 			BroadcastManager.saveLocation(rc, target.location, LocationInfoType.ENEMY);
+			System.out.println("Broadcasting: "  + (Clock.getBytecodeNum() - bytecode));
 			
 			BulletInfo[] bullets = rc.senseNearbyBullets();
+			
+			bytecode = Clock.getBytecodeNum();
 			BulletInfo toDodge = getTargetingBullet(bullets);
+			System.out.println("Finding bullet: " + (Clock.getBytecodeNum() - bytecode));
 			
 			if(toDodge != null){
+				bytecode = Clock.getBytecodeNum();
 				dodge(toDodge);
+				System.out.println("Dodging: " + (Clock.getBytecodeNum() - bytecode));
 			}
 			else{
 				Direction toMove = moveTowards(target.location);
@@ -113,7 +120,9 @@ public class ScoutLogic extends RobotLogic {
 				}
 			}
 			
+			bytecode = Clock.getBytecodeNum();
 			RobotInfo potentialTarget = getHighestPriorityTarget(rc.senseNearbyRobots(-1, getEnemyTeam()));
+			System.out.println("Prioritizing: " + (Clock.getBytecodeNum() - bytecode));
 			if(potentialTarget != null && rc.canFireSingleShot()){
 				rc.fireSingleShot(rc.getLocation().directionTo(potentialTarget.location));
 			}
