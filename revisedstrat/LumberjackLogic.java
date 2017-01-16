@@ -100,6 +100,7 @@ public class LumberjackLogic extends RobotLogic {
 		Direction toMove = moveTowards(target.location);
 		if (toDodge != null) {
 			dodge(toDodge);
+//			dodge(bullets);
 		} else {
 			if (toMove != null && rc.canMove(toMove)) {
 				rc.move(toMove);

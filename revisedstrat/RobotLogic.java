@@ -3,6 +3,8 @@ package revisedstrat;
 import battlecode.common.*;
 import scoutjackrush.RobotPlayer;
 
+import java.util.ArrayList;
+
 import static revisedstrat.Utils.randomDirection;
 
 /**
@@ -58,6 +60,24 @@ public abstract class RobotLogic {
 	public Direction moveTowards(MapLocation destination) {
 		Direction toMove = rc.getLocation().directionTo(destination);
 		return moveTowards(toMove);
+	}
+
+	/*
+	 * This method returns the bullets that will hit the player in some location.
+	 * Returns null if no bullet will hit the target.
+	 */
+	protected BulletInfo[] getAllTargetingBullets(BulletInfo[] bullets, MapLocation location) {
+		ArrayList<BulletInfo> targetingBullets = new ArrayList<>();
+		RobotInfo player = new RobotInfo(-1, null, rc.getType(), location, 1, 1, 1);
+
+		for (BulletInfo bullet : bullets) {
+			if (getIntersectionDistance(bullet.location, bullet.dir, player) != -1) {
+				targetingBullets.add(bullet);
+			}
+		}
+
+		BulletInfo[] bulletArray = new BulletInfo[targetingBullets.size()];
+		return targetingBullets.toArray(bulletArray);
 	}
 
 	/*
@@ -334,6 +354,59 @@ public abstract class RobotLogic {
 	protected void econWinIfPossible() throws GameActionException{
 		if(rc.getTeamBullets()>=GameConstants.VICTORY_POINTS_TO_WIN*GameConstants.BULLET_EXCHANGE_RATE){
 			rc.donate(rc.getTeamBullets());
+		}
+	}
+
+	private Direction findDensestDirection(BulletInfo[] bullets) {
+		float avgX = 0, avgY = 0;
+		MapLocation currLocation = rc.getLocation();
+
+		for (BulletInfo bullet : bullets) {
+			Direction d =  currLocation.directionTo(bullet.location);
+			avgX += d.getDeltaX(1);
+			avgY += d.getDeltaY(1);
+		}
+
+		avgX /= bullets.length;
+		avgY /= bullets.length;
+
+		return new Direction(avgX, avgY);
+	}
+
+	protected BulletInfo[] getAllIncomingBullets(BulletInfo[] bullets, MapLocation location, float angleTolerance) {
+		ArrayList<BulletInfo> incoming = new ArrayList<>();
+		for (BulletInfo bullet : bullets) {
+			if (bullet.location.directionTo(location).degreesBetween(bullet.dir) < angleTolerance && bullet.location.distanceTo(location) < 5) {
+				incoming.add(bullet);
+			}
+		}
+
+		return incoming.toArray(new BulletInfo[incoming.size()]);
+	}
+
+	protected void dodge(BulletInfo[] bullets) throws GameActionException {
+		BulletInfo[] nearbyBullets = rc.senseNearbyBullets(7);
+//		BulletInfo[] nearbyBullets = bullets;
+//		BulletInfo[] nearbyBullets = getAllIncomingBullets(bullets, rc.getLocation(), 30);
+		if (nearbyBullets.length == 0) return;
+
+//		Direction densest = findDensestDirection(nearbyBullets);
+		Direction densest = rc.getLocation().directionTo(nearbyBullets[0].location);
+
+		Direction toMove;
+
+		for (int angle = 100; angle > 90; angle -= 10) {
+			if (Math.random() > .5) {
+				toMove = densest.opposite().rotateLeftDegrees(angle);
+			} else {
+				toMove = densest.opposite().rotateRightDegrees(angle);
+			}
+
+			if (rc.canMove(toMove)) {
+				rc.move(toMove);
+				System.out.println("DODGING BULLET: (" + toMove.getDeltaX(1) + ", " + toMove.getDeltaY(1) + ")");
+				return;
+			}
 		}
 	}
 	

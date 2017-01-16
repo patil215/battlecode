@@ -44,6 +44,7 @@ public class SoldierLogic extends RobotLogic {
 		BulletInfo toDodge = getTargetingBullet(bullets);
 		if(toDodge != null){
 			dodge(toDodge);
+//			dodge(bullets);
 		}
 		RobotInfo target = getHighestPriorityTarget(nearbyFoes);
 		if (target != null) {

@@ -13,6 +13,8 @@ import battlecode.common.RobotType;
 import battlecode.common.TreeInfo;
 import revisedstrat.BroadcastManager.LocationInfoType;
 
+import java.util.Map;
+
 /**
  * Created by patil215 on 1/12/17.
  */
@@ -139,6 +141,7 @@ public class ScoutLogic extends RobotLogic {
 		RobotInfo threat = (RobotInfo) getClosestBody(foes);
 		if (toDodge != null) {
 			dodge(toDodge);
+//			dodge(bullets);
 		} else {
 			if (rc.getLocation().distanceTo(threat.location) <= 7) {
 				// We are too close to the enemy. They can see us.
@@ -169,6 +172,69 @@ public class ScoutLogic extends RobotLogic {
 	private RobotInfo getPriorityEconTarget(RobotInfo[] foes) {
 		return (RobotInfo) getClosestBody(foes);
 	}
+
+
+	/**
+	 * This method dodges a list of bullets, and returns an integer status code.
+	 *
+	 * 0  - bullets were successfully dodged
+	 * -1 - no call to rc.move() was made, and dodging either failed, or was unnecessary.
+	 * @param bullets
+	 * @return
+	 * @throws GameActionException
+	 */
+	private int dodgeDefaultBullets (BulletInfo[] bullets) throws GameActionException {
+		MapLocation currentLocation = rc.getLocation();
+
+		BulletInfo[] dangerousBullets = getAllTargetingBullets(bullets, currentLocation);
+
+		if (dangerousBullets.length > 5)  {
+
+		}
+
+		if (dangerousBullets.length == 0) {
+			System.out.println("NO BULLETS TO DODGE");
+			return -1;
+		}
+
+		BulletInfo toDodge = dangerousBullets[0];
+		Direction toFirstBullet = rc.getLocation().directionTo(toDodge.location);
+		Direction toMove;
+		int leastDangerous = 90;
+		int danger = Integer.MAX_VALUE;
+		for (int angle = 90; angle <= 270; angle += 10) {
+			toMove = toFirstBullet.rotateLeftDegrees(angle);
+
+			int currDanger = getAllTargetingBullets(bullets, currentLocation.add(toMove, (float) 2.5)).length;
+			if (currDanger < danger && rc.canMove(toMove)) {
+				danger = currDanger;
+				leastDangerous = angle;
+			}
+
+//			if (rc.canMove(toMove)) {
+//				rc.move(toMove);
+//				return 0;
+//			}
+
+//			toMove = toFirstBullet.rotateRightDegrees(angle);
+//			if (rc.canMove(toMove)) {
+//				rc.move(toMove);
+//				return 0;
+//			}
+//			currDanger = getAllTargetingBullets(bullets, currentLocation.add(toMove, (float) 2.5)).length;
+//			if (currDanger < danger && rc.canMove(toMove)) {
+//				danger = currDanger;
+//				leastDangerous = angle;
+//			}
+		}
+
+		System.out.println("DANGER: " +  danger);
+
+		if (danger != Integer.MAX_VALUE) rc.move(toFirstBullet.rotateLeftDegrees(leastDangerous));
+
+		return 0;
+	}
+
 
 	private RobotInfo getLowestHealthEconTarget(RobotInfo[] foes) {
 		if (foes.length == 0) {
