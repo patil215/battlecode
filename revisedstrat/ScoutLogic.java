@@ -99,18 +99,28 @@ public class ScoutLogic extends RobotLogic {
 		RobotInfo target = getPriorityEconTarget(foes);
 		if (target != null) {
 			BroadcastManager.saveLocation(rc, target.location, LocationInfoType.ENEMY);
-			Direction toMove = moveTowards(target.location);
-			if (toMove != null) {
-				rc.move(toMove);
+			
+			BulletInfo[] bullets = rc.senseNearbyBullets();
+			BulletInfo toDodge = getTargetingBullet(bullets);
+			
+			if(toDodge != null){
+				dodge(toDodge);
 			}
-			Direction towards = rc.getLocation().directionTo(target.getLocation());
-
-			// TODO: clean up or replace with actual line of sight check.
-			RobotInfo potentialTarget = rc.senseRobotAtLocation(rc.getLocation().add(towards,
-					rc.getType().bodyRadius + GameConstants.BULLET_SPAWN_OFFSET + rc.getType().bulletSpeed));
-			if (potentialTarget != null && potentialTarget.getTeam() == getEnemyTeam() && rc.canFireSingleShot()) {
-				rc.fireSingleShot(towards);
+			else{
+				Direction toMove = moveTowards(target.location);
+				if (toMove != null) {
+					rc.move(toMove);
+				}
 			}
+			
+			RobotInfo potentialTarget = getHighestPriorityTarget(rc.senseNearbyRobots(-1, getEnemyTeam()));
+			if(potentialTarget != null && rc.canFireSingleShot()){
+				rc.fireSingleShot(rc.getLocation().directionTo(potentialTarget.location));
+			}
+		}
+		//TODO: refactor?
+		else{
+			handleRecon();
 		}
 	}
 

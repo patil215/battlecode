@@ -45,8 +45,8 @@ public class TankLogic extends RobotLogic {
 			if (rc.canMove(toMove)) {
 				rc.move(toMove);
 			}
-			if (rc.canFireSingleShot()) {
-				rc.fireSingleShot(rc.getLocation().directionTo(target.location));
+			if (rc.canFirePentadShot()) {
+				rc.firePentadShot(rc.getLocation().directionTo(target.location));
 			}
 		}
 	}
