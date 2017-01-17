@@ -12,11 +12,13 @@ public class GardenerLogic extends RobotLogic {
 	private Direction moveDir;
 	private int numRoundsSettling;
 	private boolean settled;
+	private boolean towardsCenter;
 
 	public GardenerLogic(RobotController rc) {
 		super(rc);
 		numRoundsSettling = 0;
 		moveDir = Utils.randomDirection();
+		towardsCenter = false;
 	}
 
 	@Override
@@ -26,6 +28,10 @@ public class GardenerLogic extends RobotLogic {
 
 			if (rc.getRobotCount() - 1 == rc.getInitialArchonLocations(rc.getTeam()).length) {
 				tryAndBuildUnit(RobotType.SCOUT);
+				while(rc.getBuildCooldownTurns()!=0){
+					Clock.yield();
+				}
+				tryAndBuildUnit(RobotType.SOLDIER);
 			}
 
 			while (!settled && numRoundsSettling < 20) {
@@ -34,7 +40,7 @@ public class GardenerLogic extends RobotLogic {
 				Clock.yield();
 			}
 
-			Direction base = Direction.getNorth();
+			Direction base = Utils.randomDirection();
 
 			for (int count = 0; count < 3; count++) {
 				while (rc.getBuildCooldownTurns() != 0 || rc.getTeamBullets() < 50) {
@@ -87,9 +93,13 @@ public class GardenerLogic extends RobotLogic {
 			if (rc.canPlantTree(base.rotateLeftDegrees(180))) {
 				rc.plantTree(base.rotateLeftDegrees(180));
 			}
+			
+			MapLocation center = rc.getLocation();
 
 			while (true) {
 
+				moveBackAndForth(center, base);
+				
 				spawnUnit(base);
 
 				RobotInfo[] foes = rc.senseNearbyRobots(-1, getEnemyTeam());
@@ -108,6 +118,26 @@ public class GardenerLogic extends RobotLogic {
 			e.printStackTrace();
 		}
 
+	}
+
+	private void moveBackAndForth(MapLocation center, Direction base) throws GameActionException {
+		if(towardsCenter){
+			if(rc.canMove(base.opposite())){
+				rc.move(base.opposite());
+			}
+			if(rc.getLocation().distanceTo(center)<.25f){
+				towardsCenter = false;
+			}
+		} else{
+			if(rc.canMove(base)){
+				rc.move(base);
+			} else{
+				towardsCenter = true;
+			}
+			if(rc.getLocation().distanceTo(center)>2){
+				towardsCenter = true;
+			}
+		}
 	}
 
 	private void tryAndBuildUnit(RobotType toBuild) throws GameActionException {
@@ -141,16 +171,20 @@ public class GardenerLogic extends RobotLogic {
 		if (rc.canBuildRobot(RobotType.LUMBERJACK, direction) && rc.getBuildCooldownTurns() == 0
 				&& rc.getTeamBullets() >= 100) {
 			System.out.println("Can build");
-			System.out.println("We have around " + BroadcastManager.getUnitCount(rc, UnitCountInfoType.ALLY_SCOUT) + "Scouts");
+			System.out.println(
+					"We have around " + BroadcastManager.getUnitCount(rc, UnitCountInfoType.ALLY_SCOUT) + "Scouts");
 			if (BroadcastManager.getUnitCount(rc, UnitCountInfoType.ALLY_SCOUT) < 3) {
 				rc.buildRobot(RobotType.SCOUT, direction);
-			}
-			else if (Math.random() > .67) {
+			} else if (rc.canBuildRobot(RobotType.TANK, direction)) {
+				rc.buildRobot(RobotType.TANK, direction);
+			} else if (Math.random() > .8) {
 				rc.buildRobot(RobotType.LUMBERJACK, direction);
 			} else {
 				rc.buildRobot(RobotType.SOLDIER, direction);
 			}
-		} else{
+		} else
+
+		{
 			System.out.println("Can't build");
 		}
 	}
