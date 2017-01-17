@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bullet-evasion" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/scoutjackrush" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/scoutrushthree" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/scoutrush" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/revisedstrat" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/econrush" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/scoutrushtwo" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
