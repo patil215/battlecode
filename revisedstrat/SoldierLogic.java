@@ -71,7 +71,7 @@ public class SoldierLogic extends RobotLogic {
 			} else {
 				MapLocation[] broadcastLocations = rc.senseBroadcastingRobotLocations();
 				if (broadcastLocations.length != 0) {
-					int broadcastIndex = (int) Math.random() * broadcastLocations.length;
+					int broadcastIndex = (int) (Math.random() * broadcastLocations.length);
 					destination = broadcastLocations[broadcastIndex];
 				} else {
 					Direction move = moveTowards(getRandomEnemyInitialArchonLocation());
