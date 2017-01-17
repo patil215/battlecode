@@ -111,6 +111,7 @@ public class GardenerLogic extends RobotLogic {
 				waterLowestHealthTree();
 				tryAndShakeATree();
 				econWinIfPossible();
+				drawBullshitLine();
 				Clock.yield();
 			}
 

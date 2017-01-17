@@ -42,6 +42,7 @@ public class LumberjackLogic extends RobotLogic {
 			Exception e) {
 				e.printStackTrace();
 			}
+			drawBullshitLine();
 			Clock.yield();
 		}
 	}
@@ -77,8 +78,6 @@ public class LumberjackLogic extends RobotLogic {
 		RobotInfo target = (RobotInfo) getClosestBody(enemies);
 		Direction toMove = moveTowards(target.location);
 		if (toDodge != null) {
-			// dodge(toDodge);
-			System.out.println("dibber");
 			dodge(bullets);
 		} else {
 			if (toMove != null && rc.canMove(toMove)) {

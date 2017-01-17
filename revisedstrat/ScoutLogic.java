@@ -118,7 +118,7 @@ public class ScoutLogic extends RobotLogic {
 
             if (toDodge != null) {
                 bytecode = Clock.getBytecodeNum();
-                dodge(toDodge);
+                dodge(bullets);
                 System.out.println("Dodging: " + (Clock.getBytecodeNum() - bytecode));
             } else {
                 Direction toMove = moveTowards(target.location);
@@ -145,8 +145,7 @@ public class ScoutLogic extends RobotLogic {
         BulletInfo toDodge = getTargetingBullet(bullets);
         RobotInfo threat = (RobotInfo) getClosestBody(foes);
         if (toDodge != null) {
-            dodge(toDodge);
-//			dodge(bullets);
+			dodge(bullets);
         } else {
             if (rc.getLocation().distanceTo(threat.location) <= 7) {
                 // We are too close to the enemy. They can see us.

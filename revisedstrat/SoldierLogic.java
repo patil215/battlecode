@@ -30,6 +30,7 @@ public class SoldierLogic extends RobotLogic {
 				}
 				econWinIfPossible();
 				tryAndShakeATree();
+				drawBullshitLine();
 				// This unit is less useful to us, as our strategy does not
 				// directly involve it.
 				BroadcastManager.broadcastSpam(rc);
@@ -45,8 +46,7 @@ public class SoldierLogic extends RobotLogic {
 		BulletInfo[] bullets = rc.senseNearbyBullets();
 		BulletInfo toDodge = getTargetingBullet(bullets);
 		if (toDodge != null) {
-			dodge(toDodge);
-			// dodge(bullets);
+			dodge(bullets);
 		}
 		RobotInfo target = getHighestPriorityTarget(nearbyFoes);
 		if (target != null) {
@@ -92,15 +92,11 @@ public class SoldierLogic extends RobotLogic {
 		}
 
 		if (destination != null) {
-			System.out.println("trying to move");
 			Direction toMove = moveTowards(destination);
-			rc.setIndicatorLine(rc.getLocation(), destination, 128, 128, 128);
 			if (toMove != null) {
-				System.out.println("move is not null, doing my move");
 				move(toMove);
 			}
 			if (rc.canSenseLocation(destination) && rc.senseNearbyRobots(-1, getEnemyTeam()).length == 0) {
-				System.out.println("im at my destination");
 				destination = null;
 			}
 		}

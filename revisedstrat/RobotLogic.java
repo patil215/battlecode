@@ -64,7 +64,6 @@ public abstract class RobotLogic {
 	 */
 	public Direction moveTowards(MapLocation destination) {
 		if (!rc.getLocation().equals(destination)) {
-			System.out.println("location does not equal destination");
 			Direction toMove = rc.getLocation().directionTo(destination);
 			return moveTowards(toMove);
 		}
@@ -439,6 +438,43 @@ public abstract class RobotLogic {
 		return new Direction(avgX, avgY);
 	}
 
+	public void drawBullshitLine() {
+/*
+		int[] color = getRandomColor();
+		MapLocation[] enemyLocs = rc.getInitialArchonLocations(getEnemyTeam());
+		MapLocation[] allyLocs = rc.getInitialArchonLocations(rc.getTeam());
+		MapLocation[] locs = new MapLocation[allyLocs.length + enemyLocs.length];
+		for(int i = 0; i < enemyLocs.length; i++) {
+			locs[i] = enemyLocs[i];
+		}
+		for(int i = enemyLocs.length; i < allyLocs.length + enemyLocs.length; i++) {
+			locs[i] = allyLocs[i - enemyLocs.length];
+		}
+		float minX = Float.MAX_VALUE;
+		float maxX = Float.MIN_VALUE;
+		float minY = Float.MAX_VALUE;
+		float maxY = Float.MIN_VALUE;
+		for(MapLocation loc : locs) {
+			if(loc.x < minX) {
+				minX = loc.x;
+			}
+			if(loc.y < minY) {
+				minY = loc.y;
+			}
+			if(loc.x > maxX) {
+				maxX = loc.x;
+			}
+			if(loc.y > maxY) {
+				maxY = loc.y;
+			}
+		}
+
+		float x = minX + (float) (Math.random() * (maxX - minX));
+		float y = minY + (float) (Math.random() * (maxY - minY));
+
+		rc.setIndicatorLine(rc.getLocation(), new MapLocation(x, y), color[0], color[1], color[2]);*/
+	}
+
 	protected BulletInfo[] getAllIncomingBullets(BulletInfo[] bullets, MapLocation location, float angleTolerance) {
 		ArrayList<BulletInfo> incoming = new ArrayList<>();
 		for (BulletInfo bullet : bullets) {
@@ -451,7 +487,12 @@ public abstract class RobotLogic {
 		return incoming.toArray(new BulletInfo[incoming.size()]);
 	}
 
+	public int[] getRandomColor() {
+			return new int[] {(int) (Math.random() * 256), (int) (Math.random() * 256), (int) (Math.random() * 256)};
+	}
+
 	protected void dodge(BulletInfo[] bullets) throws GameActionException {
+		// bullets = getAllIncomingBullets(bullets, rc.getLocation(), 20);
 		BulletInfo[] predictNext = Arrays.stream(bullets).map(b -> new BulletInfo(b.getID(),
 				b.location.add(b.getDir(), b.speed), b.getDir(), b.getSpeed(), b.getDamage()))
 				.toArray(BulletInfo[]::new);
@@ -476,10 +517,10 @@ public abstract class RobotLogic {
 		Direction toMove = densestDirection.rotateLeftDegrees(safestAngle);
 
 		if (rc.canMove(toMove)) {
-			rc.setIndicatorLine(currentLocation, currentLocation.add(densestDirection, 3), 255, 0, 0);
-			rc.setIndicatorDot(currentLocation.add(densestDirection, 3), 0, 0, 255);
-			rc.setIndicatorLine(currentLocation, currentLocation.add(toMove, 3), 0, 255, 0);
-			rc.setIndicatorDot(currentLocation.add(toMove, 3), 0, 255, 0);
+			// rc.setIndicatorLine(currentLocation, currentLocation.add(densestDirection, 3), 255, 0, 0);
+			//rc.setIndicatorDot(currentLocation.add(densestDirection, 3), 0, 0, 255);
+			// rc.setIndicatorLine(currentLocation, currentLocation.add(toMove, 3), 0, 255, 0);
+			//rc.setIndicatorDot(currentLocation.add(toMove, 3), 0, 255, 0);
 			move(toMove);
 		}
 
