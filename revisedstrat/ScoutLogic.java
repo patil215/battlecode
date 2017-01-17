@@ -1,20 +1,8 @@
 package revisedstrat;
 
-import battlecode.common.BodyInfo;
-import battlecode.common.BulletInfo;
-import battlecode.common.Clock;
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.GameConstants;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
-import battlecode.common.TreeInfo;
+import battlecode.common.*;
 import revisedstrat.BroadcastManager.LocationInfoType;
 import revisedstrat.BroadcastManager.UnitCountInfoType;
-
-import java.util.Map;
 
 /**
  * Created by patil215 on 1/12/17.
@@ -85,7 +73,7 @@ public class ScoutLogic extends RobotLogic {
 			} else {
 				MapLocation[] broadcastLocations = rc.senseBroadcastingRobotLocations();
 				if (broadcastLocations.length != 0) {
-					int broadcastIndex = (int) Math.random() * broadcastLocations.length;
+					int broadcastIndex = (int) (Math.random() * broadcastLocations.length);
 					destination = broadcastLocations[broadcastIndex];
 				} else {
 					Direction move = moveTowards(getRandomEnemyInitialArchonLocation());
