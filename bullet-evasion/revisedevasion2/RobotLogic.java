@@ -14,13 +14,8 @@ public abstract class RobotLogic {
 
 	public RobotController rc;
 
-	private static int ARCHON_IGNORE_ROUND = 200;
-
-	private static boolean isLeftUnit;
-
 	public RobotLogic(RobotController rc) {
 		this.rc = rc;
-		isLeftUnit = Math.random() > .5;
 	}
 
 	public abstract void run();
@@ -66,24 +61,6 @@ public abstract class RobotLogic {
 	}
 
 	/*
-	 * This method returns the bullets that will hit the player in some location.
-	 * Returns null if no bullet will hit the target.
-	 */
-	protected BulletInfo[] getAllTargetingBullets(BulletInfo[] bullets, MapLocation location) {
-		ArrayList<BulletInfo> targetingBullets = new ArrayList<>();
-		RobotInfo player = new RobotInfo(-1, null, rc.getType(), location, 1, 1, 1);
-
-		for (BulletInfo bullet : bullets) {
-			if (getIntersectionDistance(bullet.location, bullet.dir, player) != -1) {
-				targetingBullets.add(bullet);
-			}
-		}
-
-		BulletInfo[] bulletArray = new BulletInfo[targetingBullets.size()];
-		return targetingBullets.toArray(bulletArray);
-	}
-
-	/*
 	 * If it is possible to move towards the specified direction, then this
 	 * method returns the best angle to do so with. Otherwise, null is returned.
 	 * The method will also disallow angles that will result in the robot
@@ -94,21 +71,16 @@ public abstract class RobotLogic {
 			return toMove;
 		} else {
 			BulletInfo[] bullets = rc.senseNearbyBullets();
-			for (int deltaAngle = 0; deltaAngle < 360; deltaAngle += 10) {
-				if (isLeftUnit) {
-					Direction leftDir = toMove.rotateLeftDegrees(deltaAngle);
-					if (rc.canMove(leftDir)
-							&& !willGetHitByABullet(rc.getLocation().add(leftDir, rc.getType().strideRadius),
-									bullets)) {
-						return leftDir;
-					}
-				} else {
-					Direction rightDir = toMove.rotateRightDegrees(deltaAngle);
-					if (rc.canMove(rightDir)
-							&& !willGetHitByABullet(rc.getLocation().add(rightDir, rc.getType().strideRadius),
-									bullets)) {
-						return rightDir;
-					}
+			for (int deltaAngle = 0; deltaAngle < 90; deltaAngle += 10) {
+				Direction leftDir = toMove.rotateLeftDegrees(deltaAngle);
+				if (rc.canMove(leftDir)
+						&& !willGetHitByABullet(rc.getLocation().add(leftDir, rc.getType().strideRadius), bullets)) {
+					return leftDir;
+				}
+				Direction rightDir = toMove.rotateRightDegrees(deltaAngle);
+				if (rc.canMove(rightDir)
+						&& !willGetHitByABullet(rc.getLocation().add(rightDir, rc.getType().strideRadius), bullets)) {
+					return rightDir;
 				}
 			}
 		}
@@ -149,7 +121,7 @@ public abstract class RobotLogic {
 		for (TreeInfo tree : trees) {
 			float distance = getIntersectionDistance(location, direction, tree);
 
-			if (distance < minTreeDistance && distance != Float.NEGATIVE_INFINITY) {
+			if (distance < minTreeDistance && distance >= 0) {
 				hitTree = tree;
 				minTreeDistance = distance;
 			}
@@ -164,7 +136,7 @@ public abstract class RobotLogic {
 		for (RobotInfo robot : robots) {
 			float distance = getIntersectionDistance(location, direction, robot);
 
-			if (distance < minRobotDistance && distance != Float.NEGATIVE_INFINITY) {
+			if (distance < minRobotDistance && distance >= 0) {
 				hitRobot = robot;
 				minRobotDistance = distance;
 			}
@@ -182,13 +154,13 @@ public abstract class RobotLogic {
 
 		// If only trees are intersected, return the nearest tree's team
 		else if (hitTree != null && hitRobot == null) {
-			return Team.NEUTRAL;
+			return hitTree.getTeam();
 		}
 
 		// If both are intersected, return the team of whichever is closer
 		else {
 			if (minTreeDistance < minRobotDistance) {
-				return Team.NEUTRAL;
+				return hitTree.getTeam();
 			} else {
 				return hitRobot.getTeam();
 			}
@@ -197,23 +169,35 @@ public abstract class RobotLogic {
 
 	/*
 	 * This method returns a bullet that will hit the player in its current
-	 * position. If multiple bullets will hit the target, only the closest
-	 * bullet is returned. Returns null if no bullet will hit the target.
+	 * position. If multiple bullets will hit the target, only one is returned.
+	 * Returns null if no bullet will hit the target.
 	 */
 	protected BulletInfo getTargetingBullet(BulletInfo[] bullets) {
 		RobotInfo player = new RobotInfo(-1, null, rc.getType(), rc.getLocation(), 1, 1, 1);
-
-		float minDistance = Float.MAX_VALUE;
-		BulletInfo closestBullet = null;
-
 		for (BulletInfo bullet : bullets) {
-			float distance = rc.getLocation().distanceTo(bullet.getLocation());
-			if (distance < minDistance && getIntersectionDistance(bullet.location, bullet.dir, player) != -1) {
-				closestBullet = bullet;
-				minDistance = distance;
+			if (getIntersectionDistance(bullet.location, bullet.dir, player) != -1) {
+				return bullet;
 			}
 		}
-		return closestBullet;
+		return null;
+	}
+
+	/*
+	 * This method returns the bullets that will hit the player in some location.
+	 * Returns null if no bullet will hit the target.
+	 */
+	protected BulletInfo[] getAllTargetingBullets(BulletInfo[] bullets, MapLocation location) {
+		ArrayList<BulletInfo> targetingBullets = new ArrayList<>();
+		RobotInfo player = new RobotInfo(-1, null, rc.getType(), location, 1, 1, 1);
+
+		for (BulletInfo bullet : bullets) {
+			if (getIntersectionDistance(bullet.location, bullet.dir, player) != -1) {
+				targetingBullets.add(bullet);
+			}
+		}
+
+		BulletInfo[] bulletArray = new BulletInfo[targetingBullets.size()];
+		return targetingBullets.toArray(bulletArray);
 	}
 
 	/*
@@ -261,7 +245,7 @@ public abstract class RobotLogic {
 		// If the shortest distance is too large, the bullet won't ever
 		// intersect the target
 		if (dist > targetRadius) {
-			return -Float.NEGATIVE_INFINITY;
+			return -1;
 		}
 
 		// Compute the distance the bullet travels to get to the point of
@@ -278,8 +262,7 @@ public abstract class RobotLogic {
 
 	/*
 	 * Code used to find the highest priority target. If no sutable targets are
-	 * found, null is returned. This method only returns a target if it can be
-	 * fired at from the robot's current position.
+	 * found, null is returned.
 	 */
 	RobotInfo getHighestPriorityTarget(RobotInfo[] enemies) throws GameActionException {
 		if (enemies.length == 0) {
@@ -289,28 +272,17 @@ public abstract class RobotLogic {
 		int maxIndex = -1;
 		double maxPriority = -1;
 
-		loop: for (int index = 0; index < enemies.length; index++) {
+		for (int index = 0; index < enemies.length; index++) {
 
-			double priority = 0;
-
-			if (enemies[index].getType().canAttack()) {
-				priority = enemies[index].getType().attackPower / Math.max(enemies[index].health, 1);
-			}
+			double priority = enemies[index].getType().attackPower / Math.max(enemies[index].health, 1);
 
 			// TODO: Refactor
 			if ((priority > maxPriority || (maxPriority == 0 && enemies[index].health < enemies[maxIndex].health))) {
 
-				// Don't attack archons at the start of the game.
-				if (enemies[index].type == RobotType.ARCHON && rc.getRoundNum() < ARCHON_IGNORE_ROUND) {
-					continue loop;
-				}
-
 				Direction toEnemy = rc.getLocation().directionTo(enemies[index].location);
 				float spawnOffset = rc.getType().bodyRadius + GameConstants.BULLET_SPAWN_OFFSET;
-
 				MapLocation bulletSpawnPoint = rc.getLocation().add(toEnemy, spawnOffset);
-
-				// Only attack if we will hit an enemy.
+				
 				if (getFirstHitTeam(bulletSpawnPoint, toEnemy) == getEnemyTeam()) {
 					maxIndex = index;
 					maxPriority = priority;
@@ -334,19 +306,9 @@ public abstract class RobotLogic {
 			return null;
 		}
 
-		BodyInfo closestEnemy = null;
-		float closestDistance = Float.MAX_VALUE;
-
-		loop: for (BodyInfo enemy : foes) {
-			// Ignore enemy archons at the start of the game.
-			if (enemy instanceof RobotInfo) {
-
-				RobotInfo robot = (RobotInfo) enemy;
-				if (robot.type == RobotType.ARCHON && rc.getRoundNum() < ARCHON_IGNORE_ROUND) {
-					continue loop;
-				}
-			}
-
+		BodyInfo closestEnemy = foes[0];
+		float closestDistance = rc.getLocation().distanceTo(foes[0].getLocation());
+		for (BodyInfo enemy : foes) {
 			float dist = rc.getLocation().distanceTo(enemy.getLocation());
 			if (dist < closestDistance) {
 				closestEnemy = enemy;
@@ -356,66 +318,13 @@ public abstract class RobotLogic {
 
 		return closestEnemy;
 	}
-
-	protected void econWinIfPossible() throws GameActionException {
-		if (rc.getTeamBullets() >= GameConstants.VICTORY_POINTS_TO_WIN * GameConstants.BULLET_EXCHANGE_RATE) {
+	
+	protected void econWinIfPossible() throws GameActionException{
+		if(rc.getTeamBullets()>=GameConstants.VICTORY_POINTS_TO_WIN*GameConstants.BULLET_EXCHANGE_RATE){
 			rc.donate(rc.getTeamBullets());
 		}
 	}
-
-	private Direction findDensestDirection(BulletInfo[] bullets) {
-		float avgX = 0, avgY = 0;
-		MapLocation currLocation = rc.getLocation();
-
-		for (BulletInfo bullet : bullets) {
-			Direction d =  currLocation.directionTo(bullet.location);
-			avgX += d.getDeltaX(1);
-			avgY += d.getDeltaY(1);
-		}
-
-		avgX /= bullets.length;
-		avgY /= bullets.length;
-
-		return new Direction(avgX, avgY);
-	}
-
-	protected BulletInfo[] getAllIncomingBullets(BulletInfo[] bullets, MapLocation location, float angleTolerance) {
-		ArrayList<BulletInfo> incoming = new ArrayList<>();
-		for (BulletInfo bullet : bullets) {
-			if (bullet.location.directionTo(location).degreesBetween(bullet.dir) < angleTolerance && bullet.location.distanceTo(location) < 5) {
-				incoming.add(bullet);
-			}
-		}
-
-		return incoming.toArray(new BulletInfo[incoming.size()]);
-	}
-
-	protected void dodge(BulletInfo[] bullets) throws GameActionException {
-		BulletInfo[] nearbyBullets = rc.senseNearbyBullets(7);
-//		BulletInfo[] nearbyBullets = bullets;
-//		BulletInfo[] nearbyBullets = getAllIncomingBullets(bullets, rc.getLocation(), 30);
-		if (nearbyBullets.length == 0) return;
-
-//		Direction densest = findDensestDirection(nearbyBullets);
-		Direction densest = rc.getLocation().directionTo(nearbyBullets[0].location);
-
-		Direction toMove;
-
-		for (int angle = 100; angle > 90; angle -= 10) {
-			if (Math.random() > .5) {
-				toMove = densest.opposite().rotateLeftDegrees(angle);
-			} else {
-				toMove = densest.opposite().rotateRightDegrees(angle);
-			}
-
-			if (rc.canMove(toMove)) {
-				rc.move(toMove);
-				System.out.println("DODGING BULLET: (" + toMove.getDeltaX(1) + ", " + toMove.getDeltaY(1) + ")");
-				return;
-			}
-		}
-	}
-
+	
 	protected void dodge(BulletInfo toDodge) throws GameActionException {
 		Direction toBullet = rc.getLocation().directionTo(toDodge.location);
 		Direction toMove;

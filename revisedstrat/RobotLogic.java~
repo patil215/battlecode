@@ -415,7 +415,8 @@ public abstract class RobotLogic {
 			}
 		}
 	}
-
+	
+>>>>>>> 045aa6c277ef2fbd08e42f7b0bb68e8b96758a6b
 	protected void dodge(BulletInfo toDodge) throws GameActionException {
 		Direction toBullet = rc.getLocation().directionTo(toDodge.location);
 		Direction toMove;

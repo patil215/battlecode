@@ -1,6 +1,5 @@
 package revisedstrat;
 
-import battlecode.common.BulletInfo;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -9,11 +8,11 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import revisedstrat.BroadcastManager.LocationInfoType;
 
-public class SoldierLogic extends RobotLogic {
-
+public class TankLogic extends RobotLogic {
+	
 	private MapLocation destination;
 
-	public SoldierLogic(RobotController rc) {
+	public TankLogic(RobotController rc) {
 		super(rc);
 		// TODO Auto-generated constructor stub
 	}
@@ -30,8 +29,7 @@ public class SoldierLogic extends RobotLogic {
 				}
 				econWinIfPossible();
 				tryAndShakeATree();
-				// This unit is less useful to us, as our strategy does not
-				// directly involve it.
+				//This unit is less useful to us, as our strategy does not directly involve it.
 				BroadcastManager.broadcastSpam(rc);
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -41,24 +39,14 @@ public class SoldierLogic extends RobotLogic {
 	}
 
 	private void handleAttack(RobotInfo[] nearbyFoes) throws GameActionException {
-		BulletInfo[] bullets = rc.senseNearbyBullets();
-		BulletInfo toDodge = getTargetingBullet(bullets);
-		if (toDodge != null) {
-			dodge(toDodge);
-//			dodge(bullets);
-		}
 		RobotInfo target = getHighestPriorityTarget(nearbyFoes);
 		if (target != null) {
 			Direction toMove = moveTowards(target.location);
-			if (toMove != null) {
-				if (!rc.hasMoved() && rc.canMove(toMove)) {
-					rc.move(toMove);
-				}
-			} else{
-				this.moveWithRandomBounce(Utils.randomDirection());
+			if (rc.canMove(toMove)) {
+				rc.move(toMove);
 			}
-			if (rc.canFirePentadShot()) {
-				rc.firePentadShot(rc.getLocation().directionTo(target.location));
+			if (rc.canFireSingleShot()) {
+				rc.fireSingleShot(rc.getLocation().directionTo(target.location));
 			}
 		}
 	}
@@ -87,10 +75,11 @@ public class SoldierLogic extends RobotLogic {
 			if (toMove != null) {
 				rc.move(toMove);
 			}
-			if (rc.canSenseLocation(destination) && rc.senseNearbyRobots(-1, getEnemyTeam()).length == 0) {
+			if(rc.canSenseLocation(destination)&&rc.senseNearbyRobots(-1, getEnemyTeam()).length==0){
 				destination = null;
 			}
 		}
+
 
 	}
 

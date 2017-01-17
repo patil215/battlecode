@@ -35,11 +35,24 @@ public class LumberjackLogic extends RobotLogic {
 					if (enemyTrees.length > 0) {
 						handleTrees(enemyTrees);
 					} else {
-						TreeInfo[] neutralTrees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
-						if (neutralTrees.length > 0) {
-							handleTrees(neutralTrees);
+						MapLocation gardenerHelp = BroadcastManager.getRecentLocation(rc,
+								LocationInfoType.GARDENER_HELP);
+						if (gardenerHelp != null) {
+							handleHelp(gardenerHelp, LocationInfoType.ARCHON_HELP);
 						} else {
-							handleRecon();
+							MapLocation archonHelp = BroadcastManager.getRecentLocation(rc,
+									LocationInfoType.ARCHON_HELP);
+							if (archonHelp != null) {
+								handleHelp(archonHelp, LocationInfoType.ARCHON_HELP);
+							} else {
+								TreeInfo[] neutralTrees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
+								if (neutralTrees.length > 0) {
+									handleTrees(neutralTrees);
+								} else {
+									handleRecon();
+								}
+
+							}
 						}
 					}
 				}
@@ -48,9 +61,7 @@ public class LumberjackLogic extends RobotLogic {
 				}
 				tryAndShakeATree();
 				econWinIfPossible();
-			} catch (
-
-			Exception e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 			Clock.yield();
@@ -89,7 +100,6 @@ public class LumberjackLogic extends RobotLogic {
 		Direction toMove = moveTowards(target.location);
 		if (toDodge != null) {
 			dodge(toDodge);
-//			dodge(bullets);
 		} else {
 			if (toMove != null && rc.canMove(toMove)) {
 				rc.move(toMove);
