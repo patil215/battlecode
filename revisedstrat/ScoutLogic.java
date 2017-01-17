@@ -148,7 +148,7 @@ public class ScoutLogic extends RobotLogic {
 	}
 
 	private void handleAttack(RobotInfo[] foes) throws GameActionException {
-		BulletInfo[] bullets = rc.senseNearbyBullets();
+		BulletInfo[] bullets = rc.senseNearbyBullets(5);
 		BulletInfo toDodge = getTargetingBullet(bullets);
 		RobotInfo threat = (RobotInfo) getClosestBody(foes);
 		if (toDodge != null) {

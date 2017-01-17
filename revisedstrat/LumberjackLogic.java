@@ -94,13 +94,13 @@ public class LumberjackLogic extends RobotLogic {
 	}
 
 	private void handleAttack(RobotInfo[] enemies) throws GameActionException {
-		BulletInfo[] bullets = rc.senseNearbyBullets();
+		BulletInfo[] bullets = rc.senseNearbyBullets(5);
 		BulletInfo toDodge = getTargetingBullet(bullets);
 		RobotInfo target = (RobotInfo) getClosestBody(enemies);
 		Direction toMove = moveTowards(target.location);
 		if (toDodge != null) {
-			dodge(toDodge);
-//			dodge(bullets);
+//			dodge(toDodge);
+			dodge(bullets);
 		} else {
 			if (toMove != null && rc.canMove(toMove)) {
 				rc.move(toMove);

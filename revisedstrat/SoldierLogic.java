@@ -40,11 +40,11 @@ public class SoldierLogic extends RobotLogic {
 	}
 
 	private void handleAttack(RobotInfo[] nearbyFoes) throws GameActionException {
-		BulletInfo[] bullets = rc.senseNearbyBullets();
+		BulletInfo[] bullets = rc.senseNearbyBullets(5);
 		BulletInfo toDodge = getTargetingBullet(bullets);
 		if(toDodge != null){
-			dodge(toDodge);
-//			dodge(bullets);
+//			dodge(toDodge);
+			dodge(bullets);
 		}
 		RobotInfo target = getHighestPriorityTarget(nearbyFoes);
 		if (target != null) {

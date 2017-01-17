@@ -4,6 +4,7 @@ import battlecode.common.*;
 import scoutjackrush.RobotPlayer;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import static revisedstrat.Utils.randomDirection;
 
@@ -208,6 +209,14 @@ public abstract class RobotLogic {
 		return closestBullet;
 	}
 
+
+	/**
+	 * Returns whether a bullet will hit a player at a specific location.
+	 */
+	protected boolean willHit(BulletInfo bullet, RobotInfo player) {
+		return getIntersectionDistance(bullet.location, bullet.dir, player) != -1;
+	}
+
 	/*
 	 * This method determines if a character will be hit by any bullet if it
 	 * moves to a particular location. The method takes in the location that the
@@ -385,29 +394,64 @@ public abstract class RobotLogic {
 	}
 
 	protected void dodge(BulletInfo[] bullets) throws GameActionException {
-		BulletInfo[] nearbyBullets = rc.senseNearbyBullets(7);
-//		BulletInfo[] nearbyBullets = bullets;
-//		BulletInfo[] nearbyBullets = getAllIncomingBullets(bullets, rc.getLocation(), 30);
-		if (nearbyBullets.length == 0) return;
+		BulletInfo[] predictNext = Arrays.stream(bullets)
+				.map(b -> new BulletInfo(b.getID(), b.location.add(b.getDir(), b.speed),
+						b.getDir(), b.getSpeed(), b.getDamage()))
+				.toArray(BulletInfo[]::new);
+		Direction densestDirection = findDensestDirection(bullets);
+		MapLocation currentLocation = rc.getLocation();
 
-//		Direction densest = findDensestDirection(nearbyBullets);
-		Direction densest = rc.getLocation().directionTo(nearbyBullets[0].location);
+		float stationaryImminentDanger = getImminenetDanger(bullets, currentLocation);
 
-		Direction toMove;
+		int safestAngle = 0;
+		float leastDanger = stationaryImminentDanger;
+		for (int angle = 90; angle < 270; angle += 10) {
 
-		for (int angle = 100; angle > 90; angle -= 10) {
-			if (Math.random() > .5) {
-				toMove = densest.opposite().rotateLeftDegrees(angle);
-			} else {
-				toMove = densest.opposite().rotateRightDegrees(angle);
-			}
+			float expectedDanger = getImminenetDanger(predictNext, currentLocation.add(densestDirection.rotateLeftDegrees(angle)));
 
-			if (rc.canMove(toMove)) {
-				rc.move(toMove);
-				System.out.println("DODGING BULLET: (" + toMove.getDeltaX(1) + ", " + toMove.getDeltaY(1) + ")");
-				return;
+			if (expectedDanger < leastDanger && rc.canMove(densestDirection.rotateLeftDegrees(angle))) {
+				leastDanger = expectedDanger;
+				safestAngle = angle;
 			}
 		}
+
+		Direction toMove = densestDirection.rotateLeftDegrees(safestAngle);
+
+		if (rc.canMove(toMove)) {
+			rc.setIndicatorLine(currentLocation, currentLocation.add(densestDirection, 3), 255, 0, 0);
+			rc.setIndicatorDot(currentLocation.add(densestDirection, 3), 0, 0, 255);
+			rc.setIndicatorLine(currentLocation, currentLocation.add(toMove, 3), 0, 255, 0);
+			rc.setIndicatorDot(currentLocation.add(toMove, 3), 0, 255, 0);
+			rc.move(toMove);
+		}
+
+	}
+
+	private float getImminenetDanger(BulletInfo[] bullets, MapLocation loc) {
+		float danger = 0;
+		for (BulletInfo bullet : bullets) {
+			danger += bullet.getDamage() / loc.distanceTo(bullet.getLocation());
+		}
+
+		return danger + 2 * expectedDamage(bullets, loc);
+	}
+
+	/**
+	 * This method returns the expected damage which a specific location
+	 * will get in the next round, based on the current bullet information
+	 * @param bullets
+	 * @return
+	 */
+	protected float expectedDamage(BulletInfo[] bullets, MapLocation loc) {
+		RobotInfo player = new RobotInfo(-1, null, rc.getType(), loc, 1, 1, 1);
+		float totalDamage = 0;
+		for (BulletInfo bullet : bullets) {
+			if (willHit(bullet, player)) {
+				totalDamage += bullet.damage;
+			}
+		}
+
+		return totalDamage;
 	}
 	
 	protected void dodge(BulletInfo toDodge) throws GameActionException {
