@@ -35,24 +35,11 @@ public class LumberjackLogic extends RobotLogic {
 					if (enemyTrees.length > 0) {
 						handleTrees(enemyTrees);
 					} else {
-						MapLocation gardenerHelp = BroadcastManager.getRecentLocation(rc,
-								LocationInfoType.GARDENER_HELP);
-						if (gardenerHelp != null) {
-							handleHelp(gardenerHelp, LocationInfoType.ARCHON_HELP);
+						TreeInfo[] neutralTrees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
+						if (neutralTrees.length > 0) {
+							handleTrees(neutralTrees);
 						} else {
-							MapLocation archonHelp = BroadcastManager.getRecentLocation(rc,
-									LocationInfoType.ARCHON_HELP);
-							if (archonHelp != null) {
-								handleHelp(archonHelp, LocationInfoType.ARCHON_HELP);
-							} else {
-								TreeInfo[] neutralTrees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
-								if (neutralTrees.length > 0) {
-									handleTrees(neutralTrees);
-								} else {
-									handleRecon();
-								}
-
-							}
+							handleRecon();
 						}
 					}
 				}
@@ -61,7 +48,9 @@ public class LumberjackLogic extends RobotLogic {
 				}
 				tryAndShakeATree();
 				econWinIfPossible();
-			} catch (Exception e) {
+			} catch (
+
+			Exception e) {
 				e.printStackTrace();
 			}
 			Clock.yield();
