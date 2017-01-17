@@ -1,17 +1,6 @@
 package revisedstrat;
 
-import battlecode.common.BodyInfo;
-import battlecode.common.BulletInfo;
-import battlecode.common.Clock;
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.GameConstants;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
-import battlecode.common.Team;
-import battlecode.common.TreeInfo;
+import battlecode.common.*;
 import revisedstrat.BroadcastManager.LocationInfoType;
 
 /**
@@ -60,7 +49,7 @@ public class LumberjackLogic extends RobotLogic {
 	private void handleHelp(MapLocation helpNeeded, LocationInfoType info) throws GameActionException {
 		Direction toMove = moveTowards(helpNeeded);
 		if (toMove != null && rc.canMove(toMove)) {
-			rc.move(toMove);
+			move(toMove);
 		} else {
 			handleTreesInWayToDesiredLocation(rc.getLocation().directionTo(helpNeeded));
 		}
@@ -75,7 +64,7 @@ public class LumberjackLogic extends RobotLogic {
 		TreeInfo closest = (TreeInfo) getClosestBody(neutralTrees);
 		Direction toMove = moveTowards(closest.getLocation());
 		if (toMove != null && rc.canMove(toMove)) {
-			rc.move(toMove);
+			move(toMove);
 		}
 		if (rc.canChop(closest.ID)) {
 			rc.chop(closest.ID);
@@ -88,11 +77,12 @@ public class LumberjackLogic extends RobotLogic {
 		RobotInfo target = (RobotInfo) getClosestBody(enemies);
 		Direction toMove = moveTowards(target.location);
 		if (toDodge != null) {
-//			dodge(toDodge);
+			// dodge(toDodge);
+			System.out.println("dibber");
 			dodge(bullets);
 		} else {
 			if (toMove != null && rc.canMove(toMove)) {
-				rc.move(toMove);
+				move(toMove);
 			} else {
 				Direction desired = rc.getLocation().directionTo(target.location);
 				handleTreesInWayToDesiredLocation(desired);

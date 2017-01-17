@@ -32,7 +32,7 @@ public class ArchonLogic extends RobotLogic {
                     spawnGardener();
                 }
                 // Try to move in random direction
-                rc.move(pickNextLocation());
+                move(pickNextLocation());
                 
                 RobotInfo[] foes = rc.senseNearbyRobots(-1,getEnemyTeam());
                 

@@ -9,7 +9,7 @@ import battlecode.common.RobotInfo;
 import revisedstrat.BroadcastManager.LocationInfoType;
 
 public class TankLogic extends RobotLogic {
-	
+
 	private MapLocation destination;
 
 	public TankLogic(RobotController rc) {
@@ -29,7 +29,8 @@ public class TankLogic extends RobotLogic {
 				}
 				econWinIfPossible();
 				tryAndShakeATree();
-				//This unit is less useful to us, as our strategy does not directly involve it.
+				// This unit is less useful to us, as our strategy does not
+				// directly involve it.
 				BroadcastManager.broadcastSpam(rc);
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -43,7 +44,7 @@ public class TankLogic extends RobotLogic {
 		if (target != null) {
 			Direction toMove = moveTowards(target.location);
 			if (rc.canMove(toMove)) {
-				rc.move(toMove);
+				move(toMove);
 			}
 			if (rc.canFirePentadShot()) {
 				rc.firePentadShot(rc.getLocation().directionTo(target.location));
@@ -52,6 +53,13 @@ public class TankLogic extends RobotLogic {
 	}
 
 	private void handleRecon() throws GameActionException {
+
+		MapLocation recentEnemyLoc = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY);
+		if (recentEnemyLoc != null && closeToLocationAndNoEnemies(recentEnemyLoc)) {
+			BroadcastManager.invalidateLocation(rc, LocationInfoType.ENEMY);
+			destination = null;
+		}
+
 		if (destination == null) {
 			MapLocation recentEnemyLocation = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY);
 			if (recentEnemyLocation != null) {
@@ -59,12 +67,12 @@ public class TankLogic extends RobotLogic {
 			} else {
 				MapLocation[] broadcastLocations = rc.senseBroadcastingRobotLocations();
 				if (broadcastLocations.length != 0) {
-					int broadcastIndex = (int) Math.random() * broadcastLocations.length;
+					int broadcastIndex = (int) (Math.random() * broadcastLocations.length);
 					destination = broadcastLocations[broadcastIndex];
 				} else {
 					Direction move = moveTowards(getRandomEnemyInitialArchonLocation());
 					if (move != null) {
-						rc.move(move);
+						move(move);
 					}
 				}
 			}
@@ -73,13 +81,12 @@ public class TankLogic extends RobotLogic {
 		if (destination != null) {
 			Direction toMove = moveTowards(destination);
 			if (toMove != null) {
-				rc.move(toMove);
+				move(toMove);
 			}
-			if(rc.canSenseLocation(destination)&&rc.senseNearbyRobots(-1, getEnemyTeam()).length==0){
+			if (rc.canSenseLocation(destination) && rc.senseNearbyRobots(-1, getEnemyTeam()).length == 0) {
 				destination = null;
 			}
 		}
-
 
 	}
 

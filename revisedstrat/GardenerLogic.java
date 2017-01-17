@@ -59,28 +59,28 @@ public class GardenerLogic extends RobotLogic {
 				}
 				if (count < 2) {
 					if (rc.canMove(base.rotateLeftDegrees(180))) {
-						rc.move(base.rotateLeftDegrees(180));
+						move(base.rotateLeftDegrees(180));
 						System.out.println("Moving down");
 						Clock.yield();
 					}
 					if (rc.canMove(base.rotateLeftDegrees(180))) {
-						rc.move(base.rotateLeftDegrees(180));
+						move(base.rotateLeftDegrees(180));
 						System.out.println("Moving down");
 						Clock.yield();
 					}
 					if (rc.canMove(base.rotateLeftDegrees(180), .1f)) {
-						rc.move(base.rotateLeftDegrees(180), .1f);
+						move(base.rotateLeftDegrees(180), .1f);
 						System.out.println("Moving down");
 						Clock.yield();
 					}
 				} else {
 					if (rc.canMove(base)) {
-						rc.move(base);
+						move(base);
 						System.out.println("Moving down");
 						Clock.yield();
 					}
 					if (rc.canMove(base)) {
-						rc.move(base);
+						move(base);
 						System.out.println("Moving down");
 						Clock.yield();
 					}
@@ -123,14 +123,14 @@ public class GardenerLogic extends RobotLogic {
 	private void moveBackAndForth(MapLocation center, Direction base) throws GameActionException {
 		if(towardsCenter){
 			if(rc.canMove(base.opposite())){
-				rc.move(base.opposite());
+				move(base.opposite());
 			}
 			if(rc.getLocation().distanceTo(center)<.25f){
 				towardsCenter = false;
 			}
 		} else{
 			if(rc.canMove(base)){
-				rc.move(base);
+				move(base);
 			} else{
 				towardsCenter = true;
 			}

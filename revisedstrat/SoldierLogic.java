@@ -41,20 +41,21 @@ public class SoldierLogic extends RobotLogic {
 	}
 
 	private void handleAttack(RobotInfo[] nearbyFoes) throws GameActionException {
+		System.out.println("Handling attack");
 		BulletInfo[] bullets = rc.senseNearbyBullets();
 		BulletInfo toDodge = getTargetingBullet(bullets);
 		if (toDodge != null) {
 			dodge(toDodge);
-//			dodge(bullets);
+			// dodge(bullets);
 		}
 		RobotInfo target = getHighestPriorityTarget(nearbyFoes);
 		if (target != null) {
 			Direction toMove = moveTowards(target.location);
 			if (toMove != null) {
-				if (!rc.hasMoved() && rc.canMove(toMove)) {
-					rc.move(toMove);
+				if (rc.canMove(toMove)) {
+					move(toMove);
 				}
-			} else{
+			} else {
 				this.moveWithRandomBounce(Utils.randomDirection());
 			}
 			if (rc.canFirePentadShot()) {
@@ -64,6 +65,14 @@ public class SoldierLogic extends RobotLogic {
 	}
 
 	private void handleRecon() throws GameActionException {
+		System.out.println("Handling recon");
+
+		MapLocation recentEnemyLoc = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY);
+		if (recentEnemyLoc != null && closeToLocationAndNoEnemies(recentEnemyLoc)) {
+			BroadcastManager.invalidateLocation(rc, LocationInfoType.ENEMY);
+			destination = null;
+		}
+
 		if (destination == null) {
 			MapLocation recentEnemyLocation = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY);
 			if (recentEnemyLocation != null) {
@@ -76,18 +85,22 @@ public class SoldierLogic extends RobotLogic {
 				} else {
 					Direction move = moveTowards(getRandomEnemyInitialArchonLocation());
 					if (move != null) {
-						rc.move(move);
+						move(move);
 					}
 				}
 			}
 		}
 
 		if (destination != null) {
+			System.out.println("trying to move");
 			Direction toMove = moveTowards(destination);
+			rc.setIndicatorLine(rc.getLocation(), destination, 128, 128, 128);
 			if (toMove != null) {
-				rc.move(toMove);
+				System.out.println("move is not null, doing my move");
+				move(toMove);
 			}
 			if (rc.canSenseLocation(destination) && rc.senseNearbyRobots(-1, getEnemyTeam()).length == 0) {
+				System.out.println("im at my destination");
 				destination = null;
 			}
 		}

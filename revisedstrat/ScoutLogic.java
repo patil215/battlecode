@@ -66,6 +66,12 @@ public class ScoutLogic extends RobotLogic {
     // TODO: First handle broadcasted information. Also, find something to do if
     // initial archon locations are abandoned.
     private void handleRecon() throws GameActionException {
+        MapLocation recentEnemyLoc = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY);
+        if (recentEnemyLoc != null && closeToLocationAndNoEnemies(recentEnemyLoc)) {
+            BroadcastManager.invalidateLocation(rc, LocationInfoType.ENEMY);
+            destination = null;
+        }
+
         if (destination == null) {
             MapLocation recentEnemyLocation = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY);
             if (recentEnemyLocation != null) {
@@ -78,7 +84,7 @@ public class ScoutLogic extends RobotLogic {
                 } else {
                     Direction move = moveTowards(getRandomEnemyInitialArchonLocation());
                     if (move != null) {
-                        rc.move(move);
+                        move(move);
                     }
                 }
             }
@@ -87,7 +93,7 @@ public class ScoutLogic extends RobotLogic {
         if (destination != null) {
             Direction toMove = moveTowards(destination);
             if (toMove != null) {
-                rc.move(toMove);
+                move(toMove);
             }
             if (rc.canSenseLocation(destination) && rc.senseNearbyRobots(-1, getEnemyTeam()).length == 0) {
                 destination = null;
@@ -117,7 +123,7 @@ public class ScoutLogic extends RobotLogic {
             } else {
                 Direction toMove = moveTowards(target.location);
                 if (toMove != null) {
-                    rc.move(toMove);
+                    move(toMove);
                 }
             }
 
@@ -146,7 +152,7 @@ public class ScoutLogic extends RobotLogic {
                 // We are too close to the enemy. They can see us.
                 Direction toMove = moveTowards(rc.getLocation().directionTo(threat.location).opposite());
                 if (toMove != null) {
-                    rc.move(toMove);
+                    move(toMove);
                 }
             }
         }
@@ -158,11 +164,11 @@ public class ScoutLogic extends RobotLogic {
             Direction towardsThreat = rc.getLocation().directionTo(threat.location);
             Direction toMove = moveTowards(towardsThreat.rotateLeftDegrees(90));
             if (toMove != null && rc.canMove(toMove)) {
-                rc.move(toMove);
+                move(toMove);
             } else {
                 toMove = moveTowards(towardsThreat.rotateRightDegrees(90));
                 if (toMove != null && rc.canMove(toMove)) {
-                    rc.move(toMove);
+                    move(toMove);
                 }
             }
         }
@@ -177,7 +183,7 @@ public class ScoutLogic extends RobotLogic {
      * This method dodges a list of bullets, and returns an integer status code.
      * <p>
      * 0  - bullets were successfully dodged
-     * -1 - no call to rc.move() was made, and dodging either failed, or was unnecessary.
+     * -1 - no call to move() was made, and dodging either failed, or was unnecessary.
      *
      * @param bullets
      * @return
@@ -212,13 +218,13 @@ public class ScoutLogic extends RobotLogic {
             }
 
 //			if (rc.canMove(toMove)) {
-//				rc.move(toMove);
+//				move(toMove);
 //				return 0;
 //			}
 
 //			toMove = toFirstBullet.rotateRightDegrees(angle);
 //			if (rc.canMove(toMove)) {
-//				rc.move(toMove);
+//				move(toMove);
 //				return 0;
 //			}
 //			currDanger = getAllTargetingBullets(bullets, currentLocation.add(toMove, (float) 2.5)).length;
@@ -230,7 +236,7 @@ public class ScoutLogic extends RobotLogic {
 
         System.out.println("DANGER: " + danger);
 
-        if (danger != Integer.MAX_VALUE) rc.move(toFirstBullet.rotateLeftDegrees(leastDangerous));
+        if (danger != Integer.MAX_VALUE) move(toFirstBullet.rotateLeftDegrees(leastDangerous));
 
         return 0;
     }
