@@ -20,6 +20,8 @@ public abstract class RobotLogic {
 
 	private static boolean isLeftUnit;
 
+	private static boolean FLAG = false;
+	
 	public RobotLogic(RobotController rc) {
 		this.rc = rc;
 		isLeftUnit = Math.random() > .5;
@@ -191,11 +193,13 @@ public abstract class RobotLogic {
 		TreeInfo hitTree = null;
 
 		for (TreeInfo tree : trees) {
-			float distance = getIntersectionDistance(location, direction, tree);
+			if(FLAG || rc.getLocation().directionTo(tree.location).radiansBetween(direction) < Math.PI / 2){
+				float distance = getIntersectionDistance(location, direction, tree);
 
-			if (distance < minTreeDistance && distance != NO_INTERSECT) {
-				hitTree = tree;
-				minTreeDistance = distance;
+				if (distance < minTreeDistance && distance != NO_INTERSECT) {
+					hitTree = tree;
+					minTreeDistance = distance;
+				}
 			}
 		}
 
@@ -206,11 +210,14 @@ public abstract class RobotLogic {
 		RobotInfo hitRobot = null;
 
 		for (RobotInfo robot : robots) {
-			float distance = getIntersectionDistance(location, direction, robot);
+			
+			if(FLAG || rc.getLocation().directionTo(robot.location).radiansBetween(direction) < Math.PI / 2){
+				float distance = getIntersectionDistance(location, direction, robot);
 
-			if (distance < minRobotDistance && distance != NO_INTERSECT) {
-				hitRobot = robot;
-				minRobotDistance = distance;
+				if (distance < minRobotDistance && distance != NO_INTERSECT) {
+					hitRobot = robot;
+					minRobotDistance = distance;
+				}
 			}
 		}
 
