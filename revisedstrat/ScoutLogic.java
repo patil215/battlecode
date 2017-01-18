@@ -10,9 +10,13 @@ import revisedstrat.BroadcastManager.UnitCountInfoType;
 public class ScoutLogic extends RobotLogic {
 	public ScoutLogic(RobotController rc) {
 		super(rc);
+		hasVisitedEnemyArchon = false;
+		randBounceDir = Utils.randomDirection();
 	}
 
 	private MapLocation destination;
+	private boolean hasVisitedEnemyArchon;
+	private Direction randBounceDir;
 
 	@Override
 	public void run() {
@@ -80,12 +84,12 @@ public class ScoutLogic extends RobotLogic {
 					System.out.println("New destination is from a broadcast");
 					int broadcastIndex = (int) (Math.random() * broadcastLocations.length);
 					destination = broadcastLocations[broadcastIndex];
-				} else {
+				} else if(!hasVisitedEnemyArchon){
 					System.out.println("We are going to wander to an archon");
-					Direction move = moveTowards(getRandomEnemyInitialArchonLocation());
-					if (move != null) {
-						move(move);
-					}
+					destination = getRandomEnemyInitialArchonLocation();
+					this.hasVisitedEnemyArchon=true;
+				} else{
+					randBounceDir = this.moveWithRandomBounce(randBounceDir);
 				}
 			}
 		}

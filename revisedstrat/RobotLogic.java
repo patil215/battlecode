@@ -112,6 +112,14 @@ public abstract class RobotLogic {
 		return false;
 	}
 
+	public void detectEnemiesAndSendHelpBroadcast() throws GameActionException {
+		RobotInfo[] foes = rc.senseNearbyRobots(-1, getEnemyTeam());
+
+		if (foes.length > 0) {
+			BroadcastManager.saveLocation(rc, foes[0].location, BroadcastManager.LocationInfoType.GARDENER_HELP);
+		}
+	}
+
 	/*
 	 * If it is possible to move towards the specified direction, then this
 	 * method returns the best angle to do so with. Otherwise, null is returned.
