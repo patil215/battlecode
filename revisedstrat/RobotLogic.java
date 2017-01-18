@@ -471,6 +471,49 @@ public abstract class RobotLogic {
 		return new int[] { (int) (Math.random() * 256), (int) (Math.random() * 256), (int) (Math.random() * 256) };
 	}
 
+	protected void moveAndDodge(MapLocation enemy, BulletInfo[] bullets) throws GameActionException {
+		MapLocation currLocation = rc.getLocation();
+		Direction toEnemy = currLocation.directionTo(enemy);
+
+		float minDamage = rc.getHealth();
+		int bestAngle = -40;
+		for (int angle = -40; angle < 40; angle += 10) {
+			MapLocation expectedLocation = currLocation.add(toEnemy.rotateLeftDegrees(angle), (float) getStrideRadius(rc.getType()));
+			float damage = expectedDamage(bullets, expectedLocation);
+
+			if (damage < minDamage) {
+				bestAngle = angle;
+				minDamage = damage;
+			}
+		}
+
+		rc.move(toEnemy.rotateLeftDegrees(bestAngle));
+	}
+
+	public static double getStrideRadius(RobotType rt) {
+		switch (rt) {
+			case ARCHON:
+			case TANK:
+			case SOLDIER: {
+				return 1;
+			}
+
+			case GARDENER: {
+				return 2;
+			}
+
+			case SCOUT: {
+				return 2.5;
+			}
+
+			case LUMBERJACK: {
+				return 1.5;
+			}
+
+			default: return 1;
+		}
+	}
+
 	protected void dodge(BulletInfo[] bullets) throws GameActionException {
 		// bullets = getAllIncomingBullets(bullets, rc.getLocation(), 20);
 		BulletInfo[] predictNext = Arrays.stream(bullets).map(b -> new BulletInfo(b.getID(),
@@ -511,11 +554,16 @@ public abstract class RobotLogic {
 
 	private float getImminenetDanger(BulletInfo[] bullets, MapLocation loc) {
 		float danger = 0;
+		RobotInfo player = new RobotInfo(-1, null, rc.getType(), loc, 1, 1, 1);
+		float totalDamage = 0;
 		for (BulletInfo bullet : bullets) {
 			danger += bullet.getDamage() / loc.distanceTo(bullet.getLocation());
+			if (willHit(bullet, player)) {
+				totalDamage += bullet.damage;
+			}
 		}
 
-		return danger + 2 * expectedDamage(bullets, loc);
+		return danger * totalDamage;
 	}
 
 	/**
