@@ -101,7 +101,7 @@ public abstract class RobotLogic {
 	public void endTurn() throws GameActionException {
 		tryAndShakeATree();
 		econWinIfPossible();
-		
+
 		// Dump all bullets if game about to end to get tiebreaker
 		if(rc.getRoundLimit() - rc.getRoundNum() < 2) {
 			float bulletCount = rc.getTeamBullets();
