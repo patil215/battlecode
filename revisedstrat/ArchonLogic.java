@@ -77,7 +77,7 @@ public class ArchonLogic extends RobotLogic {
     // TODO: Make this mathematically based on the number of bullets, robots (bullet demand), and trees
     private boolean shouldSpawnGardener() {
         if (rc.getRoundNum() > 150) {
-            if (rc.getTreeCount() < 15) {
+            if (rc.getTreeCount() < 100) {
                 return true;
             }
         }
