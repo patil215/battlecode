@@ -35,7 +35,7 @@ public class TankLogic extends RobotLogic {
 	}
 
 	private void handleAttack(RobotInfo[] nearbyFoes) throws GameActionException {
-		RobotInfo target = getHighestPriorityTarget(nearbyFoes);
+		RobotInfo target = getHighestPriorityTarget(nearbyFoes, true);
 		if (target != null) {
 			Direction toMove = moveTowards(target.location);
 			if (rc.canMove(toMove)) {

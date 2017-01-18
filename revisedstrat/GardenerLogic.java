@@ -29,7 +29,6 @@ public class GardenerLogic extends RobotLogic {
 	public void run() {
 
 		try {
-
 			buildInitialRoundsUnits();
 
 			int numRoundsSettling = 0;

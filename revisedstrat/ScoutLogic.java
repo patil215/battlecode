@@ -134,7 +134,7 @@ public class ScoutLogic extends RobotLogic {
 			}
 
 			bytecode = Clock.getBytecodeNum();
-			RobotInfo potentialTarget = getHighestPriorityTarget(rc.senseNearbyRobots(-1, getEnemyTeam()));
+			RobotInfo potentialTarget = getHighestPriorityTarget(rc.senseNearbyRobots(-1, getEnemyTeam()), false);
 			System.out.println("Prioritizing: " + (Clock.getBytecodeNum() - bytecode));
 			if (potentialTarget != null && rc.canFireSingleShot()) {
 				rc.fireSingleShot(rc.getLocation().directionTo(potentialTarget.location));
@@ -167,7 +167,7 @@ public class ScoutLogic extends RobotLogic {
 				}
 			}
 		}
-		RobotInfo target = getHighestPriorityTarget(foes);
+		RobotInfo target = getHighestPriorityTarget(foes, false);
 		if (target != null && rc.canFireSingleShot()) {
 			rc.fireSingleShot(rc.getLocation().directionTo(target.location));
 		}
