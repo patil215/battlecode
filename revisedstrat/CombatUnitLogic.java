@@ -110,7 +110,7 @@ public class CombatUnitLogic extends RobotLogic {
 	}
 
 	private void moveIntelligentlyRandomly() throws GameActionException {
-        moveWithRandomBounce(Utils.randomDirection());
+		moveWithRandomBounce(Utils.randomDirection());
 	}
 
 	private void executeCombat(RobotInfo[] enemyRobots) throws GameActionException {
@@ -119,16 +119,17 @@ public class CombatUnitLogic extends RobotLogic {
 		// Move
 		BulletInfo hittingBullet = getTargetingBullet(surroundingBullets);
 		if (hittingBullet != null) {
-		    moveAndDodge(hittingBullet.getLocation(), surroundingBullets);
+			moveAndDodge(hittingBullet.getLocation(), surroundingBullets);
 		}
 
 		// Shoot
-		RobotInfo target = getHighestPriorityTarget(enemyRobots, true); // Wyatt will
-																	// optimize
-																	// this
+		RobotInfo target = getHighestPriorityTarget(enemyRobots, true); // Wyatt
+																		// will
+		// optimize
+		// this
 		if (target != null) {
-            // Broadcast the location of the target
-            BroadcastManager.saveLocation(rc, target.location, BroadcastManager.LocationInfoType.ENEMY);
+			// Broadcast the location of the target
+			BroadcastManager.saveLocation(rc, target.location, BroadcastManager.LocationInfoType.ENEMY);
 
 			if (rc.canFirePentadShot()) {
 				rc.firePentadShot(rc.getLocation().directionTo(target.location));
@@ -156,13 +157,14 @@ public class CombatUnitLogic extends RobotLogic {
 	/*
 	 * Returns true if unit was able to move towards the map location.
 	 */
-	private boolean moveTowardsCombat(MapLocation combatLocation, BroadcastManager.LocationInfoType type) throws GameActionException {
+	private boolean moveTowardsCombat(MapLocation combatLocation, BroadcastManager.LocationInfoType type)
+			throws GameActionException {
 
-        // Invalidate broadcast location if no enemies
-        if (combatLocation != null && closeToLocationAndNoEnemies(rc, combatLocation)) {
-            BroadcastManager.invalidateLocation(rc, type);
-            return false;
-        }
+		// Invalidate broadcast location if no enemies
+		if (combatLocation != null && closeToLocationAndNoEnemies(rc, combatLocation)) {
+			BroadcastManager.invalidateLocation(rc, type);
+			return false;
+		}
 
 		// Move with intelligent pathfinding
 		Direction directionToMove = moveTowards(combatLocation);
