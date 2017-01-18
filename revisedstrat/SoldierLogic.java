@@ -12,9 +12,13 @@ import revisedstrat.BroadcastManager.LocationInfoType;
 public class SoldierLogic extends RobotLogic {
 
 	private MapLocation destination;
+	private boolean hasVisitedArchonLocation;
+	private Direction randBounceDir;
 
 	public SoldierLogic(RobotController rc) {
 		super(rc);
+		hasVisitedArchonLocation=false;
+		randBounceDir = Utils.randomDirection();
 		// TODO Auto-generated constructor stub
 	}
 
@@ -114,11 +118,11 @@ public class SoldierLogic extends RobotLogic {
 				if (broadcastLocations.length != 0) {
 					int broadcastIndex = (int) (Math.random() * broadcastLocations.length);
 					destination = broadcastLocations[broadcastIndex];
-				} else {
-					Direction move = moveTowards(getRandomEnemyInitialArchonLocation());
-					if (move != null) {
-						move(move);
-					}
+				} else if(!hasVisitedArchonLocation){
+					destination = this.getRandomEnemyInitialArchonLocation();
+					hasVisitedArchonLocation = true;
+				} else{
+					randBounceDir = this.moveWithRandomBounce(randBounceDir);
 				}
 			}
 		}
