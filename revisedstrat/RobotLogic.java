@@ -321,8 +321,8 @@ public abstract class RobotLogic {
 		return lengthToClosestApproach - excessDistance;
 	}
 
-	public boolean closeToLocationAndNoEnemies(MapLocation location) throws GameActionException {
-		if (rc.getLocation().distanceTo(location) < (RobotType.SCOUT.strideRadius / 2)
+	public boolean closeToLocationAndNoEnemies(RobotController rc, MapLocation location) throws GameActionException {
+		if (rc.getLocation().distanceTo(location) < (rc.getType().sensorRadius * .8)
 				&& rc.senseNearbyRobots(-1, getEnemyTeam()).length == 0) {
 			return true;
 		}

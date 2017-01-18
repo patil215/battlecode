@@ -1,11 +1,6 @@
 package revisedstrat;
 
-import battlecode.common.Clock;
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
+import battlecode.common.*;
 import revisedstrat.BroadcastManager.LocationInfoType;
 
 public class TankLogic extends RobotLogic {
@@ -55,7 +50,7 @@ public class TankLogic extends RobotLogic {
 	private void handleRecon() throws GameActionException {
 
 		MapLocation recentEnemyLoc = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY);
-		if (recentEnemyLoc != null && closeToLocationAndNoEnemies(recentEnemyLoc)) {
+		if (recentEnemyLoc != null && closeToLocationAndNoEnemies(rc, recentEnemyLoc)) {
 			BroadcastManager.invalidateLocation(rc, LocationInfoType.ENEMY);
 			destination = null;
 		}

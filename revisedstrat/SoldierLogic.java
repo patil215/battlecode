@@ -50,7 +50,7 @@ public class SoldierLogic extends RobotLogic {
 
 	private void handleHelp(MapLocation help, LocationInfoType type) throws GameActionException {
 		System.out.println("dealing with a help call.");
-		if(this.closeToLocationAndNoEnemies(help)){
+		if(this.closeToLocationAndNoEnemies(rc, help)){
 			BroadcastManager.invalidateLocation(rc, type);
 		}
 		else{
@@ -100,7 +100,7 @@ public class SoldierLogic extends RobotLogic {
 		System.out.println("Handling recon");
 
 		MapLocation recentEnemyLoc = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY);
-		if (recentEnemyLoc != null && closeToLocationAndNoEnemies(recentEnemyLoc)) {
+		if (recentEnemyLoc != null && closeToLocationAndNoEnemies(rc, recentEnemyLoc)) {
 			BroadcastManager.invalidateLocation(rc, LocationInfoType.ENEMY);
 			destination = null;
 		}

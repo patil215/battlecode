@@ -63,7 +63,7 @@ public class ScoutLogic extends RobotLogic {
 	private void handleRecon() throws GameActionException {
 		System.out.println("recon");
 		MapLocation recentEnemyLoc = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY);
-		if (recentEnemyLoc != null && closeToLocationAndNoEnemies(recentEnemyLoc)) {
+		if (recentEnemyLoc != null && closeToLocationAndNoEnemies(rc, recentEnemyLoc)) {
 			BroadcastManager.invalidateLocation(rc, LocationInfoType.ENEMY);
 			destination = null;
 		}
