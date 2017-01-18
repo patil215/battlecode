@@ -113,7 +113,6 @@ public class BroadcastManager {
 
 	public static MapLocation getRecentLocation(RobotController rc, LocationInfoType type) throws GameActionException {
 		int index = rc.readBroadcast(type.locationPointerIndex);
-		System.out.println("Channel is: " + index);
 		int val = rc.readBroadcast(index);
 		if (val == 0) {
 			return null;
@@ -172,7 +171,6 @@ public class BroadcastManager {
 
 	public static void incrementUnitCount(RobotController rc, UnitCountInfoType type) throws Exception {
 		checkValidUnitType(type);
-		System.out.println("We are trying to communicate on channel " + type.unitCountIndex + " for incrementing.");
 		int current = rc.readBroadcast(type.unitCountIndex);
 		current++;
 		rc.broadcast(type.unitCountIndex, current);

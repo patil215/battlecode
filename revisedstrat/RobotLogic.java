@@ -99,7 +99,7 @@ public abstract class RobotLogic {
 	}
 
 	public boolean move(Direction direction) throws GameActionException {
-		if (!rc.hasMoved()) {
+		if (!rc.hasMoved() && rc.canMove(direction)) {
 			rc.move(direction);
 			return true;
 		}
@@ -129,11 +129,6 @@ public abstract class RobotLogic {
 	 * getting hit by a bullet.
 	 */
 	public Direction moveTowards(Direction toMove) {
-		if (toMove == null) {
-			System.out.println("TOMOVE NULL");
-		} else {
-			System.out.println("TOMOVE NOT NULL)");
-		}
 		if (rc.canMove(toMove)) {
 			return toMove;
 		} else {
@@ -144,7 +139,6 @@ public abstract class RobotLogic {
 					if (rc.canMove(leftDir)
 							&& !willGetHitByABullet(rc.getLocation().add(leftDir, rc.getType().strideRadius),
 									bullets)) {
-						System.out.println("This left unit will not get hit by a bullet.");
 						return leftDir;
 					}
 				} else {
@@ -152,7 +146,6 @@ public abstract class RobotLogic {
 					if (rc.canMove(rightDir)
 							&& !willGetHitByABullet(rc.getLocation().add(rightDir, rc.getType().strideRadius),
 									bullets)) {
-						System.out.println("This right unit will not get hit by a bullet.");
 						return rightDir;
 					}
 				}
@@ -506,7 +499,7 @@ public abstract class RobotLogic {
 			}
 		}
 
-		rc.move(toEnemy.rotateLeftDegrees(bestAngle));
+		move(toEnemy.rotateLeftDegrees(bestAngle));
 	}
 
 	public static double getStrideRadius(RobotType rt) {

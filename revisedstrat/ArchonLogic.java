@@ -19,10 +19,8 @@ public class ArchonLogic extends RobotLogic {
         try {
         	
         	BroadcastManager.tryAndSetUpLocationPointerIndexValues(rc);
-        	
-        	System.out.println(rc.getLocation());
+
         	BroadcastManager.saveLocation(rc, rc.getLocation(),LocationInfoType.ARCHON_HELP);
-        	System.out.println(BroadcastManager.getRecentLocation(rc, LocationInfoType.ARCHON_HELP));
         	
             // Spawn a gardener on the first move
             if (shouldSpawnInitialGardener()) {

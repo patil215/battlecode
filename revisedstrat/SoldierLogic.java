@@ -53,7 +53,6 @@ public class SoldierLogic extends RobotLogic {
 	}
 
 	private void handleHelp(MapLocation help, LocationInfoType type) throws GameActionException {
-		System.out.println("dealing with a help call.");
 		if(this.closeToLocationAndNoEnemies(rc, help)){
 			BroadcastManager.invalidateLocation(rc, type);
 		}
@@ -66,18 +65,15 @@ public class SoldierLogic extends RobotLogic {
 	}
 
 	private void handleAttack(RobotInfo[] nearbyFoes) throws GameActionException {
-		System.out.println("Handling attack");
 		BulletInfo[] bullets = rc.senseNearbyBullets();
 		BulletInfo toDodge = getTargetingBullet(bullets);
 		if (toDodge != null) {
-			System.out.println("We need to dodge");
 			dodge(bullets);
 		}
 
 
 		RobotInfo target = getHighestPriorityTarget(nearbyFoes, true);
 		if (target != null) {
-			System.out.println("We have a target");
 			Direction toMove = moveTowards(target.location);
 			if (toMove != null) {
 				if (rc.canMove(toMove)) {
@@ -103,7 +99,6 @@ public class SoldierLogic extends RobotLogic {
 	}
 
 	private void handleRecon() throws GameActionException {
-		System.out.println("Handling recon");
 
 		MapLocation recentEnemyLoc = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY);
 		if (recentEnemyLoc != null && closeToLocationAndNoEnemies(rc, recentEnemyLoc)) {
