@@ -182,7 +182,7 @@ public abstract class RobotLogic {
 	 * It returns the team of the first object that it will hit. If no object
 	 * will be hit, this method returns NEUTRAL.
 	 */
-	public Team getFirstHitTeam(MapLocation location, Direction direction) {
+	public Team getFirstHitTeam(MapLocation location, Direction direction, boolean hitTrees) {
 
 		// Detect tree collisions.
 		TreeInfo[] trees = rc.senseNearbyTrees();
@@ -224,9 +224,13 @@ public abstract class RobotLogic {
 			return hitRobot.getTeam();
 		}
 
-		// If only trees are intersected, return the nearest tree's team
+		// If only trees are intersected, return team if hitTrees is true, otherwise neutral
 		else if (hitTree != null && hitRobot == null) {
-			return Team.NEUTRAL;
+			if(hitTrees) {
+				return hitTree.getTeam();
+			} else {
+				return Team.NEUTRAL;
+			}
 		}
 
 		// If both are intersected, return the team of whichever is closer
@@ -342,7 +346,7 @@ public abstract class RobotLogic {
 	 * found, null is returned. This method only returns a target if it can be
 	 * fired at from the robot's current position.
 	 */
-	RobotInfo getHighestPriorityTarget(RobotInfo[] enemies) throws GameActionException {
+	RobotInfo getHighestPriorityTarget(RobotInfo[] enemies, boolean hitTrees) throws GameActionException {
 		if (enemies.length == 0) {
 			return null;
 		}
@@ -372,7 +376,7 @@ public abstract class RobotLogic {
 				MapLocation bulletSpawnPoint = rc.getLocation().add(toEnemy, spawnOffset);
 
 				// Only attack if we will hit an enemy.
-				if (getFirstHitTeam(bulletSpawnPoint, toEnemy) == getEnemyTeam()) {
+				if (getFirstHitTeam(bulletSpawnPoint, toEnemy, hitTrees) == getEnemyTeam()) {
 					maxIndex = index;
 					maxPriority = priority;
 				}

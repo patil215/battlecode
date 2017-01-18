@@ -73,7 +73,9 @@ public class SoldierLogic extends RobotLogic {
 			System.out.println("We need to dodge");
 			dodge(bullets);
 		}
-		RobotInfo target = getHighestPriorityTarget(nearbyFoes);
+
+
+		RobotInfo target = getHighestPriorityTarget(nearbyFoes, true);
 		if (target != null) {
 			System.out.println("We have a target");
 			Direction toMove = moveTowards(target.location);
