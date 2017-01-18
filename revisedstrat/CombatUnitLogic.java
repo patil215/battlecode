@@ -30,6 +30,7 @@ public class CombatUnitLogic extends RobotLogic {
 				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, getEnemyTeam());
 				if (enemyRobots.length > 0) {
 					executeCombat(enemyRobots);
+					Clock.yield();
 					continue;
 				}
 
@@ -39,6 +40,7 @@ public class CombatUnitLogic extends RobotLogic {
 						BroadcastManager.LocationInfoType.GARDENER_HELP);
 				if (gardenerHelpLocation != null) {
 					moveTowardsCombat(gardenerHelpLocation, BroadcastManager.LocationInfoType.GARDENER_HELP);
+					Clock.yield();
 					continue;
 				}
 				// Try to help archons
@@ -46,6 +48,7 @@ public class CombatUnitLogic extends RobotLogic {
 						BroadcastManager.LocationInfoType.ARCHON_HELP);
 				if (archonHelpLocation != null) {
 					moveTowardsCombat(archonHelpLocation, BroadcastManager.LocationInfoType.ARCHON_HELP);
+					Clock.yield();
 					continue;
 				}
 
@@ -58,6 +61,7 @@ public class CombatUnitLogic extends RobotLogic {
 					if (enemyLocation != null) {
 						boolean success = moveTowardsCombat(enemyLocation, BroadcastManager.LocationInfoType.ENEMY);
 						if (success) {
+							Clock.yield();
 							continue;
 						}
 					}
@@ -113,11 +117,9 @@ public class CombatUnitLogic extends RobotLogic {
 		BulletInfo[] surroundingBullets = rc.senseNearbyBullets();
 
 		// Move
-		// moveAndDodge(surroundingBullets); // Dhruv will make this
 		BulletInfo hittingBullet = getTargetingBullet(surroundingBullets);
 		if (hittingBullet != null) {
-			// Dodge the bullet!
-			dodge(hittingBullet);
+		    moveAndDodge(hittingBullet.getLocation(), surroundingBullets);
 		}
 
 		// Shoot
@@ -125,7 +127,6 @@ public class CombatUnitLogic extends RobotLogic {
 																	// optimize
 																	// this
 		if (target != null) {
-            
             // Broadcast the location of the target
             BroadcastManager.saveLocation(rc, target.location, BroadcastManager.LocationInfoType.ENEMY);
 
@@ -139,8 +140,8 @@ public class CombatUnitLogic extends RobotLogic {
 
 		} else {
 			// Try to get closer to the enemy
-			// moveAndDodge(surroundingBullets);
-			target = (RobotInfo) this.getClosestBody(enemyRobots);
+			target = (RobotInfo) getClosestBody(enemyRobots);
+			moveAndDodge(target.getLocation(), surroundingBullets);
 			Direction toMove = moveTowards(target.location);
 			if (toMove != null) {
 				if (rc.canMove(toMove)) {
