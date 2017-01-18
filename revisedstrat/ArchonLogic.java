@@ -17,6 +17,9 @@ public class ArchonLogic extends RobotLogic {
 
         // TODO move try/catch to while loop
         try {
+        	
+        	BroadcastManager.tryAndSetUpLocationPointerIndexValues(rc);
+        	
         	System.out.println(rc.getLocation());
         	BroadcastManager.saveLocation(rc, rc.getLocation(),LocationInfoType.ARCHON_HELP);
         	System.out.println(BroadcastManager.getRecentLocation(rc, LocationInfoType.ARCHON_HELP));

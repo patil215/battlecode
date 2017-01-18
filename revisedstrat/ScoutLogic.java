@@ -38,7 +38,6 @@ public class ScoutLogic extends RobotLogic {
 					}
 				}
 				if (foundEconUnit) {
-					// Otherwise, we can harass the enemy.
 					handleHarass(foes);
 				} else if (foes.length > 0) {
 					handleAttack(foes);
@@ -62,6 +61,7 @@ public class ScoutLogic extends RobotLogic {
 	// TODO: First handle broadcasted information. Also, find something to do if
 	// initial archon locations are abandoned.
 	private void handleRecon() throws GameActionException {
+		System.out.println("recon");
 		MapLocation recentEnemyLoc = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY);
 		if (recentEnemyLoc != null && closeToLocationAndNoEnemies(recentEnemyLoc)) {
 			BroadcastManager.invalidateLocation(rc, LocationInfoType.ENEMY);
@@ -69,15 +69,19 @@ public class ScoutLogic extends RobotLogic {
 		}
 
 		if (destination == null) {
+			System.out.println("There is no destination");
 			MapLocation recentEnemyLocation = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY);
 			if (recentEnemyLocation != null) {
+				System.out.println("New destination is a called enemy location");
 				destination = recentEnemyLocation;
 			} else {
 				MapLocation[] broadcastLocations = rc.senseBroadcastingRobotLocations();
 				if (broadcastLocations.length != 0) {
+					System.out.println("New destination is from a broadcast");
 					int broadcastIndex = (int) (Math.random() * broadcastLocations.length);
 					destination = broadcastLocations[broadcastIndex];
 				} else {
+					System.out.println("We are going to wander to an archon");
 					Direction move = moveTowards(getRandomEnemyInitialArchonLocation());
 					if (move != null) {
 						move(move);
@@ -87,6 +91,7 @@ public class ScoutLogic extends RobotLogic {
 		}
 
 		if (destination != null) {
+			System.out.println("There is a destination");
 			Direction toMove = moveTowards(destination);
 			if (toMove != null) {
 				move(toMove);
@@ -100,6 +105,7 @@ public class ScoutLogic extends RobotLogic {
 	// TODO: Actually allow shooting at a distance against archons. Use attack
 	// code for this?
 	private void handleHarass(RobotInfo[] foes) throws GameActionException {
+		System.out.println("harassing");
 		RobotInfo target = getPriorityEconTarget(foes);
 		if (target != null) {
 			int bytecode = Clock.getBytecodeNum();
@@ -137,11 +143,17 @@ public class ScoutLogic extends RobotLogic {
 	}
 
 	private void handleAttack(RobotInfo[] foes) throws GameActionException {
+		System.out.println("attacking");
 		BulletInfo[] bullets = rc.senseNearbyBullets(5);
 		BulletInfo toDodge = getTargetingBullet(bullets);
 		RobotInfo threat = (RobotInfo) getClosestBody(foes);
+		//The only enemy is an archon, and it is too early to deal with it
+		if(threat == null){
+			handleRecon();
+			return;
+		}
 		if (toDodge != null) {
-			dodge(bullets);
+			dodge(toDodge);
 		} else {
 			if (rc.getLocation().distanceTo(threat.location) <= 7) {
 				// We are too close to the enemy. They can see us.

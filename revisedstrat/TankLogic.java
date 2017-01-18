@@ -11,14 +11,17 @@ import revisedstrat.BroadcastManager.LocationInfoType;
 public class TankLogic extends RobotLogic {
 
 	private MapLocation destination;
+	private SoldierLogic moveDecision;
 
 	public TankLogic(RobotController rc) {
 		super(rc);
-		// TODO Auto-generated constructor stub
+		moveDecision = new SoldierLogic(rc);
 	}
 
 	@Override
 	public void run() {
+		moveDecision.run();
+		/*
 		while (true) {
 			try {
 				RobotInfo[] nearbyFoes = rc.senseNearbyRobots(-1, getEnemyTeam());
@@ -29,14 +32,11 @@ public class TankLogic extends RobotLogic {
 				}
 				econWinIfPossible();
 				tryAndShakeATree();
-				// This unit is less useful to us, as our strategy does not
-				// directly involve it.
-				BroadcastManager.broadcastSpam(rc);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 			Clock.yield();
-		}
+		}*/
 	}
 
 	private void handleAttack(RobotInfo[] nearbyFoes) throws GameActionException {

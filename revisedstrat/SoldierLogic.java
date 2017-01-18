@@ -26,18 +26,38 @@ public class SoldierLogic extends RobotLogic {
 				if (nearbyFoes.length > 0) {
 					handleAttack(nearbyFoes);
 				} else {
-					handleRecon();
+					MapLocation help = BroadcastManager.getRecentLocation(rc, LocationInfoType.GARDENER_HELP);
+					if (help != null) {
+						handleHelp(help, LocationInfoType.GARDENER_HELP);
+					} else {
+						help = BroadcastManager.getRecentLocation(rc, LocationInfoType.ARCHON_HELP);
+						if (help != null) {
+							handleHelp(help, LocationInfoType.ARCHON_HELP);
+						} else {
+							handleRecon();
+						}
+					}
 				}
 				econWinIfPossible();
 				tryAndShakeATree();
 				drawBullshitLine();
-				// This unit is less useful to us, as our strategy does not
-				// directly involve it.
-				BroadcastManager.broadcastSpam(rc);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 			Clock.yield();
+		}
+	}
+
+	private void handleHelp(MapLocation help, LocationInfoType type) throws GameActionException {
+		System.out.println("dealing with a help call.");
+		if(this.closeToLocationAndNoEnemies(help)){
+			BroadcastManager.invalidateLocation(rc, type);
+		}
+		else{
+			Direction toMove = moveTowards(help);
+			if(rc.canMove(help)){
+				move(help);
+			}
 		}
 	}
 
@@ -46,10 +66,12 @@ public class SoldierLogic extends RobotLogic {
 		BulletInfo[] bullets = rc.senseNearbyBullets();
 		BulletInfo toDodge = getTargetingBullet(bullets);
 		if (toDodge != null) {
+			System.out.println("We need to dodge");
 			dodge(bullets);
 		}
 		RobotInfo target = getHighestPriorityTarget(nearbyFoes);
 		if (target != null) {
+			System.out.println("We have a target");
 			Direction toMove = moveTowards(target.location);
 			if (toMove != null) {
 				if (rc.canMove(toMove)) {
@@ -60,6 +82,16 @@ public class SoldierLogic extends RobotLogic {
 			}
 			if (rc.canFirePentadShot()) {
 				rc.firePentadShot(rc.getLocation().directionTo(target.location));
+			}
+		} else{
+			target = (RobotInfo) this.getClosestBody(nearbyFoes);
+			Direction toMove = moveTowards(target.location);
+			if(toMove!=null){
+				if(rc.canMove(toMove)){
+					move(toMove);
+				}
+			} else{
+				this.moveWithRandomBounce(Utils.randomDirection());
 			}
 		}
 	}

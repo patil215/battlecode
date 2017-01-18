@@ -19,6 +19,7 @@ public class GardenerLogic extends RobotLogic {
 		numRoundsSettling = 0;
 		moveDir = Utils.randomDirection();
 		towardsCenter = false;
+		settled = false;
 	}
 
 	@Override
@@ -28,79 +29,51 @@ public class GardenerLogic extends RobotLogic {
 
 			if (rc.getRobotCount() - 1 == rc.getInitialArchonLocations(rc.getTeam()).length) {
 				tryAndBuildUnit(RobotType.SCOUT);
-				while(rc.getBuildCooldownTurns()!=0){
+				while (rc.getBuildCooldownTurns() != 0) {
 					Clock.yield();
 				}
 				tryAndBuildUnit(RobotType.SOLDIER);
 			}
 
-			while (!settled && numRoundsSettling < 20) {
-				moveTowardsGoodSpot();
-				numRoundsSettling++;
-				Clock.yield();
-			}
+			int roundCount = 0;
+			Direction base = rc.getLocation().directionTo(Utils.getAvgArchonLocations(rc, getEnemyTeam()));
 
-			Direction base = Utils.randomDirection();
-
-			for (int count = 0; count < 3; count++) {
-				while (rc.getBuildCooldownTurns() != 0 || rc.getTeamBullets() < 50) {
-					Clock.yield();
-				}
-				if (rc.canPlantTree(base.rotateLeftDegrees(90))) {
-					System.out.println("Planting left tree");
-					rc.plantTree(base.rotateLeftDegrees(90));
-				}
-				while (rc.getBuildCooldownTurns() != 0 || rc.getTeamBullets() < 50) {
-					Clock.yield();
-				}
-				if (rc.canPlantTree(base.rotateRightDegrees(90))) {
-					rc.plantTree(base.rotateRightDegrees(90));
-					System.out.println("Planting right tree");
-				}
-				if (count < 2) {
-					if (rc.canMove(base.rotateLeftDegrees(180))) {
-						move(base.rotateLeftDegrees(180));
-						System.out.println("Moving down");
-						Clock.yield();
-					}
-					if (rc.canMove(base.rotateLeftDegrees(180))) {
-						move(base.rotateLeftDegrees(180));
-						System.out.println("Moving down");
-						Clock.yield();
-					}
-					if (rc.canMove(base.rotateLeftDegrees(180), .1f)) {
-						move(base.rotateLeftDegrees(180), .1f);
-						System.out.println("Moving down");
-						Clock.yield();
-					}
-				} else {
-					if (rc.canMove(base)) {
-						move(base);
-						System.out.println("Moving down");
-						Clock.yield();
-					}
-					if (rc.canMove(base)) {
-						move(base);
-						System.out.println("Moving down");
-						Clock.yield();
-					}
-				}
-			}
-
-			while (rc.getBuildCooldownTurns() != 0 || rc.getTeamBullets() < 50) {
-				Clock.yield();
-			}
-			if (rc.canPlantTree(base.rotateLeftDegrees(180))) {
-				rc.plantTree(base.rotateLeftDegrees(180));
-			}
-			
-			MapLocation center = rc.getLocation();
+			boolean shouldSpawnTanks = Math.random() > .5;
 
 			while (true) {
+				if (!settled && roundCount > 30) {
+					settled = true;
+				} else if (!settled) {
+					roundCount++;
+					moveTowardsGoodSpot();
+					System.out.println("Moving");
+				} 
+				if(settled){
+					rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(base), 255, 255, 255);
+					if (rc.getBuildCooldownTurns() == 0) {
+						System.out.println("Should be able to spawn a unit");
+						Direction startAngle;
+						if (shouldSpawnTanks) {
+							startAngle = base.rotateLeftDegrees(90);
+						} else {
+							startAngle = base.rotateLeftDegrees(60);
+						}
 
-				moveBackAndForth(center, base);
-				
-				spawnUnit(base);
+						System.out.println("Starting to try angles");
+						while (!rc.canPlantTree(startAngle) && Math.abs(base.degreesBetween(startAngle)) >= 50) {
+							startAngle = startAngle.rotateLeftDegrees(10);
+							System.out.println("Trying an angle of " + startAngle);
+						}
+						System.out.println("Done trying angles");
+						if (rc.canPlantTree(startAngle)) {
+							System.out.println("Trying to plant a tree");
+							rc.plantTree(startAngle);
+						} else {
+							System.out.println("Trying to spawn unit");
+							spawnUnit(base);
+						}
+					}
+				}
 
 				RobotInfo[] foes = rc.senseNearbyRobots(-1, getEnemyTeam());
 
@@ -122,20 +95,20 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private void moveBackAndForth(MapLocation center, Direction base) throws GameActionException {
-		if(towardsCenter){
-			if(rc.canMove(base.opposite())){
+		if (towardsCenter) {
+			if (rc.canMove(base.opposite())) {
 				move(base.opposite());
 			}
-			if(rc.getLocation().distanceTo(center)<.25f){
+			if (rc.getLocation().distanceTo(center) < .25f) {
 				towardsCenter = false;
 			}
-		} else{
-			if(rc.canMove(base)){
+		} else {
+			if (rc.canMove(base)) {
 				move(base);
-			} else{
+			} else {
 				towardsCenter = true;
 			}
-			if(rc.getLocation().distanceTo(center)>2){
+			if (rc.getLocation().distanceTo(center) > 2) {
 				towardsCenter = true;
 			}
 		}
@@ -183,9 +156,7 @@ public class GardenerLogic extends RobotLogic {
 			} else {
 				rc.buildRobot(RobotType.SOLDIER, direction);
 			}
-		} else
-
-		{
+		} else {
 			System.out.println("Can't build");
 		}
 	}

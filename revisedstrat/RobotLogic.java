@@ -134,22 +134,16 @@ public abstract class RobotLogic {
 					if (rc.canMove(leftDir)
 							&& !willGetHitByABullet(rc.getLocation().add(leftDir, rc.getType().strideRadius),
 									bullets)) {
+						System.out.println("This left unit will not get hit by a bullet.");
 						return leftDir;
 					}
 				} else {
 					Direction rightDir = toMove.rotateRightDegrees(deltaAngle);
-					if (rightDir == null) {
-						System.out.println("RIGHTDIR null");
-					}
-					System.out.println("Checking angle " + deltaAngle);
 					if (rc.canMove(rightDir)
 							&& !willGetHitByABullet(rc.getLocation().add(rightDir, rc.getType().strideRadius),
 									bullets)) {
-						System.out.println("FOUND A PLACE TO SAVE MY ASS");
+						System.out.println("This right unit will not get hit by a bullet.");
 						return rightDir;
-					} else if (willGetHitByABullet(rc.getLocation().add(rightDir, rc.getType().strideRadius),
-							bullets)) {
-						System.out.println("***REMOVED***");
 					}
 				}
 			}
@@ -439,40 +433,26 @@ public abstract class RobotLogic {
 	}
 
 	public void drawBullshitLine() {
-/*
-		int[] color = getRandomColor();
-		MapLocation[] enemyLocs = rc.getInitialArchonLocations(getEnemyTeam());
-		MapLocation[] allyLocs = rc.getInitialArchonLocations(rc.getTeam());
-		MapLocation[] locs = new MapLocation[allyLocs.length + enemyLocs.length];
-		for(int i = 0; i < enemyLocs.length; i++) {
-			locs[i] = enemyLocs[i];
-		}
-		for(int i = enemyLocs.length; i < allyLocs.length + enemyLocs.length; i++) {
-			locs[i] = allyLocs[i - enemyLocs.length];
-		}
-		float minX = Float.MAX_VALUE;
-		float maxX = Float.MIN_VALUE;
-		float minY = Float.MAX_VALUE;
-		float maxY = Float.MIN_VALUE;
-		for(MapLocation loc : locs) {
-			if(loc.x < minX) {
-				minX = loc.x;
-			}
-			if(loc.y < minY) {
-				minY = loc.y;
-			}
-			if(loc.x > maxX) {
-				maxX = loc.x;
-			}
-			if(loc.y > maxY) {
-				maxY = loc.y;
-			}
-		}
-
-		float x = minX + (float) (Math.random() * (maxX - minX));
-		float y = minY + (float) (Math.random() * (maxY - minY));
-
-		rc.setIndicatorLine(rc.getLocation(), new MapLocation(x, y), color[0], color[1], color[2]);*/
+		/*
+		 * int[] color = getRandomColor(); MapLocation[] enemyLocs =
+		 * rc.getInitialArchonLocations(getEnemyTeam()); MapLocation[] allyLocs
+		 * = rc.getInitialArchonLocations(rc.getTeam()); MapLocation[] locs =
+		 * new MapLocation[allyLocs.length + enemyLocs.length]; for(int i = 0; i
+		 * < enemyLocs.length; i++) { locs[i] = enemyLocs[i]; } for(int i =
+		 * enemyLocs.length; i < allyLocs.length + enemyLocs.length; i++) {
+		 * locs[i] = allyLocs[i - enemyLocs.length]; } float minX =
+		 * Float.MAX_VALUE; float maxX = Float.MIN_VALUE; float minY =
+		 * Float.MAX_VALUE; float maxY = Float.MIN_VALUE; for(MapLocation loc :
+		 * locs) { if(loc.x < minX) { minX = loc.x; } if(loc.y < minY) { minY =
+		 * loc.y; } if(loc.x > maxX) { maxX = loc.x; } if(loc.y > maxY) { maxY =
+		 * loc.y; } }
+		 * 
+		 * float x = minX + (float) (Math.random() * (maxX - minX)); float y =
+		 * minY + (float) (Math.random() * (maxY - minY));
+		 * 
+		 * rc.setIndicatorLine(rc.getLocation(), new MapLocation(x, y),
+		 * color[0], color[1], color[2]);
+		 */
 	}
 
 	protected BulletInfo[] getAllIncomingBullets(BulletInfo[] bullets, MapLocation location, float angleTolerance) {
@@ -488,7 +468,7 @@ public abstract class RobotLogic {
 	}
 
 	public int[] getRandomColor() {
-			return new int[] {(int) (Math.random() * 256), (int) (Math.random() * 256), (int) (Math.random() * 256)};
+		return new int[] { (int) (Math.random() * 256), (int) (Math.random() * 256), (int) (Math.random() * 256) };
 	}
 
 	protected void dodge(BulletInfo[] bullets) throws GameActionException {
@@ -517,10 +497,13 @@ public abstract class RobotLogic {
 		Direction toMove = densestDirection.rotateLeftDegrees(safestAngle);
 
 		if (rc.canMove(toMove)) {
-			// rc.setIndicatorLine(currentLocation, currentLocation.add(densestDirection, 3), 255, 0, 0);
-			//rc.setIndicatorDot(currentLocation.add(densestDirection, 3), 0, 0, 255);
-			// rc.setIndicatorLine(currentLocation, currentLocation.add(toMove, 3), 0, 255, 0);
-			//rc.setIndicatorDot(currentLocation.add(toMove, 3), 0, 255, 0);
+			// rc.setIndicatorLine(currentLocation,
+			// currentLocation.add(densestDirection, 3), 255, 0, 0);
+			// rc.setIndicatorDot(currentLocation.add(densestDirection, 3), 0,
+			// 0, 255);
+			// rc.setIndicatorLine(currentLocation, currentLocation.add(toMove,
+			// 3), 0, 255, 0);
+			// rc.setIndicatorDot(currentLocation.add(toMove, 3), 0, 255, 0);
 			move(toMove);
 		}
 
