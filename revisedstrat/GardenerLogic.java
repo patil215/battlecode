@@ -9,12 +9,12 @@ import revisedstrat.BroadcastManager.UnitCountInfoType;
 public class GardenerLogic extends RobotLogic {
 
 	private Direction moveDir;
-	private final int NUM_ROUNDS_TO_SETTLE = 30;
+	private final int NUM_ROUNDS_TO_SETTLE = 35;
 	private final double TANK_SPAWNER_CHANCE = 0.5;
 
 	private final Direction ENEMY_BASE_OPPOSITE_DIRECTION;
 	private final boolean SHOULD_SPAWN_TANKS;
-	private final int MIN_FREE_SPACE_REQUIREMENT = 4;
+	private final int MIN_FREE_SPACE_REQUIREMENT = 5;
 
 	public GardenerLogic(RobotController rc) {
 		super(rc);
@@ -22,7 +22,7 @@ public class GardenerLogic extends RobotLogic {
 				.directionTo(Utils.getAvgArchonLocations(rc, getEnemyTeam())).opposite();
 		SHOULD_SPAWN_TANKS = Math.random() < TANK_SPAWNER_CHANCE
 				&& !(rc.getRobotCount() - 1 == rc.getInitialArchonLocations(rc.getTeam()).length);
-		moveDir = Utils.randomDirection();
+		moveDir = Utils.diagonalDirection();
 	}
 
 	@Override
@@ -147,7 +147,7 @@ public class GardenerLogic extends RobotLogic {
 	private boolean moveTowardsGoodSpot() throws GameActionException {
 		// Try to find a free space to settle until 20 turns have elapsed
 		if (!isGoodLocation()) {
-			moveDir = moveWithRandomBounce(moveDir);
+			moveDir = moveWithDiagonalBounce(moveDir);
 			return false;
 		} else {
 			return true;
@@ -156,7 +156,7 @@ public class GardenerLogic extends RobotLogic {
 
 	private boolean isGoodLocation() {
 		try {
-			// Check for free space of 3 radius - gives space to spawn trees
+			// Check for free space of certain radius - gives space to spawn trees
 			return !rc.isCircleOccupiedExceptByThisRobot(rc.getLocation().add(0, (float) .01), MIN_FREE_SPACE_REQUIREMENT)
 					&& rc.onTheMap(rc.getLocation().add(0, (float) .01), MIN_FREE_SPACE_REQUIREMENT);
 		} catch (GameActionException e) {

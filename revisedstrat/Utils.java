@@ -21,4 +21,9 @@ public class Utils {
     public static Direction randomDirection() {
         return new Direction((float) Math.random() * 2 * (float) Math.PI);
     }
+
+    public static Direction diagonalDirection() {
+        int[] diagonals = new int[] {0, 45, 90, 135, 180, 225, 270, 315, 360};
+        return new Direction(diagonals[(int) (Math.random() * diagonals.length)]);
+    }
 }

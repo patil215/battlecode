@@ -58,6 +58,23 @@ public abstract class RobotLogic {
 		return move;
 	}
 
+	public Direction moveWithDiagonalBounce(Direction move) throws GameActionException {
+		if (rc.canMove(move)) {
+			move(move);
+		} else {
+			for (int count = 0; count < 8 && !rc.canMove(move); count++) {
+				move = Utils.diagonalDirection();
+			}
+			for (int count = 0; count < 12 && !rc.canMove(move); count++) {
+				move = Utils.randomDirection();
+			}
+			if (rc.canMove(move)) {
+				move(move);
+			}
+		}
+		return move;
+	}
+
 	/*
 	 * If it is possible to move towards the target, then this method returns
 	 * the best angle to do so with. Otherwise, null is returned. The method
@@ -356,6 +373,22 @@ public abstract class RobotLogic {
 		return false;
 	}
 
+	public boolean closeToLocationAndJustArchons(RobotController rc, MapLocation location) throws GameActionException {
+		boolean enemy = false;
+		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(-1, getEnemyTeam());
+		for(RobotInfo info : nearbyRobots) {
+			if(info.getType() != RobotType.ARCHON) {
+				enemy = true;
+				break;
+			}
+		}
+		if (rc.getLocation().distanceTo(location) < (rc.getType().sensorRadius * .8)
+				&& !enemy) {
+			return true;
+		}
+		return false;
+	}
+
 	/*
 	 * Code used to find the highest priority target. If no sutable targets are
 	 * found, null is returned. This method only returns a target if it can be
@@ -374,7 +407,8 @@ public abstract class RobotLogic {
 			double priority = 0;
 
 			if (enemies[index].getType().canAttack()) {
-				priority = enemies[index].getType().attackPower / Math.max(enemies[index].health, 1);
+				priority = enemies[index].getType().attackPower /
+						(Math.max(enemies[index].health, 1) * rc.getLocation().distanceTo(enemies[index].getLocation()));
 			}
 
 			// TODO: Refactor

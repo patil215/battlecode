@@ -31,7 +31,7 @@ public strictfp class RobotPlayer {
             	logic = new CombatUnitLogic(rc);
             	break;
             default:
-            	logic = new ScoutLogic(rc);
+            	logic = new CombatUnitLogic(rc);
        }
 
         logic.run();

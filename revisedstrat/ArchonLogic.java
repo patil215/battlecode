@@ -17,11 +17,11 @@ public class ArchonLogic extends RobotLogic {
 
         // TODO move try/catch to while loop
         try {
-        	
+
         	BroadcastManager.tryAndSetUpLocationPointerIndexValues(rc);
 
         	BroadcastManager.saveLocation(rc, rc.getLocation(),LocationInfoType.ARCHON_HELP);
-        	
+
             // Spawn a gardener on the first move
             if (shouldSpawnInitialGardener()) {
                 spawnGardener();
@@ -34,9 +34,9 @@ public class ArchonLogic extends RobotLogic {
                 }
                 // Try to move in random direction
                 move(pickNextLocation());
-                
+
                 RobotInfo[] foes = rc.senseNearbyRobots(-1,getEnemyTeam());
-                
+
                 if(foes.length>0){
                 	BroadcastManager.saveLocation(rc, foes[0].location, LocationInfoType.ARCHON_HELP);
                 }

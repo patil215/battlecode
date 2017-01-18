@@ -8,6 +8,7 @@ import revisedstrat.BroadcastManager.UnitCountInfoType;
  * Created by patil215 on 1/12/17.
  */
 public class ScoutLogic extends RobotLogic {
+
 	public ScoutLogic(RobotController rc) {
 		super(rc);
 		hasVisitedEnemyArchon = false;
@@ -24,6 +25,9 @@ public class ScoutLogic extends RobotLogic {
 		int birthRound = rc.getRoundNum();
 		while (true) {
 			try {
+
+				invalidateVisitedLocation();
+
 				if (rc.getRoundNum() - birthRound == 20) {
 					BroadcastManager.incrementUnitCount(rc, UnitCountInfoType.ALLY_SCOUT);
 				}
@@ -43,10 +47,7 @@ public class ScoutLogic extends RobotLogic {
 					handleHarass(foes);
 				} else if (foes.length > 0) {
 					handleAttack(foes);
-				}
-
-				// There are no enemies in sight
-				else {
+				} else {
 					handleRecon();
 				}
 
@@ -58,39 +59,45 @@ public class ScoutLogic extends RobotLogic {
 		}
 	}
 
+	private void invalidateVisitedLocation() throws GameActionException {
+		MapLocation recentEnemyLoc = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY_NOT_ARCHON);
+		if (recentEnemyLoc != null && closeToLocationAndJustArchons(rc, recentEnemyLoc)) {
+			BroadcastManager.invalidateLocation(rc, LocationInfoType.ENEMY_NOT_ARCHON);
+			destination = null;
+		}
+	}
+
 	// TODO: First handle broadcasted information. Also, find something to do if
 	// initial archon locations are abandoned.
 	private void handleRecon() throws GameActionException {
-		MapLocation recentEnemyLoc = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY);
-		if (recentEnemyLoc != null && closeToLocationAndNoEnemies(rc, recentEnemyLoc)) {
-			BroadcastManager.invalidateLocation(rc, LocationInfoType.ENEMY);
-			destination = null;
-		}
-
 		if (destination == null) {
-			MapLocation recentEnemyLocation = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY);
+			MapLocation recentEnemyLocation = BroadcastManager.getRecentLocation(rc, LocationInfoType.ENEMY_NOT_ARCHON);
 			if (recentEnemyLocation != null) {
 				destination = recentEnemyLocation;
+			} else if (!hasVisitedEnemyArchon) {
+				destination = getRandomEnemyInitialArchonLocation();
+				this.hasVisitedEnemyArchon = true;
 			} else {
+				randBounceDir = this.moveWithRandomBounce(randBounceDir);
+			}
+			/*else {
 				MapLocation[] broadcastLocations = rc.senseBroadcastingRobotLocations();
 				if (broadcastLocations.length != 0) {
 					int broadcastIndex = (int) (Math.random() * broadcastLocations.length);
 					destination = broadcastLocations[broadcastIndex];
-				} else if(!hasVisitedEnemyArchon){
+				} else if (!hasVisitedEnemyArchon) {
 					destination = getRandomEnemyInitialArchonLocation();
-					this.hasVisitedEnemyArchon=true;
-				} else{
+					this.hasVisitedEnemyArchon = true;
+				} else {
 					randBounceDir = this.moveWithRandomBounce(randBounceDir);
 				}
-			}
-		}
-
-		if (destination != null) {
+			}*/
+		} else {
 			Direction toMove = moveTowards(destination);
 			if (toMove != null) {
 				move(toMove);
 			}
-			if (rc.canSenseLocation(destination) && rc.senseNearbyRobots(-1, getEnemyTeam()).length == 0) {
+			if (rc.canSenseLocation(destination)/* && rc.senseNearbyRobots(-1, getEnemyTeam()).length == 0*/) {
 				destination = null;
 			}
 		}
@@ -99,44 +106,61 @@ public class ScoutLogic extends RobotLogic {
 	// TODO: Actually allow shooting at a distance against archons. Use attack
 	// code for this?
 	private void handleHarass(RobotInfo[] foes) throws GameActionException {
+
+		System.out.println("harrassing");
 		RobotInfo target = getPriorityEconTarget(foes);
 		if (target != null) {
-			int bytecode = Clock.getBytecodeNum();
+
 			BroadcastManager.saveLocation(rc, target.location, LocationInfoType.ENEMY);
+			if (target.getType() != RobotType.ARCHON) {
+				BroadcastManager.saveLocation(rc, target.location, LocationInfoType.ENEMY_NOT_ARCHON);
+			}
 
-			BulletInfo[] bullets = rc.senseNearbyBullets();
+			/*
+			 * Direction toMove = moveTowards(target.location); if (toMove !=
+			 * null) { move(toMove); }
+			 */
+			if (rc.canFireSingleShot()) {
+				rc.fireSingleShot(rc.getLocation().directionTo(target.location));
+			}
 
-			bytecode = Clock.getBytecodeNum();
-			BulletInfo toDodge = getTargetingBullet(bullets);
-
-			if (toDodge != null) {
-				bytecode = Clock.getBytecodeNum();
-				dodge(bullets);
+			Direction moveDir = moveTowards(target.getLocation());
+			if(moveDir != null) {
+				move(moveDir);
 			} else {
-				Direction toMove = moveTowards(target.location);
-				if (toMove != null) {
-					move(toMove);
-				}
+				BulletInfo[] bullets = rc.senseNearbyBullets();
+				dodge(bullets);
 			}
 
-			bytecode = Clock.getBytecodeNum();
-			RobotInfo potentialTarget = getHighestPriorityTarget(rc.senseNearbyRobots(-1, getEnemyTeam()), false);
-			if (potentialTarget != null && rc.canFireSingleShot()) {
-				rc.fireSingleShot(rc.getLocation().directionTo(potentialTarget.location));
-			}
-		}
-		// TODO: refactor?
-		else {
+			/*
+			 * BulletInfo toDodge = getTargetingBullet(bullets); if (toDodge !=
+			 * null) { dodge(bullets); }
+			 */
+
+			/*
+			 * RobotInfo potentialTarget =
+			 * getHighestPriorityTarget(rc.senseNearbyRobots(-1,
+			 * getEnemyTeam()), false); if (potentialTarget != null &&
+			 * rc.canFireSingleShot()) {
+			 * rc.fireSingleShot(rc.getLocation().directionTo(potentialTarget.
+			 * location)); }
+			 */
+		} else {
 			handleRecon();
 		}
 	}
 
 	private void handleAttack(RobotInfo[] foes) throws GameActionException {
+
+		System.out.println("attacking");
 		BulletInfo[] bullets = rc.senseNearbyBullets(5);
 		BulletInfo toDodge = getTargetingBullet(bullets);
 		RobotInfo threat = (RobotInfo) getClosestBody(foes);
-		//The only enemy is an archon, and it is too early to deal with it
-		if(threat == null){
+		// The only enemy is an archon, and it is too early to deal with it
+		if (threat != null) {
+			BroadcastManager.saveLocation(rc, threat.location, LocationInfoType.ENEMY);
+		}
+		if (threat == null) {
 			handleRecon();
 			return;
 		}
@@ -151,7 +175,8 @@ public class ScoutLogic extends RobotLogic {
 				}
 			}
 		}
-		RobotInfo target = getHighestPriorityTarget(foes, false);
+		// RobotInfo target = getHighestPriorityTarget(foes, false);
+		RobotInfo target = (RobotInfo) getClosestBody(foes);
 		if (target != null && rc.canFireSingleShot()) {
 			rc.fireSingleShot(rc.getLocation().directionTo(target.location));
 		}
@@ -182,20 +207,5 @@ public class ScoutLogic extends RobotLogic {
 			}
 		}
 		return target;
-	}
-
-	private RobotInfo getLowestHealthEconTarget(RobotInfo[] foes) {
-		if (foes.length == 0) {
-			return null;
-		}
-
-		RobotInfo lowestHealthEnemy = foes[0];
-		for (RobotInfo enemy : foes) {
-			if (enemy.health < lowestHealthEnemy.health) {
-				lowestHealthEnemy = enemy;
-			}
-		}
-
-		return lowestHealthEnemy;
 	}
 }

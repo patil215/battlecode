@@ -21,7 +21,7 @@ public class BroadcastManager {
 	 * nonzero)
 	 */
 	public enum LocationInfoType {
-		ENEMY(0, 1, 1), ARCHON_HELP(21, 22, 22), GARDENER_HELP(25, 26, 26);
+		ENEMY(0, 1, 1), ENEMY_NOT_ARCHON(2, 3, 3), ARCHON_HELP(21, 22, 22), GARDENER_HELP(25, 26, 26);
 
 		// Represents the index that stores the pointer (i.e. index) of the most
 		// recently added/modified location
@@ -76,9 +76,9 @@ public class BroadcastManager {
 	public static boolean tryAndSetUpLocationPointerIndexValues(RobotController rc) throws GameActionException{
 		if(rc.readBroadcast(SETUP_INDEX)==0){
 			rc.broadcast(SETUP_INDEX, 1);
-			rc.broadcast(LocationInfoType.ENEMY.locationPointerIndex, (LocationInfoType.ENEMY.locationStartIndex));
-			rc.broadcast(LocationInfoType.ARCHON_HELP.locationPointerIndex, (LocationInfoType.ARCHON_HELP.locationStartIndex));
-			rc.broadcast(LocationInfoType.GARDENER_HELP.locationPointerIndex, (LocationInfoType.GARDENER_HELP.locationStartIndex));
+			for(LocationInfoType type : LocationInfoType.values()) {
+				rc.broadcast(type.locationPointerIndex, (type.locationStartIndex));
+			}
 			return true;
 		}
 		return false;

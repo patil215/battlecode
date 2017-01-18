@@ -7,7 +7,7 @@ import battlecode.common.*;
  */
 public class CombatUnitLogic extends RobotLogic {
 
-	private final int SOLDIER_UNIT_COUNT_ATTACK_THRESHOLD = 30;
+	private final int SOLDIER_UNIT_COUNT_ATTACK_THRESHOLD = 20;
 
 	private MapLocation[] enemyArchonLocations;
 	private int archonVisitedIndex;
@@ -43,6 +43,7 @@ public class CombatUnitLogic extends RobotLogic {
 					endTurn();
 					continue;
 				}
+
 				// Try to help archons
 				MapLocation archonHelpLocation = BroadcastManager.getRecentLocation(rc,
 						BroadcastManager.LocationInfoType.ARCHON_HELP);
