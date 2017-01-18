@@ -66,7 +66,6 @@ public class GardenerLogic extends RobotLogic {
 	private void createTreeRingAndSpawnUnits() throws GameActionException {
 		rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(ENEMY_BASE_OPPOSITE_DIRECTION), 255, 255, 255);
 		if (rc.getBuildCooldownTurns() == 0) {
-			System.out.println("Should be able to spawn a unit");
 			Direction startAngle;
 			if (SHOULD_SPAWN_TANKS) {
 				startAngle = ENEMY_BASE_OPPOSITE_DIRECTION.rotateLeftDegrees(90);
@@ -74,18 +73,13 @@ public class GardenerLogic extends RobotLogic {
 				startAngle = ENEMY_BASE_OPPOSITE_DIRECTION.rotateLeftDegrees(60);
 			}
 
-			System.out.println("Starting to try angles");
 			while (!rc.canPlantTree(startAngle)
 					&& Math.abs(ENEMY_BASE_OPPOSITE_DIRECTION.degreesBetween(startAngle)) >= 50) {
 				startAngle = startAngle.rotateLeftDegrees(10);
-				System.out.println("Trying an angle of " + startAngle);
 			}
-			System.out.println("Done trying angles");
 			if (rc.canPlantTree(startAngle)) {
-				System.out.println("Trying to plant a tree");
 				rc.plantTree(startAngle);
 			} else {
-				System.out.println("Trying to spawn unit");
 				spawnUnit(ENEMY_BASE_OPPOSITE_DIRECTION);
 			}
 		}
@@ -143,13 +137,8 @@ public class GardenerLogic extends RobotLogic {
 	private void spawnUnit(Direction direction) throws GameActionException {
 		if (rc.canBuildRobot(RobotType.LUMBERJACK, direction) && rc.getBuildCooldownTurns() == 0
 				&& rc.getTeamBullets() >= 100) {
-			System.out.println("Can build");
-			System.out.println(
-					"We have around " + BroadcastManager.getUnitCount(rc, UnitCountInfoType.ALLY_SCOUT) + "Scouts");
 			RobotType typeToBuild = determineUnitToSpawn(direction);
 			rc.buildRobot(typeToBuild, direction);
-		} else {
-			System.out.println("Can't build");
 		}
 	}
 
