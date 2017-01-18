@@ -41,9 +41,7 @@ public class ArchonLogic extends RobotLogic {
                 	BroadcastManager.saveLocation(rc, foes[0].location, LocationInfoType.ARCHON_HELP);
                 }
 
-                tryAndShakeATree();
-                econWinIfPossible();
-                Clock.yield();
+                endTurn();
             }
 
         } catch (GameActionException e) {

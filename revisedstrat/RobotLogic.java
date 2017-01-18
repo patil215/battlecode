@@ -98,6 +98,21 @@ public abstract class RobotLogic {
 		return false;
 	}
 
+	public void endTurn() throws GameActionException {
+		tryAndShakeATree();
+		econWinIfPossible();
+		
+		// Dump all bullets if game about to end to get tiebreaker
+		if(rc.getRoundLimit() - rc.getRoundNum() < 2) {
+			float bulletCount = rc.getTeamBullets();
+			bulletCount /= 10;
+			int donateCount = (int) bulletCount;
+			donateCount *= 10;
+			rc.donate(donateCount);
+		}
+		Clock.yield();
+	}
+
 	public boolean move(Direction direction) throws GameActionException {
 		if (!rc.hasMoved() && rc.canMove(direction)) {
 			rc.move(direction);
@@ -177,10 +192,10 @@ public abstract class RobotLogic {
 	 * It returns the team of the first object that it will hit. If no object
 	 * will be hit, this method returns NEUTRAL.
 	 */
-	public Team getFirstHitTeam(MapLocation location, Direction direction, boolean hitTrees) {
+	public Team getFirstHitTeam(MapLocation location, Direction direction, boolean hitTrees, float maxDistance) {
 
 		// Detect tree collisions.
-		TreeInfo[] trees = rc.senseNearbyTrees();
+		TreeInfo[] trees = rc.senseNearbyTrees(maxDistance);
 
 		float minTreeDistance = Float.MAX_VALUE;
 		TreeInfo hitTree = null;
@@ -197,7 +212,7 @@ public abstract class RobotLogic {
 		}
 
 		// Detect robot collisions
-		RobotInfo[] robots = rc.senseNearbyRobots();
+		RobotInfo[] robots = rc.senseNearbyRobots(maxDistance);
 
 		float minRobotDistance = Float.MAX_VALUE;
 		RobotInfo hitRobot = null;
@@ -376,7 +391,8 @@ public abstract class RobotLogic {
 				MapLocation bulletSpawnPoint = rc.getLocation().add(toEnemy, spawnOffset);
 
 				// Only attack if we will hit an enemy.
-				if (getFirstHitTeam(bulletSpawnPoint, toEnemy, hitTrees) == getEnemyTeam()) {
+				if (getFirstHitTeam(bulletSpawnPoint, toEnemy, hitTrees, rc.getLocation().distanceTo(enemies[index].getLocation()))
+				== getEnemyTeam()) {
 					maxIndex = index;
 					maxPriority = priority;
 				}

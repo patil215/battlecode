@@ -50,11 +50,9 @@ public class GardenerLogic extends RobotLogic {
 				detectEnemiesAndSendHelpBroadcast();
 
 				waterLowestHealthTree();
-				tryAndShakeATree();
-				econWinIfPossible();
 				drawBullshitLine();
 
-				Clock.yield();
+				endTurn();
 			}
 
 		} catch (GameActionException e) {
@@ -89,7 +87,7 @@ public class GardenerLogic extends RobotLogic {
 		if (rc.getRobotCount() - 1 == rc.getInitialArchonLocations(rc.getTeam()).length) {
 			tryAndBuildUnit(RobotType.SCOUT);
 			while (rc.getBuildCooldownTurns() != 0) {
-				Clock.yield();
+				endTurn();
 			}
 			tryAndBuildUnit(RobotType.SOLDIER);
 		}

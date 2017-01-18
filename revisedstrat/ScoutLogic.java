@@ -50,13 +50,11 @@ public class ScoutLogic extends RobotLogic {
 					handleRecon();
 				}
 
-				tryAndShakeATree();
-				econWinIfPossible();
+				endTurn();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 
-			Clock.yield();
 		}
 	}
 

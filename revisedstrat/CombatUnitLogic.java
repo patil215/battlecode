@@ -30,7 +30,7 @@ public class CombatUnitLogic extends RobotLogic {
 				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, getEnemyTeam());
 				if (enemyRobots.length > 0) {
 					executeCombat(enemyRobots);
-					Clock.yield();
+					endTurn();
 					continue;
 				}
 
@@ -40,7 +40,7 @@ public class CombatUnitLogic extends RobotLogic {
 						BroadcastManager.LocationInfoType.GARDENER_HELP);
 				if (gardenerHelpLocation != null) {
 					moveTowardsCombat(gardenerHelpLocation, BroadcastManager.LocationInfoType.GARDENER_HELP);
-					Clock.yield();
+					endTurn();
 					continue;
 				}
 				// Try to help archons
@@ -48,7 +48,7 @@ public class CombatUnitLogic extends RobotLogic {
 						BroadcastManager.LocationInfoType.ARCHON_HELP);
 				if (archonHelpLocation != null) {
 					moveTowardsCombat(archonHelpLocation, BroadcastManager.LocationInfoType.ARCHON_HELP);
-					Clock.yield();
+					endTurn();
 					continue;
 				}
 
@@ -61,7 +61,7 @@ public class CombatUnitLogic extends RobotLogic {
 					if (enemyLocation != null) {
 						boolean success = moveTowardsCombat(enemyLocation, BroadcastManager.LocationInfoType.ENEMY);
 						if (success) {
-							Clock.yield();
+							endTurn();
 							continue;
 						}
 					}
