@@ -21,7 +21,7 @@ public abstract class RobotLogic {
 	private static boolean isLeftUnit;
 
 	private static boolean FLAG = false;
-	
+
 	public RobotLogic(RobotController rc) {
 		this.rc = rc;
 		isLeftUnit = Math.random() > .5;
@@ -120,7 +120,7 @@ public abstract class RobotLogic {
 		econWinIfPossible();
 
 		// Dump all bullets if game about to end to get tiebreaker
-		if(rc.getRoundLimit() - rc.getRoundNum() < 2) {
+		if (rc.getRoundLimit() - rc.getRoundNum() < 2) {
 			float bulletCount = rc.getTeamBullets();
 			bulletCount /= 10;
 			int donateCount = (int) bulletCount;
@@ -218,7 +218,7 @@ public abstract class RobotLogic {
 		TreeInfo hitTree = null;
 
 		for (TreeInfo tree : trees) {
-			if(FLAG || rc.getLocation().directionTo(tree.location).radiansBetween(direction) < Math.PI / 2){
+			if (FLAG || rc.getLocation().directionTo(tree.location).radiansBetween(direction) < Math.PI / 2) {
 				float distance = getIntersectionDistance(location, direction, tree);
 
 				if (distance < minTreeDistance && distance != NO_INTERSECT) {
@@ -235,8 +235,8 @@ public abstract class RobotLogic {
 		RobotInfo hitRobot = null;
 
 		for (RobotInfo robot : robots) {
-			
-			if(FLAG || rc.getLocation().directionTo(robot.location).radiansBetween(direction) < Math.PI / 2){
+
+			if (FLAG || rc.getLocation().directionTo(robot.location).radiansBetween(direction) < Math.PI / 2) {
 				float distance = getIntersectionDistance(location, direction, robot);
 
 				if (distance < minRobotDistance && distance != NO_INTERSECT) {
@@ -256,9 +256,10 @@ public abstract class RobotLogic {
 			return hitRobot.getTeam();
 		}
 
-		// If only trees are intersected, return team if hitTrees is true, otherwise neutral
+		// If only trees are intersected, return team if hitTrees is true,
+		// otherwise neutral
 		else if (hitTree != null && hitRobot == null) {
-			if(hitTrees) {
+			if (hitTrees) {
 				return hitTree.getTeam();
 			} else {
 				return Team.NEUTRAL;
@@ -376,14 +377,13 @@ public abstract class RobotLogic {
 	public boolean closeToLocationAndJustArchons(RobotController rc, MapLocation location) throws GameActionException {
 		boolean enemy = false;
 		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(-1, getEnemyTeam());
-		for(RobotInfo info : nearbyRobots) {
-			if(info.getType() != RobotType.ARCHON) {
+		for (RobotInfo info : nearbyRobots) {
+			if (info.getType() != RobotType.ARCHON) {
 				enemy = true;
 				break;
 			}
 		}
-		if (rc.getLocation().distanceTo(location) < (rc.getType().sensorRadius * .8)
-				&& !enemy) {
+		if (rc.getLocation().distanceTo(location) < (rc.getType().sensorRadius * .8) && !enemy) {
 			return true;
 		}
 		return false;
@@ -407,8 +407,8 @@ public abstract class RobotLogic {
 			double priority = 0;
 
 			if (enemies[index].getType().canAttack()) {
-				priority = enemies[index].getType().attackPower /
-						(Math.max(enemies[index].health, 1) * rc.getLocation().distanceTo(enemies[index].getLocation()));
+				priority = enemies[index].getType().attackPower / (Math.max(enemies[index].health, 1)
+						* rc.getLocation().distanceTo(enemies[index].getLocation()));
 			}
 
 			// TODO: Refactor
@@ -425,8 +425,8 @@ public abstract class RobotLogic {
 				MapLocation bulletSpawnPoint = rc.getLocation().add(toEnemy, spawnOffset);
 
 				// Only attack if we will hit an enemy.
-				if (getFirstHitTeam(bulletSpawnPoint, toEnemy, hitTrees, rc.getLocation().distanceTo(enemies[index].getLocation()))
-				== getEnemyTeam()) {
+				if (getFirstHitTeam(bulletSpawnPoint, toEnemy, hitTrees,
+						rc.getLocation().distanceTo(enemies[index].getLocation())) == getEnemyTeam()) {
 					maxIndex = index;
 					maxPriority = priority;
 				}
@@ -540,7 +540,8 @@ public abstract class RobotLogic {
 		float minDamage = rc.getHealth();
 		int bestAngle = -40;
 		for (int angle = -40; angle < 40; angle += 10) {
-			MapLocation expectedLocation = currLocation.add(toEnemy.rotateLeftDegrees(angle), (float) getStrideRadius(rc.getType()));
+			MapLocation expectedLocation = currLocation.add(toEnemy.rotateLeftDegrees(angle),
+					(float) getStrideRadius(rc.getType()));
 			float damage = expectedDamage(bullets, expectedLocation);
 
 			if (damage < minDamage) {
@@ -554,25 +555,26 @@ public abstract class RobotLogic {
 
 	public static double getStrideRadius(RobotType rt) {
 		switch (rt) {
-			case ARCHON:
-			case TANK:
-			case SOLDIER: {
-				return 1;
-			}
+		case ARCHON:
+		case TANK:
+		case SOLDIER: {
+			return 1;
+		}
 
-			case GARDENER: {
-				return 2;
-			}
+		case GARDENER: {
+			return 2;
+		}
 
-			case SCOUT: {
-				return 2.5;
-			}
+		case SCOUT: {
+			return 2.5;
+		}
 
-			case LUMBERJACK: {
-				return 1.5;
-			}
+		case LUMBERJACK: {
+			return 1.5;
+		}
 
-			default: return 1;
+		default:
+			return 1;
 		}
 	}
 
@@ -662,6 +664,221 @@ public abstract class RobotLogic {
 				return;
 			}
 		}
+	}
+
+	private MapLocation[] getBulletLineSegment(BulletInfo bullet) {
+		MapLocation[] endpoints = new MapLocation[2];
+		endpoints[0] = new MapLocation(bullet.getLocation().x, bullet.getLocation().y);
+		MapLocation endLocation = bullet.getLocation().add(bullet.getDir(), bullet.getSpeed());
+		endpoints[1] = endLocation;
+		return endpoints;
+	}
+
+	private MapLocation[][] getSegments(BulletInfo[] bullets) {
+		MapLocation[][] segments = new MapLocation[bullets.length][2];
+
+		for (int i = 0; i < bullets.length; i++) {
+			segments[i] = getBulletLineSegment(bullets[i]);
+
+			// TODO only add if necessary because close enough
+			/*
+			 * if(!(segment[0].distanceTo(rc.getLocation()) < (maxMovement +
+			 * hitRadius)) && !(segment[1].distanceTo(rc.getLocation()) <
+			 * (maxMovement + hitRadius))) {
+			 * 
+			 * }
+			 */
+		}
+		return segments;
+	}
+
+	private float INITIAL_OFFSET = 0.01f;
+	private float OTHER_OFFSET = 0.005f;
+
+	private MapLocation getRandomTangentLocationToSegment(MapLocation[] segment, float distanceFromSegment) {
+		int tries = 0;
+		while (true && tries < 100) {
+			tries++;
+			float dx = segment[1].x - segment[0].x;
+			float dy = segment[1].y - segment[0].y;
+
+			float dist = (float) Math.random();
+			float[] upLine = new float[] { dist * dx, dist * dy };
+
+			float magnitude = (float) Math.sqrt((float) Math.pow(dx, 2) + (float) Math.pow(dy, 2));
+
+			float uDx = dx / magnitude;
+			float uDy = dy / magnitude;
+
+			// Add offset to account for floating point errors
+			float desiredDistance = distanceFromSegment + INITIAL_OFFSET;
+
+			float[] perpLine = { uDy * desiredDistance, uDx * desiredDistance * -1 };
+
+			float[] startPoint = { segment[0].x + upLine[0], segment[0].y + upLine[1] };
+
+			float[] point = new float[] { segment[0].x + upLine[0] + perpLine[0],
+					segment[0].y + upLine[1] + perpLine[1] };
+			MapLocation desiredPoint = new MapLocation(point[0], point[1]);
+			// rc.setIndicatorLine(new MapLocation(startPoint[0],
+			// startPoint[1]), desiredPoint, 0, 128, 0);
+			if (rc.getLocation().distanceTo(desiredPoint) < rc.getType().strideRadius) {
+				return desiredPoint;
+			}
+		}
+		return null;
+	}
+
+	private float shortestDistance(MapLocation location, MapLocation[] segment) {
+
+		float x = location.x;
+		float y = location.y;
+
+		float x1 = segment[0].x;
+		float y1 = segment[0].y;
+		float x2 = segment[1].x;
+		float y2 = segment[1].y;
+
+		float A = x - x1;
+		float B = y - y1;
+		float C = x2 - x1;
+		float D = y2 - y1;
+
+		float dot = A * C + B * D;
+		float len_sq = C * C + D * D;
+		float param = -1;
+		if (len_sq != 0) // in case of 0 length line
+			param = dot / len_sq;
+
+		float xx, yy;
+
+		if (param < 0) {
+			xx = x1;
+			yy = y1;
+		} else if (param > 1) {
+			xx = x2;
+			yy = y2;
+		} else {
+			xx = x1 + param * C;
+			yy = y1 + param * D;
+		}
+
+		float dx = x - xx;
+		float dy = y - yy;
+		return (float) Math.sqrt(dx * dx + dy * dy);
+	}
+
+	/*
+	 * Returns null if shortest does not exist
+	 */
+	private MapLocation[] getClosestLineSegmentWithinThreshold(MapLocation playerLocation, MapLocation[][] segments,
+			float hitRadius) {
+		float desiredDistance = hitRadius + OTHER_OFFSET;
+
+		for (MapLocation[] segment : segments) {
+			float shortestDistance = shortestDistance(playerLocation, segment);
+			if (shortestDistance < desiredDistance) {
+				return segment;
+			}
+		}
+
+		return null;
+	}
+
+	private MapLocation getRandomLocation() {
+		float bodyRadius = rc.getType().strideRadius;
+		return rc.getLocation().add(Utils.randomDirection(),
+				(float) (Math.random() * (rc.getType().strideRadius - (bodyRadius / 2))) + bodyRadius / 2);
+	}
+
+	public MapLocation getBulletAvoidingLocationpo(RobotController rc) {
+		float maxMovement = rc.getType().strideRadius;
+		float hitRadius = rc.getType().bodyRadius;
+		float maxBulletSpeed = 1;
+
+		// float bulletConsiderationRadius = maxMovement + maxBulletSpeed +
+		// hitRadius;
+		float bulletConsiderationRadius = maxMovement + hitRadius + maxBulletSpeed;
+
+		BulletInfo[] bullets = rc.senseNearbyBullets(bulletConsiderationRadius);
+		if (bullets.length <= 0) {
+			return null;
+		}
+
+		MapLocation[][] segments = getSegments(bullets);
+
+		int byteCodeStart = Clock.getBytecodeNum();
+
+		System.out.println("WOEIJFOWIEJF");
+
+		MapLocation[] possibleLocs = new MapLocation[100];
+		int tries = 0;
+		while (Clock.getBytecodeNum() - byteCodeStart < 6000 && tries < possibleLocs.length) {
+			System.out.println("In loop");
+			tries++;
+			int index = (int) (Math.random() * segments.length);
+			MapLocation[] startSegment = segments[index];
+			// MapLocation startLoc =
+			// getRandomTangentLocationToSegment(startSegment, hitRadius);
+			MapLocation startLoc = getRandomLocation();
+			if (startLoc == null) {
+				System.out.println("***REMOVED*** nothing found");
+				continue;
+			}
+			// rc.setIndicatorDot(startLoc, 50, 50, 50);
+			// rc.setIndicatorLine(rc.getLocation(), startLoc, 128, 0, 0);
+			MapLocation[] conflictingSegment = getClosestLineSegmentWithinThreshold(startLoc, segments, hitRadius);
+			if (conflictingSegment == null && rc.canMove(startLoc)) {
+				// We good ***REMOVED*** yea
+				possibleLocs[tries] = startLoc;
+			}
+		}
+
+		float minDist = Float.MAX_VALUE;
+		MapLocation minLoc = null;
+		for (int i = 0; i < possibleLocs.length; i++) {
+			MapLocation possibleLoc = possibleLocs[i];
+			if (possibleLoc == null) {
+				continue;
+			}
+			float dist = possibleLoc.distanceTo(rc.getLocation());
+			System.out.println(dist);
+			if (dist < minDist) {
+				minLoc = possibleLoc;
+				minDist = dist;
+			}
+		}
+
+		return minLoc;
+	}
+
+	public MapLocation getBulletAvoidingLocation(RobotController rc) {
+
+		float maxMovement = rc.getType().strideRadius;
+		float hitRadius = rc.getType().bodyRadius;
+		float maxBulletSpeed = 1;
+
+		float bulletConsiderationRadius = maxMovement + hitRadius + maxBulletSpeed;
+
+		BulletInfo[] bullets = rc.senseNearbyBullets(bulletConsiderationRadius);
+		if (bullets.length <= 0) {
+			return null;
+		}
+
+		MapLocation[][] segments = getSegments(bullets);
+
+
+		int byteCodeStart = Clock.getBytecodeNum();
+		while (Clock.getBytecodeNum() - byteCodeStart < 6000) {
+			System.out.println("In loop");
+			MapLocation startLoc = getRandomLocation();
+			MapLocation[] conflictingSegment = getClosestLineSegmentWithinThreshold(startLoc, segments, hitRadius);
+			if (conflictingSegment == null && rc.canMove(startLoc)) {
+				return startLoc;
+			}
+		}
+
+		return null;
 	}
 
 }

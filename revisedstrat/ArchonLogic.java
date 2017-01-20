@@ -33,7 +33,10 @@ public class ArchonLogic extends RobotLogic {
                     spawnGardener();
                 }
                 // Try to move in random direction
-                move(pickNextLocation());
+                MapLocation moveLocation = pickNextLocation();
+                if(moveLocation != null) {
+                    move(moveLocation);
+                }
 
                 RobotInfo[] foes = rc.senseNearbyRobots(-1,getEnemyTeam());
 
@@ -54,7 +57,7 @@ public class ArchonLogic extends RobotLogic {
     private void spawnGardener() throws GameActionException {
         Direction directionAttempt = rc.getLocation().directionTo(getRandomEnemyInitialArchonLocation()).opposite();
         // Keep rotating until there is space to spawn a gardener
-        while (true) {
+        for(int i = 0; i < 100; i++) {
             if (rc.canHireGardener(directionAttempt)) {
                 rc.hireGardener(directionAttempt);
                 break;
@@ -86,25 +89,22 @@ public class ArchonLogic extends RobotLogic {
 
     // TODO move accounting for bullet evasion, use moveTowards() logic to "wiggle" out of traps
     private MapLocation pickNextLocation() throws GameActionException {
-        while (true) {
+        for(int i = 0; i < 100; i++) {
             Direction randomDir = Utils.randomDirection();
             MapLocation attemptedNewLocation = rc.getLocation().add(randomDir, rc.getType().strideRadius);
             if (isValidNextArchonLocation(attemptedNewLocation)) {
+                System.out.println("Found location to move to");
                 return attemptedNewLocation;
             }
         }
+        return null;
     }
 
-    private boolean isValidNextArchonLocation(MapLocation location) {
+    private boolean isValidNextArchonLocation(MapLocation location) throws GameActionException {
         if (!rc.canSenseLocation(location)) {
             return false;
         }
-        try {
-            if (!rc.onTheMap(location)) {
-                return false;
-            }
-        } catch (GameActionException e) {
-            e.printStackTrace();
+        if (!rc.onTheMap(location)) {
             return false;
         }
         if (!rc.canMove(location)) {

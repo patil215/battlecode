@@ -120,18 +120,23 @@ public class ScoutLogic extends RobotLogic {
 			 * Direction toMove = moveTowards(target.location); if (toMove !=
 			 * null) { move(toMove); }
 			 */
-			if (rc.canFireSingleShot()) {
-				rc.fireSingleShot(rc.getLocation().directionTo(target.location));
-			}
 
+			BulletInfo[] bullets = rc.senseNearbyBullets();
 			Direction moveDir = moveTowards(target.getLocation());
 			if(moveDir != null) {
 				move(moveDir);
 			} else {
-				BulletInfo[] bullets = rc.senseNearbyBullets();
-				dodge(bullets);
+				if(willGetHitByABullet(rc.getLocation(), bullets)) {
+					MapLocation safeLocation = getBulletAvoidingLocation(rc);
+					if(safeLocation != null) {
+						move(safeLocation);
+					}
+				}
 			}
 
+			if (rc.canFireSingleShot()) {
+				rc.fireSingleShot(rc.getLocation().directionTo(target.location));
+			}
 			/*
 			 * BulletInfo toDodge = getTargetingBullet(bullets); if (toDodge !=
 			 * null) { dodge(bullets); }
@@ -154,7 +159,6 @@ public class ScoutLogic extends RobotLogic {
 
 		System.out.println("attacking");
 		BulletInfo[] bullets = rc.senseNearbyBullets(5);
-		BulletInfo toDodge = getTargetingBullet(bullets);
 		RobotInfo threat = (RobotInfo) getClosestBody(foes);
 		// The only enemy is an archon, and it is too early to deal with it
 		if (threat != null) {
@@ -164,8 +168,23 @@ public class ScoutLogic extends RobotLogic {
 			handleRecon();
 			return;
 		}
-		if (toDodge != null) {
-			dodge(toDodge);
+
+		//BulletInfo toDodge = getTargetingBullet(bullets);
+
+		RobotInfo target = (RobotInfo) getClosestBody(foes);
+		if (target != null && rc.canFireSingleShot()) {
+			rc.fireSingleShot(rc.getLocation().directionTo(target.location));
+		}
+		// RobotInfo target = getHighestPriorityTarget(foes, false);
+		boolean willBeHit = willGetHitByABullet(rc.getLocation(), bullets);
+		MapLocation safeLocation = null;
+		if(willBeHit) {
+			System.out.println("WE GONNA GET HIT");
+			safeLocation = getBulletAvoidingLocation(rc);
+		}
+		if (willBeHit && safeLocation != null) {
+			System.out.println("DEPLOYING EVASIVE MANEUVERS");
+			move(safeLocation);
 		} else {
 			if (rc.getLocation().distanceTo(threat.location) <= 7) {
 				// We are too close to the enemy. They can see us.
@@ -175,12 +194,7 @@ public class ScoutLogic extends RobotLogic {
 				}
 			}
 		}
-		// RobotInfo target = getHighestPriorityTarget(foes, false);
-		RobotInfo target = (RobotInfo) getClosestBody(foes);
-		if (target != null && rc.canFireSingleShot()) {
-			rc.fireSingleShot(rc.getLocation().directionTo(target.location));
-		}
-		if (!rc.hasAttacked() && !rc.hasMoved()) {
+		/*if (!rc.hasAttacked() && !rc.hasMoved()) {
 			Direction towardsThreat = rc.getLocation().directionTo(threat.location);
 			Direction toMove = moveTowards(towardsThreat.rotateLeftDegrees(90));
 			if (toMove != null && rc.canMove(toMove)) {
@@ -191,7 +205,7 @@ public class ScoutLogic extends RobotLogic {
 					move(toMove);
 				}
 			}
-		}
+		}*/
 	}
 
 	private RobotInfo getPriorityEconTarget(RobotInfo[] foes) {

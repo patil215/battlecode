@@ -120,7 +120,11 @@ public class CombatUnitLogic extends RobotLogic {
 		// Move
 		BulletInfo hittingBullet = getTargetingBullet(surroundingBullets);
 		if (hittingBullet != null) {
-			moveAndDodge(hittingBullet.getLocation(), surroundingBullets);
+			//moveAndDodge(hittingBullet.getLocation(), surroundingBullets);
+			MapLocation safeLocation = getBulletAvoidingLocation(rc);
+			if(safeLocation != null) {
+				move(safeLocation);
+			}
 		}
 
 		// Shoot
@@ -143,7 +147,11 @@ public class CombatUnitLogic extends RobotLogic {
 		} else {
 			// Try to get closer to the enemy
 			target = (RobotInfo) getClosestBody(enemyRobots);
-			moveAndDodge(target.getLocation(), surroundingBullets);
+			MapLocation safeLocation = getBulletAvoidingLocation(rc);
+			if(safeLocation != null) {
+				move(safeLocation);
+			}
+			//moveAndDodge(target.getLocation(), surroundingBullets);
 			Direction toMove = moveTowards(target.location);
 			if (toMove != null) {
 				if (rc.canMove(toMove)) {
