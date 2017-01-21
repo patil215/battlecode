@@ -1,7 +1,6 @@
 package revisedstrat;
 
 import battlecode.common.*;
-import revisedstrat.BroadcastManager.UnitCountInfoType;
 
 /**
  * Created by patil215 on 1/12/17.
@@ -9,20 +8,23 @@ import revisedstrat.BroadcastManager.UnitCountInfoType;
 public class GardenerLogic extends RobotLogic {
 
 	private Direction moveDir;
-	private final int NUM_ROUNDS_TO_SETTLE = 35;
-
-	private final Direction ENEMY_BASE_OPPOSITE_DIRECTION;
+	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER = 50;
+	private final boolean UNIT_SPAWNER_ELIGIBLE;
+	private final boolean DEGENERATE_ELIGIBLE;
+	private final int NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE = 300;
+	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = 25;
+	private final int UNIT_SPAWNER_THRESHOLD = 200;
 	private final boolean SHOULD_SPAWN_TANKS;
-	private final int MIN_FREE_SPACE_REQUIREMENT = 5;
+	private final float MIN_FREE_SPACE_REQUIREMENT = 5;
 
 	public GardenerLogic(RobotController rc) {
 		super(rc);
-		double TANK_SPAWNER_CHANCE = rc.getRoundNum()* 2.0 /rc.getRoundLimit();
-		ENEMY_BASE_OPPOSITE_DIRECTION = rc.getLocation()
-				.directionTo(Utils.getAvgArchonLocations(rc, getEnemyTeam())).opposite();
+		double TANK_SPAWNER_CHANCE = rc.getRoundNum() * 2.0 / rc.getRoundLimit();
 		SHOULD_SPAWN_TANKS = Math.random() < TANK_SPAWNER_CHANCE
 				&& !(rc.getRobotCount() - 1 == rc.getInitialArchonLocations(rc.getTeam()).length);
 		moveDir = Utils.diagonalDirection();
+		UNIT_SPAWNER_ELIGIBLE = rc.getRoundNum() > UNIT_SPAWNER_THRESHOLD;
+		DEGENERATE_ELIGIBLE = rc.getRoundNum() < NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE;
 	}
 
 	@Override
@@ -36,14 +38,16 @@ public class GardenerLogic extends RobotLogic {
 
 			while (true) {
 
-				if(!settled) {
-					if (numRoundsSettling > NUM_ROUNDS_TO_SETTLE) {
-						settled = true;
+				if (!settled && !(DEGENERATE_ELIGIBLE && numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE)) {
+					if (numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER && UNIT_SPAWNER_ELIGIBLE) {
+						settled = moveTowardsGoodSpot();
+						spawnUnit(Utils.randomDirection());
 					} else {
 						numRoundsSettling++;
 						settled = moveTowardsGoodSpot();
 					}
 				} else {
+					settled = true;
 					createTreeRingAndSpawnUnits();
 				}
 
@@ -62,23 +66,25 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private void createTreeRingAndSpawnUnits() throws GameActionException {
-		rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(ENEMY_BASE_OPPOSITE_DIRECTION), 255, 255, 255);
+
+		Direction archonOppositeLocation = rc.getLocation().directionTo(rc.getInitialArchonLocations(rc.getTeam())[0])
+				.opposite();
+		rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(archonOppositeLocation), 255, 255, 255);
 		if (rc.getBuildCooldownTurns() == 0) {
 			Direction startAngle;
 			if (SHOULD_SPAWN_TANKS) {
-				startAngle = ENEMY_BASE_OPPOSITE_DIRECTION.rotateLeftDegrees(90);
+				startAngle = archonOppositeLocation.rotateLeftDegrees(90);
 			} else {
-				startAngle = ENEMY_BASE_OPPOSITE_DIRECTION.rotateLeftDegrees(60);
+				startAngle = archonOppositeLocation.rotateLeftDegrees(60);
 			}
 
-			while (!rc.canPlantTree(startAngle)
-					&& Math.abs(ENEMY_BASE_OPPOSITE_DIRECTION.degreesBetween(startAngle)) >= 50) {
+			while (!rc.canPlantTree(startAngle) && Math.abs(archonOppositeLocation.degreesBetween(startAngle)) >= 50) {
 				startAngle = startAngle.rotateLeftDegrees(10);
 			}
 			if (rc.canPlantTree(startAngle)) {
 				rc.plantTree(startAngle);
 			} else {
-				spawnUnit(ENEMY_BASE_OPPOSITE_DIRECTION);
+				spawnUnit(archonOppositeLocation);
 			}
 		}
 	}
@@ -121,9 +127,10 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private RobotType determineUnitToSpawn(Direction intendedDirection) throws GameActionException {
-		/*if (BroadcastManager.getUnitCount(rc, UnitCountInfoType.ALLY_SCOUT) < 3) {
-			return RobotType.SCOUT;
-		} else*/ if (rc.canBuildRobot(RobotType.TANK, intendedDirection)) {
+		/*
+		 * if (BroadcastManager.getUnitCount(rc, UnitCountInfoType.ALLY_SCOUT) <
+		 * 3) { return RobotType.SCOUT; } else
+		 */ if (rc.canBuildRobot(RobotType.TANK, intendedDirection)) {
 			return RobotType.TANK;
 		} else if (Math.random() > .7) {
 			return RobotType.LUMBERJACK;
@@ -154,10 +161,22 @@ public class GardenerLogic extends RobotLogic {
 		}
 	}
 
+	private boolean isCircleOccupiedByTrees(float radius) {
+		TreeInfo[] trees = rc.senseNearbyTrees(radius);
+		return trees.length > 0;
+	}
+
+	private boolean edgeWithinRadius(float radius) throws GameActionException {
+		MapLocation loc = rc.getLocation();
+		float threshold = (float) Math.ceil(radius / 2);
+		return !rc.onTheMap(loc.add(Direction.NORTH, threshold)) || !rc.onTheMap(loc.add(Direction.EAST, threshold))
+				|| !rc.onTheMap(loc.add(Direction.WEST, threshold)) || !rc.onTheMap(loc.add(Direction.SOUTH, threshold));
+	}
+
 	private boolean isGoodLocation() {
 		try {
 			// Check for free space of certain radius - gives space to spawn trees
-			return !rc.isCircleOccupiedExceptByThisRobot(rc.getLocation().add(0, (float) .01), MIN_FREE_SPACE_REQUIREMENT)
+			return !isCircleOccupiedByTrees(MIN_FREE_SPACE_REQUIREMENT) && !edgeWithinRadius(MIN_FREE_SPACE_REQUIREMENT)
 					&& rc.onTheMap(rc.getLocation().add(0, (float) .01), MIN_FREE_SPACE_REQUIREMENT);
 		} catch (GameActionException e) {
 			return false;
