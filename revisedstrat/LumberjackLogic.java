@@ -25,6 +25,14 @@ public class LumberjackLogic extends RobotLogic {
 				 * (enemyRobots.length > 0) { executeCombat(enemyRobots);
 				 * Clock.yield(); continue; }
 				 */
+				
+				// Attack enemy if there are no trees to cut
+				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, getEnemyTeam());
+				if (enemyRobots.length > 0) {
+					attackEnemy(enemyRobots);
+					endTurn();
+					continue;
+				}
 
 				// Tree cutting mode
 				TreeInfo[] enemyTrees = rc.senseNearbyTrees(-1, getEnemyTeam());
@@ -38,14 +46,6 @@ public class LumberjackLogic extends RobotLogic {
 				TreeInfo[] neutralTrees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
 				if (neutralTrees.length > 0) {
 					moveTowardsAndChop(neutralTrees);
-					endTurn();
-					continue;
-				}
-
-				// Attack enemy if there are no trees to cut
-				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, getEnemyTeam());
-				if (enemyRobots.length > 0) {
-					attackEnemy(enemyRobots);
 					endTurn();
 					continue;
 				}

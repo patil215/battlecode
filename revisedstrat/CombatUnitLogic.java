@@ -136,13 +136,7 @@ public class CombatUnitLogic extends RobotLogic {
 			// Broadcast the location of the target
 			BroadcastManager.saveLocation(rc, target.location, BroadcastManager.LocationInfoType.ENEMY);
 
-			if (rc.canFirePentadShot()) {
-				rc.firePentadShot(rc.getLocation().directionTo(target.location));
-			} else if (rc.canFireTriadShot()) {
-				rc.fireTriadShot(rc.getLocation().directionTo(target.location));
-			} else if (rc.canFireSingleShot()) {
-				rc.fireSingleShot(rc.getLocation().directionTo(target.location));
-			}
+			tryAndFireAShot(target);
 
 		} else {
 			// Try to get closer to the enemy
@@ -160,6 +154,16 @@ public class CombatUnitLogic extends RobotLogic {
 			} else {
 				this.moveWithRandomBounce(Utils.randomDirection());
 			}
+		}
+	}
+
+	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
+		if (rc.canFirePentadShot() && rc.getTeamBullets()>200) {
+			rc.firePentadShot(rc.getLocation().directionTo(target.location));
+		} else if (rc.canFireTriadShot() && rc.getTeamBullets()>100) {
+			rc.fireTriadShot(rc.getLocation().directionTo(target.location));
+		} else if (rc.canFireSingleShot()) {
+			rc.fireSingleShot(rc.getLocation().directionTo(target.location));
 		}
 	}
 

@@ -10,7 +10,6 @@ public class GardenerLogic extends RobotLogic {
 
 	private Direction moveDir;
 	private final int NUM_ROUNDS_TO_SETTLE = 35;
-	private final double TANK_SPAWNER_CHANCE = 0.5;
 
 	private final Direction ENEMY_BASE_OPPOSITE_DIRECTION;
 	private final boolean SHOULD_SPAWN_TANKS;
@@ -18,6 +17,7 @@ public class GardenerLogic extends RobotLogic {
 
 	public GardenerLogic(RobotController rc) {
 		super(rc);
+		double TANK_SPAWNER_CHANCE = rc.getRoundNum()* 2.0 /rc.getRoundLimit();
 		ENEMY_BASE_OPPOSITE_DIRECTION = rc.getLocation()
 				.directionTo(Utils.getAvgArchonLocations(rc, getEnemyTeam())).opposite();
 		SHOULD_SPAWN_TANKS = Math.random() < TANK_SPAWNER_CHANCE
@@ -85,11 +85,11 @@ public class GardenerLogic extends RobotLogic {
 
 	private void buildInitialRoundsUnits() throws GameActionException {
 		if (rc.getRobotCount() - 1 == rc.getInitialArchonLocations(rc.getTeam()).length) {
-			tryAndBuildUnit(RobotType.SCOUT);
+			tryAndBuildUnit(RobotType.LUMBERJACK);
 			while (rc.getBuildCooldownTurns() != 0) {
 				endTurn();
 			}
-			tryAndBuildUnit(RobotType.SOLDIER);
+			tryAndBuildUnit(RobotType.LUMBERJACK);
 		}
 	}
 
@@ -121,11 +121,11 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private RobotType determineUnitToSpawn(Direction intendedDirection) throws GameActionException {
-		if (BroadcastManager.getUnitCount(rc, UnitCountInfoType.ALLY_SCOUT) < 3) {
+		/*if (BroadcastManager.getUnitCount(rc, UnitCountInfoType.ALLY_SCOUT) < 3) {
 			return RobotType.SCOUT;
-		} else if (rc.canBuildRobot(RobotType.TANK, intendedDirection)) {
+		} else*/ if (rc.canBuildRobot(RobotType.TANK, intendedDirection)) {
 			return RobotType.TANK;
-		} else if (Math.random() > .8) {
+		} else if (Math.random() > .7) {
 			return RobotType.LUMBERJACK;
 		} else {
 			return RobotType.SOLDIER;
