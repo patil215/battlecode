@@ -11,11 +11,17 @@ public class CombatUnitLogic extends RobotLogic {
 
 	private MapLocation[] enemyArchonLocations;
 	private int archonVisitedIndex;
+	private boolean hasDestination;
+	private final static int GARDENER_HELP_PRIORITY = 3;
+	private final static int ARCHON_HELP_PRIORITY = 2;
+	private final static int MOVE_TOWARDS_COMBAT_PRIORITY = 1;
+	private static int currentDestinationType;
 
 	public CombatUnitLogic(RobotController rc) {
 		super(rc);
 		enemyArchonLocations = rc.getInitialArchonLocations(getEnemyTeam());
 		archonVisitedIndex = 0;
+		currentDestinationType = 0;
 	}
 
 	@Override
@@ -29,17 +35,29 @@ public class CombatUnitLogic extends RobotLogic {
 				// Combat mode
 				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, getEnemyTeam());
 				if (enemyRobots.length > 0) {
+					currentDestinationType = 0;
+					setDestination(null);
 					executeCombat(enemyRobots);
 					endTurn();
 					continue;
+				}
+				
+				MapLocation destination = this.getDestination();
+				if(destination != null && shouldClearLocation(destination)){
+					currentDestinationType = 0;
+					setDestination(null);
 				}
 
 				// Defense mode
 				// Try to help gardeners
 				MapLocation gardenerHelpLocation = BroadcastManager.getRecentLocation(rc,
 						BroadcastManager.LocationInfoType.GARDENER_HELP);
-				if (gardenerHelpLocation != null) {
-					moveTowardsCombat(gardenerHelpLocation, BroadcastManager.LocationInfoType.GARDENER_HELP);
+				if (gardenerHelpLocation != null && currentDestinationType < GARDENER_HELP_PRIORITY) {
+					// moveTowardsCombat(gardenerHelpLocation,
+					// BroadcastManager.LocationInfoType.GARDENER_HELP);
+					setDestination(gardenerHelpLocation);
+					currentDestinationType = GARDENER_HELP_PRIORITY;
+					tryToMoveToDestination();
 					endTurn();
 					continue;
 				}
@@ -47,8 +65,12 @@ public class CombatUnitLogic extends RobotLogic {
 				// Try to help archons
 				MapLocation archonHelpLocation = BroadcastManager.getRecentLocation(rc,
 						BroadcastManager.LocationInfoType.ARCHON_HELP);
-				if (archonHelpLocation != null) {
-					moveTowardsCombat(archonHelpLocation, BroadcastManager.LocationInfoType.ARCHON_HELP);
+				if (archonHelpLocation != null && currentDestinationType < ARCHON_HELP_PRIORITY) {
+					// moveTowardsCombat(archonHelpLocation,
+					// BroadcastManager.LocationInfoType.ARCHON_HELP);
+					setDestination(gardenerHelpLocation);
+					currentDestinationType = ARCHON_HELP_PRIORITY;
+					tryToMoveToDestination();
 					endTurn();
 					continue;
 				}
@@ -56,11 +78,16 @@ public class CombatUnitLogic extends RobotLogic {
 				// Attack mode
 				// If unit is a soldier, wait until we have more than 50 units
 				// to attack. If tank, go for it.
-				if ((rc.getType() == RobotType.SOLDIER && rc.getRobotCount() > SOLDIER_UNIT_COUNT_ATTACK_THRESHOLD)
-						|| rc.getType() == RobotType.TANK) {
+				if (((rc.getType() == RobotType.SOLDIER && rc.getRobotCount() > SOLDIER_UNIT_COUNT_ATTACK_THRESHOLD)
+						|| rc.getType() == RobotType.TANK) && currentDestinationType < MOVE_TOWARDS_COMBAT_PRIORITY) {
 					MapLocation enemyLocation = getEnemyLocation();
 					if (enemyLocation != null) {
-						boolean success = moveTowardsCombat(enemyLocation, BroadcastManager.LocationInfoType.ENEMY);
+						// boolean success = moveTowardsCombat(enemyLocation,
+						// BroadcastManager.LocationInfoType.ENEMY);
+						setDestination(gardenerHelpLocation);
+						currentDestinationType = MOVE_TOWARDS_COMBAT_PRIORITY;
+						boolean success = tryToMoveToDestination();
+
 						if (success) {
 							endTurn();
 							continue;
@@ -69,12 +96,24 @@ public class CombatUnitLogic extends RobotLogic {
 				}
 
 				// Discovery mode, move randomly
-				moveIntelligentlyRandomly();
+				if (currentDestinationType > 0) {
+					tryToMoveToDestination();
+					endTurn();
+				} else {
+					moveIntelligentlyRandomly();
+					endTurn();
+				}
 
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	private boolean shouldClearLocation(MapLocation destination) throws GameActionException {
+		Direction toMove = rc.getLocation().directionTo(destination);
+		RobotInfo frontRobot = rc.senseRobotAtLocation(rc.getLocation().add(toMove));
+		return rc.getLocation().distanceTo(destination)< this.DISTANCE_TO_CLEAR_DESTINATION ||rc.canSenseLocation(destination)&&frontRobot!=null && frontRobot.team==rc.getTeam();
 	}
 
 	private void checkVisitedArchonLocation() {
@@ -120,9 +159,9 @@ public class CombatUnitLogic extends RobotLogic {
 		// Move
 		BulletInfo hittingBullet = getTargetingBullet(surroundingBullets);
 		if (hittingBullet != null) {
-			//moveAndDodge(hittingBullet.getLocation(), surroundingBullets);
+			// moveAndDodge(hittingBullet.getLocation(), surroundingBullets);
 			MapLocation safeLocation = getBulletAvoidingLocation(rc);
-			if(safeLocation != null) {
+			if (safeLocation != null) {
 				move(safeLocation);
 			}
 		}
@@ -142,10 +181,10 @@ public class CombatUnitLogic extends RobotLogic {
 			// Try to get closer to the enemy
 			target = (RobotInfo) getClosestBody(enemyRobots);
 			MapLocation safeLocation = getBulletAvoidingLocation(rc);
-			if(safeLocation != null) {
+			if (safeLocation != null) {
 				move(safeLocation);
 			}
-			//moveAndDodge(target.getLocation(), surroundingBullets);
+			// moveAndDodge(target.getLocation(), surroundingBullets);
 			Direction toMove = moveTowards(target.location);
 			if (toMove != null) {
 				if (rc.canMove(toMove)) {
@@ -158,9 +197,9 @@ public class CombatUnitLogic extends RobotLogic {
 	}
 
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
-		if (rc.canFirePentadShot() && rc.getTeamBullets()>200) {
+		if (rc.canFirePentadShot() && rc.getTeamBullets() > 200) {
 			rc.firePentadShot(rc.getLocation().directionTo(target.location));
-		} else if (rc.canFireTriadShot() && rc.getTeamBullets()>100) {
+		} else if (rc.canFireTriadShot() && rc.getTeamBullets() > 100) {
 			rc.fireTriadShot(rc.getLocation().directionTo(target.location));
 		} else if (rc.canFireSingleShot()) {
 			rc.fireSingleShot(rc.getLocation().directionTo(target.location));

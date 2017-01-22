@@ -169,8 +169,8 @@ public class GardenerLogic extends RobotLogic {
 	private boolean edgeWithinRadius(float radius) throws GameActionException {
 		MapLocation loc = rc.getLocation();
 		float threshold = (float) Math.ceil(radius / 2);
-		return !rc.onTheMap(loc.add(Direction.NORTH, threshold)) || !rc.onTheMap(loc.add(Direction.EAST, threshold))
-				|| !rc.onTheMap(loc.add(Direction.WEST, threshold)) || !rc.onTheMap(loc.add(Direction.SOUTH, threshold));
+		return !rc.onTheMap(loc.add(Direction.getNorth(), threshold)) || !rc.onTheMap(loc.add(Direction.getEast(), threshold))
+				|| !rc.onTheMap(loc.add(Direction.getWest(), threshold)) || !rc.onTheMap(loc.add(Direction.getSouth(), threshold));
 	}
 
 	private boolean isGoodLocation() {

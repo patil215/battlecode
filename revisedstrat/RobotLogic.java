@@ -22,9 +22,20 @@ public abstract class RobotLogic {
 
 	private static boolean FLAG = false;
 
+	private static MapLocation destination;
+
+	private static float distanceToDestination;
+
+	protected static final float DISTANCE_TO_CLEAR_DESTINATION = 2;
+
+	private static Direction lastDirection;
+
+	private static boolean needToSetDirection;
+
 	public RobotLogic(RobotController rc) {
 		this.rc = rc;
 		isLeftUnit = Math.random() > .5;
+		needToSetDirection = true;
 	}
 
 	public abstract void run();
@@ -73,6 +84,92 @@ public abstract class RobotLogic {
 			}
 		}
 		return move;
+	}
+
+	/*
+	 * Sets the destination to the specified location. Used with
+	 * tryToMoveToDestination for path finding.
+	 * 
+	 * Passing in null clears the destination.
+	 */
+	public void setDestination(MapLocation newDesination) {
+		needToSetDirection = true;
+		if (newDesination != null) {
+			destination = newDesination;
+			distanceToDestination = Float.MAX_VALUE;
+			lastDirection = rc.getLocation().directionTo(destination);
+		} else {
+			destination = null;
+			distanceToDestination = 0;
+			lastDirection = null;
+		}
+	}
+
+	public MapLocation getDestination() {
+		return destination;
+	}
+
+	/*
+	 * Tries to move the unit towards the destination using a bug algorithm. Set
+	 * the destination using setDestination.
+	 * 
+	 * Returns true if the robot moved in the desired direction. Otherwise,
+	 * false is returned.
+	 */
+	public boolean tryToMoveToDestination() throws GameActionException {
+		if (destination == null) {
+			return false;
+		}
+		rc.setIndicatorLine(rc.getLocation(), destination, 40, 0, 40);
+		MapLocation currentLocation = rc.getLocation();
+		Direction toMove = rc.getLocation().directionTo(destination);
+		float currentDistance = currentLocation.distanceTo(destination);
+		System.out.println("Current distance is: " + currentDistance + " closest distance is : " + distanceToDestination
+				+ " canMove returns " + rc.canMove(toMove)
+				+ "If the next statement is false, then this unit leans left " + isLeftUnit);
+		if (currentDistance <= distanceToDestination && rc.canMove(toMove)) {
+			rc.move(toMove);
+			distanceToDestination = currentDistance;
+			needToSetDirection = true;
+			lastDirection = toMove;
+			return true;
+		} else if (rc.canMove(toMove)) {
+			if (needToSetDirection) {
+				isLeftUnit = findBestDirection(destination);
+				needToSetDirection = false;
+			}
+			toMove = lastDirection;
+			toMove = moveTowards(toMove);
+			if (toMove != null) {
+				lastDirection = toMove;
+				rc.move(toMove);
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			toMove = moveTowards(toMove);
+			if (toMove != null) {
+				lastDirection = toMove;
+				rc.move(toMove);
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
+
+	private boolean findBestDirection(MapLocation destination2) {
+		Direction toMove = rc.getLocation().directionTo(destination2);
+		for (int count = 0; count < 180; count += 10) {
+			if (rc.canMove(toMove.rotateLeftDegrees(count))) {
+				return true;
+			} else if (rc.canMove(toMove.rotateRightDegrees(count))) {
+				return false;
+			}
+		}
+		System.out.println("Reached. This should never happen if a unit is not trapped.");
+		return false;
 	}
 
 	/*
@@ -473,7 +570,7 @@ public abstract class RobotLogic {
 	}
 
 	protected void econWinIfPossible() throws GameActionException {
-		if (rc.getTeamBullets() >= GameConstants.VICTORY_POINTS_TO_WIN * (7.5 + (rc.getRoundNum())*12.5 / 3000)) {
+		if (rc.getTeamBullets() >= GameConstants.VICTORY_POINTS_TO_WIN * (7.5 + (rc.getRoundNum()) * 12.5 / 3000)) {
 			rc.donate(rc.getTeamBullets());
 		}
 	}
@@ -866,7 +963,6 @@ public abstract class RobotLogic {
 		}
 
 		MapLocation[][] segments = getSegments(bullets);
-
 
 		int byteCodeStart = Clock.getBytecodeNum();
 		while (Clock.getBytecodeNum() - byteCodeStart < 6000) {
