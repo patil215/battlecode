@@ -1,13 +1,14 @@
 package revisedstrat;
 
 import battlecode.common.*;
+import revisedstrat.BroadcastManager.LocationInfoType;
 
 /**
  * Created by patil215 on 1/17/17.
  */
 public class CombatUnitLogic extends RobotLogic {
 
-	private final int SOLDIER_UNIT_COUNT_ATTACK_THRESHOLD = 20;
+	private final int SOLDIER_UNIT_COUNT_ATTACK_THRESHOLD = 15;
 
 	private MapLocation[] enemyArchonLocations;
 	private int archonVisitedIndex;
@@ -41,9 +42,21 @@ public class CombatUnitLogic extends RobotLogic {
 					endTurn();
 					continue;
 				}
-				
+
 				MapLocation destination = this.getDestination();
-				if(destination != null && shouldClearLocation(destination)){
+				if (destination != null && shouldClearLocation(destination)) {
+					switch (currentDestinationType) {
+					case GARDENER_HELP_PRIORITY:
+						BroadcastManager.invalidateLocation(rc, LocationInfoType.GARDENER_HELP);
+						break;
+					case ARCHON_HELP_PRIORITY:
+						BroadcastManager.invalidateLocation(rc, LocationInfoType.ARCHON_HELP);
+						break;
+					case MOVE_TOWARDS_COMBAT_PRIORITY:
+						//TODO: Replace with more detailed analysis of locations.
+						BroadcastManager.invalidateLocation(rc, LocationInfoType.ENEMY);
+						break;
+					}
 					currentDestinationType = 0;
 					setDestination(null);
 				}
@@ -52,14 +65,18 @@ public class CombatUnitLogic extends RobotLogic {
 				// Try to help gardeners
 				MapLocation gardenerHelpLocation = BroadcastManager.getRecentLocation(rc,
 						BroadcastManager.LocationInfoType.GARDENER_HELP);
-				if (gardenerHelpLocation != null && currentDestinationType < GARDENER_HELP_PRIORITY) {
+				if (gardenerHelpLocation != null && currentDestinationType <= GARDENER_HELP_PRIORITY) {
 					// moveTowardsCombat(gardenerHelpLocation,
 					// BroadcastManager.LocationInfoType.GARDENER_HELP);
-					setDestination(gardenerHelpLocation);
-					currentDestinationType = GARDENER_HELP_PRIORITY;
-					tryToMoveToDestination();
-					endTurn();
-					continue;
+					if (currentDestinationType < GARDENER_HELP_PRIORITY || gardenerHelpLocation.x != getDestination().x
+							|| gardenerHelpLocation.y != getDestination().y) {
+
+						setDestination(gardenerHelpLocation);
+						currentDestinationType = GARDENER_HELP_PRIORITY;
+						tryToMoveToDestination();
+						endTurn();
+						continue;
+					}
 				}
 
 				// Try to help archons
@@ -68,11 +85,15 @@ public class CombatUnitLogic extends RobotLogic {
 				if (archonHelpLocation != null && currentDestinationType < ARCHON_HELP_PRIORITY) {
 					// moveTowardsCombat(archonHelpLocation,
 					// BroadcastManager.LocationInfoType.ARCHON_HELP);
-					setDestination(gardenerHelpLocation);
-					currentDestinationType = ARCHON_HELP_PRIORITY;
-					tryToMoveToDestination();
-					endTurn();
-					continue;
+
+					if (currentDestinationType < ARCHON_HELP_PRIORITY || archonHelpLocation.x != getDestination().x
+							|| archonHelpLocation.y != getDestination().y) {
+						setDestination(archonHelpLocation);
+						currentDestinationType = ARCHON_HELP_PRIORITY;
+						tryToMoveToDestination();
+						endTurn();
+						continue;
+					}
 				}
 
 				// Attack mode
@@ -84,13 +105,17 @@ public class CombatUnitLogic extends RobotLogic {
 					if (enemyLocation != null) {
 						// boolean success = moveTowardsCombat(enemyLocation,
 						// BroadcastManager.LocationInfoType.ENEMY);
-						setDestination(gardenerHelpLocation);
-						currentDestinationType = MOVE_TOWARDS_COMBAT_PRIORITY;
-						boolean success = tryToMoveToDestination();
 
-						if (success) {
-							endTurn();
-							continue;
+						if (currentDestinationType < MOVE_TOWARDS_COMBAT_PRIORITY
+								|| enemyLocation.x != getDestination().x || enemyLocation.y != getDestination().y) {
+							setDestination(enemyLocation);
+							currentDestinationType = MOVE_TOWARDS_COMBAT_PRIORITY;
+							boolean success = tryToMoveToDestination();
+
+							if (success) {
+								endTurn();
+								continue;
+							}
 						}
 					}
 				}
@@ -113,7 +138,8 @@ public class CombatUnitLogic extends RobotLogic {
 	private boolean shouldClearLocation(MapLocation destination) throws GameActionException {
 		Direction toMove = rc.getLocation().directionTo(destination);
 		RobotInfo frontRobot = rc.senseRobotAtLocation(rc.getLocation().add(toMove));
-		return rc.getLocation().distanceTo(destination)< this.DISTANCE_TO_CLEAR_DESTINATION ||rc.canSenseLocation(destination)&&frontRobot!=null && frontRobot.team==rc.getTeam();
+		return rc.getLocation().distanceTo(destination) <= this.DISTANCE_TO_CLEAR_DESTINATION
+				|| rc.canSenseLocation(destination) && frontRobot != null && frontRobot.team == rc.getTeam();
 	}
 
 	private void checkVisitedArchonLocation() {
@@ -156,6 +182,8 @@ public class CombatUnitLogic extends RobotLogic {
 	private void executeCombat(RobotInfo[] enemyRobots) throws GameActionException {
 		BulletInfo[] surroundingBullets = rc.senseNearbyBullets();
 
+		BroadcastManager.saveLocation(rc, enemyRobots[0].location, LocationInfoType.ENEMY);
+
 		// Move
 		BulletInfo hittingBullet = getTargetingBullet(surroundingBullets);
 		if (hittingBullet != null) {
@@ -197,9 +225,9 @@ public class CombatUnitLogic extends RobotLogic {
 	}
 
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
-		if (rc.canFirePentadShot() && rc.getTeamBullets() > 200) {
+		if (rc.canFirePentadShot() && rc.getTeamBullets() > 70) {
 			rc.firePentadShot(rc.getLocation().directionTo(target.location));
-		} else if (rc.canFireTriadShot() && rc.getTeamBullets() > 100) {
+		} else if (rc.canFireTriadShot() && rc.getTeamBullets() > 30) {
 			rc.fireTriadShot(rc.getLocation().directionTo(target.location));
 		} else if (rc.canFireSingleShot()) {
 			rc.fireSingleShot(rc.getLocation().directionTo(target.location));
