@@ -92,12 +92,48 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private void buildInitialRoundsUnits() throws GameActionException {
+		System.out.println("Reached");
 		if (rc.getRobotCount() - 1 == rc.getInitialArchonLocations(rc.getTeam()).length) {
-			tryAndBuildUnit(RobotType.LUMBERJACK);
+			float totalDifferenceX = 0;
+			float totalDifferenceY = 0;
+			TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
+			if (nearbyTrees.length != 0) {
+				for (int count = 0; count < 10; count++) {
+					MapLocation randomTree = nearbyTrees[(int) (Math.random() * nearbyTrees.length)].location;
+					totalDifferenceX += rc.getLocation().x - randomTree.x;
+					totalDifferenceY += rc.getLocation().y - randomTree.y;
+				}
+				float treeSpread = (totalDifferenceY + totalDifferenceX);
+				System.out.println(treeSpread);
+				if (Math.abs(treeSpread) < 20) {
+					tryAndBuildUnit(RobotType.LUMBERJACK);
+					System.out.println("First build is lumberjack");
+				} else {
+					tryAndBuildUnit(RobotType.SOLDIER);
+					System.out.println("First build is soldier");
+				}
+			} else{
+				tryAndBuildUnit(RobotType.SOLDIER);
+				System.out.println("First build is soldier");
+			}
 			while (rc.getBuildCooldownTurns() != 0) {
 				endTurn();
 			}
-			tryAndBuildUnit(RobotType.SOLDIER);
+			float closestDistanceToInitialArchon = Float.MAX_VALUE;
+			MapLocation[] enemyArchons = rc.getInitialArchonLocations(getEnemyTeam());
+			for (MapLocation startLocation : enemyArchons) {
+				float distance = rc.getLocation().distanceTo(startLocation);
+				if (distance < closestDistanceToInitialArchon) {
+					closestDistanceToInitialArchon = distance;
+				}
+			}
+			if (closestDistanceToInitialArchon < 50) {
+				tryAndBuildUnit(RobotType.SOLDIER);
+				System.out.println("Second build is soldier");
+			} else {
+				tryAndBuildUnit(RobotType.LUMBERJACK);
+				System.out.println("Second build is lumberjack");
+			}
 		}
 	}
 
@@ -146,11 +182,11 @@ public class GardenerLogic extends RobotLogic {
 	private double getLumberjackSpawnChance() {
 		double senseArea = Math.pow(rc.getType().sensorRadius, 2);
 		double treeArea = 0;
-		TreeInfo [] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
-		for(TreeInfo t: trees){
-			treeArea += Math.pow(t.radius,2);
+		TreeInfo[] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
+		for (TreeInfo t : trees) {
+			treeArea += Math.pow(t.radius, 2);
 		}
-		return treeArea/senseArea;
+		return treeArea / senseArea;
 	}
 
 	private void spawnUnit(Direction direction) throws GameActionException {

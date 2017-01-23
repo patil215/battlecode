@@ -969,10 +969,11 @@ public abstract class RobotLogic {
 		MapLocation[][] segments = getSegments(bullets);
 
 		int byteCodeStart = Clock.getBytecodeNum();
-		int count = 0;
 		System.out.println("Outside");
-		while (count < 5) {
-			count++;
+		while (Clock.getBytecodeNum()-byteCodeStart < 3000) {
+			if(Clock.getBytecodeNum()<byteCodeStart){
+				break;
+			}
 			System.out.println("In loop 2");
 			MapLocation startLoc = getRandomLocation();
 			MapLocation[] conflictingSegment = getClosestLineSegmentWithinThreshold(startLoc, segments, hitRadius);
