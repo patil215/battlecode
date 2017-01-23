@@ -38,8 +38,10 @@ public class GardenerLogic extends RobotLogic {
 
 			while (true) {
 
-				if (!settled && !(DEGENERATE_ELIGIBLE && numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE)) {
-					if (numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER && UNIT_SPAWNER_ELIGIBLE) {
+				if (!settled && !(DEGENERATE_ELIGIBLE
+						&& numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE)) {
+					if (numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER
+							&& UNIT_SPAWNER_ELIGIBLE) {
 						settled = moveTowardsGoodSpot();
 						spawnUnit(Utils.randomDirection());
 					} else {
@@ -175,7 +177,8 @@ public class GardenerLogic extends RobotLogic {
 
 	private boolean isGoodLocation() {
 		try {
-			// Check for free space of certain radius - gives space to spawn trees
+			// Check for free space of certain radius - gives space to spawn
+			// trees
 			return !isCircleOccupiedByTrees(MIN_FREE_SPACE_REQUIREMENT) && !edgeWithinRadius(MIN_FREE_SPACE_REQUIREMENT)
 					&& rc.onTheMap(rc.getLocation().add(0, (float) .01), MIN_FREE_SPACE_REQUIREMENT);
 		} catch (GameActionException e) {
