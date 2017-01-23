@@ -108,6 +108,10 @@ public abstract class RobotLogic {
 	public MapLocation getDestination() {
 		return destination;
 	}
+	
+	public float getClosestDistance(){
+		return distanceToDestination;
+	}
 
 	/*
 	 * Tries to move the unit towards the destination using a bug algorithm. Set
@@ -120,13 +124,13 @@ public abstract class RobotLogic {
 		if (destination == null) {
 			return false;
 		}
-		rc.setIndicatorLine(rc.getLocation(), destination, 40, 0, 40);
+		//rc.setIndicatorLine(rc.getLocation(), destination, 40, 0, 40);
 		MapLocation currentLocation = rc.getLocation();
 		Direction toMove = rc.getLocation().directionTo(destination);
 		float currentDistance = currentLocation.distanceTo(destination);
 		System.out.println("Current distance is: " + currentDistance + " closest distance is : " + distanceToDestination
 				+ " canMove returns " + rc.canMove(toMove)
-				+ "If the next statement is false, then this unit leans left " + isLeftUnit);
+				+ "If the next statement is true, then this unit leans left " + isLeftUnit);
 		if (currentDistance <= distanceToDestination && rc.canMove(toMove)) {
 			rc.move(toMove);
 			distanceToDestination = currentDistance;
@@ -134,10 +138,6 @@ public abstract class RobotLogic {
 			lastDirection = toMove;
 			return true;
 		} else if (rc.canMove(toMove)) {
-			if (needToSetDirection) {
-				isLeftUnit = findBestDirection(destination);
-				needToSetDirection = false;
-			}
 			toMove = lastDirection;
 			toMove = moveTowards(toMove);
 			if (toMove != null) {
@@ -148,6 +148,10 @@ public abstract class RobotLogic {
 				return false;
 			}
 		} else {
+			if (needToSetDirection) {
+				isLeftUnit = findBestDirection(destination);
+				needToSetDirection = false;
+			}
 			toMove = moveTowards(toMove);
 			if (toMove != null) {
 				lastDirection = toMove;
@@ -910,7 +914,7 @@ public abstract class RobotLogic {
 
 		MapLocation[] possibleLocs = new MapLocation[100];
 		int tries = 0;
-		while (Clock.getBytecodeNum() - byteCodeStart < 6000 && tries < possibleLocs.length) {
+		while (Math.abs(Clock.getBytecodeNum() - byteCodeStart) < 6000 && tries < possibleLocs.length) {
 			System.out.println("In loop");
 			tries++;
 			int index = (int) (Math.random() * segments.length);
@@ -965,8 +969,11 @@ public abstract class RobotLogic {
 		MapLocation[][] segments = getSegments(bullets);
 
 		int byteCodeStart = Clock.getBytecodeNum();
-		while (Clock.getBytecodeNum() - byteCodeStart < 6000) {
-			System.out.println("In loop");
+		int count = 0;
+		System.out.println("Outside");
+		while (count < 5) {
+			count++;
+			System.out.println("In loop 2");
 			MapLocation startLoc = getRandomLocation();
 			MapLocation[] conflictingSegment = getClosestLineSegmentWithinThreshold(startLoc, segments, hitRadius);
 			if (conflictingSegment == null && rc.canMove(startLoc)) {

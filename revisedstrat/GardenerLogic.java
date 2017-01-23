@@ -38,8 +38,10 @@ public class GardenerLogic extends RobotLogic {
 
 			while (true) {
 
-				if (!settled && !(DEGENERATE_ELIGIBLE && numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE)) {
-					if (numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER && UNIT_SPAWNER_ELIGIBLE) {
+				if (!settled && !(DEGENERATE_ELIGIBLE
+						&& numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE)) {
+					if (numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER
+							&& UNIT_SPAWNER_ELIGIBLE) {
 						settled = moveTowardsGoodSpot();
 						spawnUnit(Utils.randomDirection());
 					} else {
@@ -95,7 +97,7 @@ public class GardenerLogic extends RobotLogic {
 			while (rc.getBuildCooldownTurns() != 0) {
 				endTurn();
 			}
-			tryAndBuildUnit(RobotType.LUMBERJACK);
+			tryAndBuildUnit(RobotType.SOLDIER);
 		}
 	}
 
@@ -132,11 +134,23 @@ public class GardenerLogic extends RobotLogic {
 		 * 3) { return RobotType.SCOUT; } else
 		 */ if (rc.canBuildRobot(RobotType.TANK, intendedDirection)) {
 			return RobotType.TANK;
-		} else if (Math.random() > .7) {
+		}
+		double chanceToSpawnLumberjack = getLumberjackSpawnChance();
+		if (Math.random() < chanceToSpawnLumberjack) {
 			return RobotType.LUMBERJACK;
 		} else {
 			return RobotType.SOLDIER;
 		}
+	}
+
+	private double getLumberjackSpawnChance() {
+		double senseArea = Math.pow(rc.getType().sensorRadius, 2);
+		double treeArea = 0;
+		TreeInfo [] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
+		for(TreeInfo t: trees){
+			treeArea += Math.pow(t.radius,2);
+		}
+		return treeArea/senseArea;
 	}
 
 	private void spawnUnit(Direction direction) throws GameActionException {
@@ -152,6 +166,9 @@ public class GardenerLogic extends RobotLogic {
 	 * found after the move.
 	 */
 	private boolean moveTowardsGoodSpot() throws GameActionException {
+		if (rc.getBuildCooldownTurns() == 0) {
+			this.tryAndBuildUnit(this.determineUnitToSpawn(Utils.randomDirection()));
+		}
 		// Try to find a free space to settle until 20 turns have elapsed
 		if (!isGoodLocation()) {
 			moveDir = moveWithDiagonalBounce(moveDir);
@@ -169,13 +186,16 @@ public class GardenerLogic extends RobotLogic {
 	private boolean edgeWithinRadius(float radius) throws GameActionException {
 		MapLocation loc = rc.getLocation();
 		float threshold = (float) Math.ceil(radius / 2);
-		return !rc.onTheMap(loc.add(Direction.getNorth(), threshold)) || !rc.onTheMap(loc.add(Direction.getEast(), threshold))
-				|| !rc.onTheMap(loc.add(Direction.getWest(), threshold)) || !rc.onTheMap(loc.add(Direction.getSouth(), threshold));
+		return !rc.onTheMap(loc.add(Direction.getNorth(), threshold))
+				|| !rc.onTheMap(loc.add(Direction.getEast(), threshold))
+				|| !rc.onTheMap(loc.add(Direction.getWest(), threshold))
+				|| !rc.onTheMap(loc.add(Direction.getSouth(), threshold));
 	}
 
 	private boolean isGoodLocation() {
 		try {
-			// Check for free space of certain radius - gives space to spawn trees
+			// Check for free space of certain radius - gives space to spawn
+			// trees
 			return !isCircleOccupiedByTrees(MIN_FREE_SPACE_REQUIREMENT) && !edgeWithinRadius(MIN_FREE_SPACE_REQUIREMENT)
 					&& rc.onTheMap(rc.getLocation().add(0, (float) .01), MIN_FREE_SPACE_REQUIREMENT);
 		} catch (GameActionException e) {

@@ -12,17 +12,21 @@ public class CombatUnitLogic extends RobotLogic {
 
 	private MapLocation[] enemyArchonLocations;
 	private int archonVisitedIndex;
-	private boolean hasDestination;
 	private final static int GARDENER_HELP_PRIORITY = 3;
 	private final static int ARCHON_HELP_PRIORITY = 2;
 	private final static int MOVE_TOWARDS_COMBAT_PRIORITY = 1;
 	private static int currentDestinationType;
+
+	private static MapLocation birthLocation;
+	private static int birthRound;
 
 	public CombatUnitLogic(RobotController rc) {
 		super(rc);
 		enemyArchonLocations = rc.getInitialArchonLocations(getEnemyTeam());
 		archonVisitedIndex = 0;
 		currentDestinationType = 0;
+		birthLocation = rc.getLocation();
+		birthRound = rc.getRoundNum();
 	}
 
 	@Override
@@ -33,18 +37,10 @@ public class CombatUnitLogic extends RobotLogic {
 				// Check if visited archon location and invalidate it
 				checkVisitedArchonLocation();
 
-				// Combat mode
-				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, getEnemyTeam());
-				if (enemyRobots.length > 0) {
-					currentDestinationType = 0;
-					setDestination(null);
-					executeCombat(enemyRobots);
-					endTurn();
-					continue;
-				}
-
 				MapLocation destination = this.getDestination();
 				if (destination != null && shouldClearLocation(destination)) {
+					System.out
+							.println("Trying to clear location currentDestination type is: " + currentDestinationType);
 					switch (currentDestinationType) {
 					case GARDENER_HELP_PRIORITY:
 						BroadcastManager.invalidateLocation(rc, LocationInfoType.GARDENER_HELP);
@@ -53,12 +49,24 @@ public class CombatUnitLogic extends RobotLogic {
 						BroadcastManager.invalidateLocation(rc, LocationInfoType.ARCHON_HELP);
 						break;
 					case MOVE_TOWARDS_COMBAT_PRIORITY:
-						//TODO: Replace with more detailed analysis of locations.
+						// TODO: Replace with more detailed analysis of
+						// locations.
 						BroadcastManager.invalidateLocation(rc, LocationInfoType.ENEMY);
 						break;
 					}
+					System.out.println("reached");
 					currentDestinationType = 0;
 					setDestination(null);
+				}
+
+				// Combat mode
+				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, getEnemyTeam());
+				if (enemyRobots.length > 0) {
+					currentDestinationType = 0;
+					setDestination(null);
+					executeCombat(enemyRobots);
+					endTurn();
+					continue;
 				}
 
 				// Defense mode
@@ -135,11 +143,17 @@ public class CombatUnitLogic extends RobotLogic {
 		}
 	}
 
+	private void updatePanicMode() {
+		Direction toTry = Utils.randomDirection();
+	}
+
 	private boolean shouldClearLocation(MapLocation destination) throws GameActionException {
 		Direction toMove = rc.getLocation().directionTo(destination);
 		RobotInfo frontRobot = rc.senseRobotAtLocation(rc.getLocation().add(toMove));
-		return rc.getLocation().distanceTo(destination) <= this.DISTANCE_TO_CLEAR_DESTINATION
-				|| rc.canSenseLocation(destination) && frontRobot != null && frontRobot.team == rc.getTeam();
+		System.out.println("run");
+		return this.getClosestDistance() <= DISTANCE_TO_CLEAR_DESTINATION
+				|| rc.getLocation().distanceTo(destination) <= DISTANCE_TO_CLEAR_DESTINATION
+				|| (rc.canSenseLocation(destination) && frontRobot != null && frontRobot.team == rc.getTeam());
 	}
 
 	private void checkVisitedArchonLocation() {
@@ -148,7 +162,7 @@ public class CombatUnitLogic extends RobotLogic {
 			return;
 		}
 		if (rc.getLocation().distanceTo(enemyArchonLocations[archonVisitedIndex]) < rc.getType().sensorRadius * 0.8
-				&& rc.senseNearbyRobots(-1, getEnemyTeam()).length > 0) {
+				&& rc.senseNearbyRobots(-1, getEnemyTeam()).length == 0) {
 			// This archon has been visited and there's no one here, move onto
 			// the next one
 			archonVisitedIndex++;
@@ -187,6 +201,7 @@ public class CombatUnitLogic extends RobotLogic {
 		// Move
 		BulletInfo hittingBullet = getTargetingBullet(surroundingBullets);
 		if (hittingBullet != null) {
+			System.out.println("In combat");
 			// moveAndDodge(hittingBullet.getLocation(), surroundingBullets);
 			MapLocation safeLocation = getBulletAvoidingLocation(rc);
 			if (safeLocation != null) {
@@ -200,23 +215,30 @@ public class CombatUnitLogic extends RobotLogic {
 		// optimize
 		// this
 		if (target != null) {
+			System.out.println("Found a target");
 			// Broadcast the location of the target
 			BroadcastManager.saveLocation(rc, target.location, BroadcastManager.LocationInfoType.ENEMY);
 
 			tryAndFireAShot(target);
 
 		} else {
+			// TODO: Refactor
 			// Try to get closer to the enemy
+			System.out.println("Found no target");
 			target = (RobotInfo) getClosestBody(enemyRobots);
-			MapLocation safeLocation = getBulletAvoidingLocation(rc);
-			if (safeLocation != null) {
-				move(safeLocation);
-			}
-			// moveAndDodge(target.getLocation(), surroundingBullets);
-			Direction toMove = moveTowards(target.location);
-			if (toMove != null) {
-				if (rc.canMove(toMove)) {
-					move(toMove);
+			if (target != null) {
+				MapLocation safeLocation = getBulletAvoidingLocation(rc);
+				if (safeLocation != null) {
+					move(safeLocation);
+				}
+				// moveAndDodge(target.getLocation(), surroundingBullets);
+				Direction toMove = moveTowards(target.location);
+				if (toMove != null) {
+					if (rc.canMove(toMove)) {
+						move(toMove);
+					}
+				} else {
+					this.moveWithRandomBounce(Utils.randomDirection());
 				}
 			} else {
 				this.moveWithRandomBounce(Utils.randomDirection());
