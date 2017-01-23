@@ -25,10 +25,16 @@ public class LumberjackLogic extends RobotLogic {
 				 * (enemyRobots.length > 0) { executeCombat(enemyRobots);
 				 * Clock.yield(); continue; }
 				 */
-				
+
 				// Attack enemy if there are no trees to cut
+				boolean foundEnemyToTarget = false;
 				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, getEnemyTeam());
-				if (enemyRobots.length > 0) {
+				for (RobotInfo enemy : enemyRobots) {
+					if (enemy.type != RobotType.SOLDIER && enemy.type != RobotType.TANK) {
+						foundEnemyToTarget = true;
+					}
+				}
+				if (foundEnemyToTarget) {
 					attackEnemy(enemyRobots);
 					endTurn();
 					continue;
@@ -51,7 +57,13 @@ public class LumberjackLogic extends RobotLogic {
 				}
 
 				// Move randomly
-				moveDir = moveWithRandomBounce(moveDir);
+				Direction towardsEnemy = rc.getLocation().directionTo(getRandomEnemyInitialArchonLocation());
+				towardsEnemy = moveTowards(towardsEnemy);
+				if(towardsEnemy!=null){
+					rc.move(towardsEnemy);
+				} else{
+					this.moveDir = this.moveWithRandomBounce(moveDir);
+				}
 				endTurn();
 
 			} catch (Exception e) {
@@ -61,21 +73,70 @@ public class LumberjackLogic extends RobotLogic {
 	}
 
 	private void moveTowardsAndChop(TreeInfo[] trees) throws GameActionException {
-		TreeInfo nearestTree = (TreeInfo) getClosestBody(trees);
-		if (nearestTree != null) {
+		TreeInfo toChop = getTargetTree(trees);
+		if (toChop != null) {
+			Direction toTree = rc.getLocation().directionTo(toChop.location);
+			rc.setIndicatorLine(rc.getLocation(), toChop.location, 80, 80, 0);
+			TreeInfo treeInFront = getClosestTreeThatCanBeChopped(trees);
 			boolean chopped = false;
-			if (rc.canChop(nearestTree.getID())) {
-				rc.chop(nearestTree.getID());
+			if (rc.canChop(toChop.getID())) {
+				rc.chop(toChop.getID());
+				chopped = true;
+			} else if (treeInFront != null && rc.canChop(treeInFront.ID)) {
+				rc.chop(treeInFront.ID);
 				chopped = true;
 			}
 			if (!chopped) {
-				move(moveTowards(nearestTree.getLocation()));
+				Direction toMove = moveTowards(toChop.getLocation());
+				if (toMove != null) {
+					move(toMove);
+				}
 			}
 		}
 	}
 
+	private TreeInfo getClosestTreeThatCanBeChopped(TreeInfo[] trees) {
+		TreeInfo toChop = null;
+		float closestDistance = Float.MAX_VALUE;
+		for(TreeInfo tree: trees){
+			float distance = rc.getLocation().distanceTo(tree.location);
+			if(tree.team!=rc.getTeam() && distance < closestDistance){
+				closestDistance = distance;
+				toChop = tree;
+			}
+		}
+		return toChop;
+	}
+
+	private TreeInfo getTargetTree(TreeInfo[] trees) {
+		boolean foundTreeWithGoodies = false;
+		float distanceToClosestTree = Float.MAX_VALUE;
+		TreeInfo target = null;
+		for (TreeInfo tree : trees) {
+			float distance = rc.getLocation().distanceTo(tree.location);
+			if (foundTreeWithGoodies && tree.containedRobot == null) {
+				System.out.println(1);
+				continue;
+			} else if (foundTreeWithGoodies && distance < distanceToClosestTree) {
+				target = tree;
+				distanceToClosestTree = distance;
+				System.out.println(2);
+			} else if (!foundTreeWithGoodies && tree.containedRobot != null) {
+				target = tree;
+				distanceToClosestTree = distance;
+				foundTreeWithGoodies = true;
+				System.out.println(3);
+			} else if (!foundTreeWithGoodies && distance < distanceToClosestTree) {
+				target = tree;
+				distanceToClosestTree = distance;
+				System.out.println(4);
+			}
+		}
+		return target;
+	}
+
 	private void attackEnemy(RobotInfo[] enemyRobots) throws GameActionException {
-		RobotInfo target = (RobotInfo) getClosestBody(enemyRobots);
+		RobotInfo target = getTarget(enemyRobots);
 		Direction toMove = moveTowards(target.location);
 		if (toMove != null) {
 			move(toMove);
@@ -84,6 +145,19 @@ public class LumberjackLogic extends RobotLogic {
 				+ target.getType().bodyRadius) && rc.canStrike()) {
 			rc.strike();
 		}
+	}
+
+	private RobotInfo getTarget(RobotInfo[] enemyRobots) {
+		RobotInfo closestEnemy = null;
+		float closestDistance = Float.MAX_VALUE;
+		for (RobotInfo enemy : enemyRobots) {
+			float distance = rc.getLocation().distanceTo(enemy.location);
+			if (distance < closestDistance && rc.getType() != RobotType.SOLDIER && rc.getType() != RobotType.TANK) {
+				closestDistance = distance;
+				closestEnemy = enemy;
+			}
+		}
+		return closestEnemy;
 	}
 
 }
