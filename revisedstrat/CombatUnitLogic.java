@@ -196,13 +196,10 @@ public class CombatUnitLogic extends RobotLogic {
 	private void executeCombat(RobotInfo[] enemyRobots) throws GameActionException {
 		BulletInfo[] surroundingBullets = rc.senseNearbyBullets();
 
-		BroadcastManager.saveLocation(rc, enemyRobots[0].location, LocationInfoType.ENEMY);
-
 		// Move
 		BulletInfo hittingBullet = getTargetingBullet(surroundingBullets);
 		if (hittingBullet != null) {
 			System.out.println("In combat");
-			// moveAndDodge(hittingBullet.getLocation(), surroundingBullets);
 			MapLocation safeLocation = getBulletAvoidingLocation(rc);
 			if (safeLocation != null) {
 				move(safeLocation);
@@ -210,38 +207,28 @@ public class CombatUnitLogic extends RobotLogic {
 		}
 
 		// Shoot
-		RobotInfo target = getHighestPriorityTarget(enemyRobots, true); // Wyatt
-																		// will
-		// optimize
-		// this
+		RobotInfo target = getHighestPriorityTarget(enemyRobots, true);
 		if (target != null) {
 			System.out.println("Found a target");
 			// Broadcast the location of the target
 			BroadcastManager.saveLocation(rc, target.location, BroadcastManager.LocationInfoType.ENEMY);
-
 			tryAndFireAShot(target);
-
 		} else {
-			// TODO: Refactor
 			// Try to get closer to the enemy
 			System.out.println("Found no target");
 			target = (RobotInfo) getClosestBody(enemyRobots);
 			if (target != null) {
-				MapLocation safeLocation = getBulletAvoidingLocation(rc);
-				if (safeLocation != null) {
-					move(safeLocation);
-				}
-				// moveAndDodge(target.getLocation(), surroundingBullets);
+				BroadcastManager.saveLocation(rc, target.location, LocationInfoType.ENEMY);
 				Direction toMove = moveTowards(target.location);
 				if (toMove != null) {
 					if (rc.canMove(toMove)) {
 						move(toMove);
 					}
 				} else {
-					this.moveWithRandomBounce(Utils.randomDirection());
+					moveWithRandomBounce(Utils.randomDirection());
 				}
 			} else {
-				this.moveWithRandomBounce(Utils.randomDirection());
+				moveWithRandomBounce(Utils.randomDirection());
 			}
 		}
 	}
@@ -275,6 +262,108 @@ public class CombatUnitLogic extends RobotLogic {
 			return true;
 		}
 		return false;
+	}
+
+	private static class Shot {
+		public enum Type {
+			SINGLE, TRI, PENTA;
+		}
+
+		Direction direction;
+		Type type;
+
+		public Shot(Direction direction, Type type) {
+			this.direction = direction;
+			this.type = type;
+		}
+	}
+
+	private double getPrioritySum(BodyInfo... bodies) {
+		double sum = 0;
+
+		for (BodyInfo body : bodies) {
+			// Friendly trees have negative multiplier of 1
+			// Friendly allies have negative multiplier of 1.5
+			// Enemies have multiplier of 1
+			// Enemy trees have multiplier of 0.75
+
+			if (body == null) {
+				continue;
+			}
+
+			if (body.isRobot()) {
+				RobotInfo robot = (RobotInfo) body;
+				if (robot.getTeam().equals(rc.getTeam())) {
+					sum += -1.5 * Math.abs(robot.getType().attackPower)
+							/ (Math.max(robot.health, 1) * rc.getLocation().distanceTo(robot.getLocation()));
+				} else {
+					sum += Math.abs(robot.getType().attackPower)
+							/ (Math.max(robot.health, 1) * rc.getLocation().distanceTo(robot.getLocation()));
+				}
+			}
+		}
+		return sum;
+	}
+
+	private Shot getOptimalShot() {
+		int startBytecode = Clock.getBytecodeNum();
+		AimManager aimManager = new AimManager(rc);
+
+		double maxSingleSum = Double.NEGATIVE_INFINITY;
+		int maxSingleDirection = 0;
+
+		double maxTripleSum = Double.NEGATIVE_INFINITY;
+		int maxTripleDirection = 0;
+
+		double maxPentaSum = Double.NEGATIVE_INFINITY;
+		int maxPentaDirection = 0;
+
+		for (int i = 0; i < 360; i += 10) {
+			int start = Clock.getBytecodeNum();
+			System.out.println("beginning query at " + start);
+			BodyInfo singleShot = aimManager.getTargetSingleShot(new Direction(i));
+			BodyInfo[] tripleShot = aimManager.getTargetTripleShot(new Direction(i));
+			BodyInfo[] pentaShot = aimManager.getTargetPentadShot(new Direction(i));
+
+			double singleSum = getPrioritySum(singleShot);
+			if (singleSum > maxSingleSum) {
+				maxSingleDirection = i;
+				maxSingleSum = singleSum;
+			}
+
+			double tripleSum = getPrioritySum(tripleShot);
+			if (tripleSum > maxTripleSum) {
+				maxTripleDirection = i;
+				maxTripleSum = tripleSum;
+			}
+
+			double pentaSum = getPrioritySum(pentaShot);
+			if (pentaSum > maxPentaSum) {
+				maxPentaDirection = i;
+				maxPentaSum = pentaSum;
+			}
+		}
+
+		double bestShotSum = maxSingleSum;
+		Shot shot = new Shot(new Direction(maxSingleDirection), Shot.Type.SINGLE);
+
+		if (maxTripleSum - 0.01 > bestShotSum) {
+			bestShotSum = maxTripleSum;
+			shot.direction = new Direction(maxTripleDirection);
+			shot.type = Shot.Type.TRI;
+		}
+
+		if (maxPentaSum - 0.01 > bestShotSum) {
+			shot.direction = new Direction(maxPentaDirection);
+			shot.type = Shot.Type.PENTA;
+		}
+
+		if (bestShotSum <= 0) {
+			return null;
+		}
+
+		return shot;
+
 	}
 
 }

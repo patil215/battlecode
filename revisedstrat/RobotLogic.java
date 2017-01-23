@@ -985,4 +985,20 @@ public abstract class RobotLogic {
 		return null;
 	}
 
+	static int bytecodeNum;
+	static String trackingId;
+
+	public static void startTrackingBytecode(String id) {
+		bytecodeNum = Clock.getBytecodeNum();
+		trackingId = id;
+		StringBuilder sb = new StringBuilder().append(id).append(", ").append(bytecodeNum).append(" bt current");
+		System.out.println(sb.toString());
+	}
+
+	public static void printBytecodeUsed() {
+		int currentBytecode = Clock.getBytecodeNum();
+		StringBuilder sb = new StringBuilder().append(trackingId).append(", ").append(currentBytecode - bytecodeNum).append(" bt used");
+		System.out.println(sb.toString());
+	}
+
 }
