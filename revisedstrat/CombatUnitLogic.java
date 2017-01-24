@@ -107,8 +107,7 @@ public class CombatUnitLogic extends RobotLogic {
 				// Attack mode
 				// If unit is a soldier, wait until we have more than 50 units
 				// to attack. If tank, go for it.
-				if (((rc.getType() == RobotType.SOLDIER && rc.getRobotCount() > SOLDIER_UNIT_COUNT_ATTACK_THRESHOLD)
-						|| rc.getType() == RobotType.TANK) && currentDestinationType < MOVE_TOWARDS_COMBAT_PRIORITY) {
+				if (currentDestinationType < MOVE_TOWARDS_COMBAT_PRIORITY) {
 					MapLocation enemyLocation = getEnemyLocation();
 					if (enemyLocation != null) {
 						// boolean success = moveTowardsCombat(enemyLocation,
@@ -141,10 +140,6 @@ public class CombatUnitLogic extends RobotLogic {
 				e.printStackTrace();
 			}
 		}
-	}
-
-	private void updatePanicMode() {
-		Direction toTry = Utils.randomDirection();
 	}
 
 	private boolean shouldClearLocation(MapLocation destination) throws GameActionException {
