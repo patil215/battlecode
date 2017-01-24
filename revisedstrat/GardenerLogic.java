@@ -54,13 +54,13 @@ public class GardenerLogic extends RobotLogic {
 						numRoundsSettling++;
 						settled = moveTowardsGoodSpot();
 					}
+					detectTreesAndAskLumberjacksForHelp();
 				} else {
 					settled = true;
 					createTreeRingAndSpawnUnits();
 				}
 
 				sendHelpBroadcastIfNeeded();
-				detectTreesAndAskLumberjacksForHelp();
 				waterLowestHealthTree();
 
 				endTurn();
