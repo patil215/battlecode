@@ -8,30 +8,35 @@ import revisedstrat.BroadcastManager.LocationInfoType;
  */
 public class GardenerLogic extends RobotLogic {
 
-	private Direction moveDir;
+	private final int NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE = 200;
+	private final int NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE = 300;
 	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER = 50;
+	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = 25;
+	private final float MIN_FREE_SPACE_REQUIREMENT = 5;
+
+	private Direction moveDir;
 	private final boolean UNIT_SPAWNER_ELIGIBLE;
 	private final boolean DEGENERATE_ELIGIBLE;
-	private final int NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE = 300;
-	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = 25;
-	private final int UNIT_SPAWNER_THRESHOLD = 200;
 	private final boolean SHOULD_SPAWN_TANKS;
-	private final float MIN_FREE_SPACE_REQUIREMENT = 5;
 
 	public GardenerLogic(RobotController rc) {
 		super(rc);
+		moveDir = Utils.diagonalDirection();
+
 		double TANK_SPAWNER_CHANCE = rc.getRoundNum() * 2.0 / rc.getRoundLimit();
 		SHOULD_SPAWN_TANKS = Math.random() < TANK_SPAWNER_CHANCE
-				&& !(rc.getRobotCount() - 1 == rc.getInitialArchonLocations(rc.getTeam()).length);
-		moveDir = Utils.diagonalDirection();
-		UNIT_SPAWNER_ELIGIBLE = rc.getRoundNum() > UNIT_SPAWNER_THRESHOLD;
+				&& !(rc.getRobotCount() - 1 == allyArchonLocations.length);
+		UNIT_SPAWNER_ELIGIBLE = rc.getRoundNum() > NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE;
 		DEGENERATE_ELIGIBLE = rc.getRoundNum() < NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE;
 	}
+
+	// TODO: make gardener only send help broadcast every 50 rounds
 
 	@Override
 	public void run() {
 
 		try {
+
 			buildInitialRoundsUnits();
 
 			int numRoundsSettling = 0;
@@ -49,15 +54,14 @@ public class GardenerLogic extends RobotLogic {
 						numRoundsSettling++;
 						settled = moveTowardsGoodSpot();
 					}
+					detectTreesAndAskLumberjacksForHelp();
 				} else {
 					settled = true;
 					createTreeRingAndSpawnUnits();
 				}
 
-				detectEnemiesAndSendHelpBroadcast();
-				detectTreesAndAskLumberjacksForHelp();
+				sendHelpBroadcastIfNeeded();
 				waterLowestHealthTree();
-				drawBullshitLine();
 
 				endTurn();
 			}
@@ -69,17 +73,15 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private void detectTreesAndAskLumberjacksForHelp() throws GameActionException {
-		TreeInfo [] treesInWay = rc.senseNearbyTrees(5, Team.NEUTRAL);
-		if(treesInWay.length!=0){
+		TreeInfo[] treesInWay = rc.senseNearbyTrees(MIN_FREE_SPACE_REQUIREMENT, Team.NEUTRAL);
+		if (treesInWay.length > 0) {
 			BroadcastManager.saveLocation(rc, treesInWay[0].location, LocationInfoType.LUMBERJACK_GET_HELP);
 		}
 	}
 
 	private void createTreeRingAndSpawnUnits() throws GameActionException {
 
-		Direction archonOppositeLocation = rc.getLocation().directionTo(rc.getInitialArchonLocations(rc.getTeam())[0])
-				.opposite();
-		rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(archonOppositeLocation), 255, 255, 255);
+		Direction archonOppositeLocation = rc.getLocation().directionTo(allyArchonLocations[0]).opposite();
 		if (rc.getBuildCooldownTurns() == 0) {
 			Direction startAngle;
 			if (SHOULD_SPAWN_TANKS) {
@@ -99,53 +101,56 @@ public class GardenerLogic extends RobotLogic {
 		}
 	}
 
+	private float getNearbyTreeSpread(TreeInfo[] nearbyTrees) {
+		float totalDifferenceX = 0;
+		float totalDifferenceY = 0;
+		for (int count = 0; count < 10; count++) {
+			MapLocation randomTree = nearbyTrees[(int) (Math.random() * nearbyTrees.length)].location;
+			totalDifferenceX += rc.getLocation().x - randomTree.x;
+			totalDifferenceY += rc.getLocation().y - randomTree.y;
+		}
+		return (totalDifferenceY + totalDifferenceX);
+	}
+
 	private void buildInitialRoundsUnits() throws GameActionException {
-		System.out.println("Reached");
-		if (rc.getRobotCount() - 1 == rc.getInitialArchonLocations(rc.getTeam()).length) {
-			float totalDifferenceX = 0;
-			float totalDifferenceY = 0;
+		if (rc.getRobotCount() - 1 == allyArchonLocations.length) {
+			// Build first unit depending on tree density
 			TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
 			if (nearbyTrees.length != 0) {
-				for (int count = 0; count < 10; count++) {
-					MapLocation randomTree = nearbyTrees[(int) (Math.random() * nearbyTrees.length)].location;
-					totalDifferenceX += rc.getLocation().x - randomTree.x;
-					totalDifferenceY += rc.getLocation().y - randomTree.y;
-				}
-				float treeSpread = (totalDifferenceY + totalDifferenceX);
-				System.out.println(treeSpread);
+				float treeSpread = getNearbyTreeSpread(nearbyTrees);
 				if (Math.abs(treeSpread) < 20) {
-					tryAndBuildUnit(RobotType.LUMBERJACK);
-					System.out.println("First build is lumberjack");
+					tryToBuildUnit(RobotType.LUMBERJACK);
 				} else {
-					tryAndBuildUnit(RobotType.SOLDIER);
-					System.out.println("First build is soldier");
+					tryToBuildUnit(RobotType.SOLDIER);
 				}
 			} else {
-				tryAndBuildUnit(RobotType.SOLDIER);
-				System.out.println("First build is soldier");
+				tryToBuildUnit(RobotType.SOLDIER);
 			}
+
+			// Wait until we can build second unit
 			while (rc.getBuildCooldownTurns() != 0) {
 				endTurn();
 			}
-			float closestDistanceToInitialArchon = Float.MAX_VALUE;
-			MapLocation[] enemyArchons = rc.getInitialArchonLocations(getEnemyTeam());
+
+			// Build second unit depending on how far archons are from each
+			// other
+			float closestEnemyArchonDistance = Float.MAX_VALUE;
+			MapLocation[] enemyArchons = enemyArchonLocations;
 			for (MapLocation startLocation : enemyArchons) {
 				float distance = rc.getLocation().distanceTo(startLocation);
-				if (distance < closestDistanceToInitialArchon) {
-					closestDistanceToInitialArchon = distance;
+				if (distance < closestEnemyArchonDistance) {
+					closestEnemyArchonDistance = distance;
 				}
 			}
-			if (closestDistanceToInitialArchon < 50) {
-				tryAndBuildUnit(RobotType.SOLDIER);
-				System.out.println("Second build is soldier");
+			if (closestEnemyArchonDistance < 50) {
+				tryToBuildUnit(RobotType.SOLDIER);
 			} else {
-				tryAndBuildUnit(RobotType.LUMBERJACK);
-				System.out.println("Second build is lumberjack");
+				tryToBuildUnit(RobotType.LUMBERJACK);
 			}
 		}
 	}
 
-	private void tryAndBuildUnit(RobotType toBuild) throws GameActionException {
+	private void tryToBuildUnit(RobotType toBuild) throws GameActionException {
 		Direction test = Direction.getNorth();
 		for (int deltaDegree = 0; deltaDegree < 360; deltaDegree++) {
 			if (rc.canBuildRobot(toBuild, test.rotateLeftDegrees(deltaDegree))) {
@@ -155,8 +160,17 @@ public class GardenerLogic extends RobotLogic {
 		}
 	}
 
+	private void spawnUnit(Direction direction) throws GameActionException {
+		if (rc.getBuildCooldownTurns() == 0 && rc.getTeamBullets() >= 100) {
+			RobotType typeToBuild = determineUnitToSpawn(direction);
+			if (rc.canBuildRobot(typeToBuild, direction)) {
+				rc.buildRobot(typeToBuild, direction);
+			}
+		}
+	}
+
 	private void waterLowestHealthTree() throws GameActionException {
-		TreeInfo[] trees = rc.senseNearbyTrees(-1, rc.getTeam());
+		TreeInfo[] trees = rc.senseNearbyTrees(-1, allyTeam);
 		if (trees.length > 0) {
 			int minHealthID = -1;
 			float minHealth = Float.MAX_VALUE;
@@ -173,10 +187,7 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private RobotType determineUnitToSpawn(Direction intendedDirection) throws GameActionException {
-		/*
-		 * if (BroadcastManager.getUnitCount(rc, UnitCountInfoType.ALLY_SCOUT) <
-		 * 3) { return RobotType.SCOUT; } else
-		 */ if (rc.canBuildRobot(RobotType.TANK, intendedDirection)) {
+		if (rc.canBuildRobot(RobotType.TANK, intendedDirection)) {
 			return RobotType.TANK;
 		}
 		double chanceToSpawnLumberjack = getLumberjackSpawnChance();
@@ -199,13 +210,6 @@ public class GardenerLogic extends RobotLogic {
 		return treeArea / senseArea;
 	}
 
-	private void spawnUnit(Direction direction) throws GameActionException {
-		if (rc.canBuildRobot(RobotType.LUMBERJACK, direction) && rc.getBuildCooldownTurns() == 0
-				&& rc.getTeamBullets() >= 100) {
-			RobotType typeToBuild = determineUnitToSpawn(direction);
-			rc.buildRobot(typeToBuild, direction);
-		}
-	}
 
 	/*
 	 * Attempts to move to a good location. Returns true if a good location was
@@ -213,7 +217,7 @@ public class GardenerLogic extends RobotLogic {
 	 */
 	private boolean moveTowardsGoodSpot() throws GameActionException {
 		if (rc.getBuildCooldownTurns() == 0) {
-			this.tryAndBuildUnit(this.determineUnitToSpawn(Utils.randomDirection()));
+			tryToBuildUnit(determineUnitToSpawn(Utils.randomDirection()));
 		}
 		// Try to find a free space to settle until 20 turns have elapsed
 		if (!isGoodLocation()) {
@@ -224,18 +228,17 @@ public class GardenerLogic extends RobotLogic {
 		}
 	}
 
+	private void sendHelpBroadcastIfNeeded() throws GameActionException {
+		RobotInfo[] foes = rc.senseNearbyRobots(-1, enemyTeam);
+
+		if (foes.length > 0) {
+			BroadcastManager.saveLocation(rc, foes[0].location, BroadcastManager.LocationInfoType.GARDENER_HELP);
+		}
+	}
+
 	private boolean isCircleOccupiedByTrees(float radius) {
 		TreeInfo[] trees = rc.senseNearbyTrees(radius);
 		return trees.length > 0;
-	}
-
-	private boolean edgeWithinRadius(float radius) throws GameActionException {
-		MapLocation loc = rc.getLocation();
-		float threshold = (float) Math.ceil(radius / 2);
-		return !rc.onTheMap(loc.add(Direction.getNorth(), threshold))
-				|| !rc.onTheMap(loc.add(Direction.getEast(), threshold))
-				|| !rc.onTheMap(loc.add(Direction.getWest(), threshold))
-				|| !rc.onTheMap(loc.add(Direction.getSouth(), threshold));
 	}
 
 	private boolean isGoodLocation() {

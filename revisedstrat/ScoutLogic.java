@@ -36,7 +36,7 @@ public class ScoutLogic extends RobotLogic {
 					isDead = true;
 				}
 				// Check if we have company
-				RobotInfo[] foes = rc.senseNearbyRobots(-1, getEnemyTeam());
+				RobotInfo[] foes = rc.senseNearbyRobots(-1, enemyTeam);
 				boolean foundEconUnit = false;
 				for (RobotInfo info : foes) {
 					if (info.type == RobotType.GARDENER || (info.type == RobotType.ARCHON && rc.getRoundNum() > 200)) {
@@ -97,7 +97,7 @@ public class ScoutLogic extends RobotLogic {
 			if (toMove != null) {
 				move(toMove);
 			}
-			if (rc.canSenseLocation(destination)/* && rc.senseNearbyRobots(-1, getEnemyTeam()).length == 0*/) {
+			if (rc.canSenseLocation(destination)/* && rc.senseNearbyRobots(-1, enemyTeam).length == 0*/) {
 				destination = null;
 			}
 		}
@@ -145,7 +145,7 @@ public class ScoutLogic extends RobotLogic {
 			/*
 			 * RobotInfo potentialTarget =
 			 * getHighestPriorityTarget(rc.senseNearbyRobots(-1,
-			 * getEnemyTeam()), false); if (potentialTarget != null &&
+			 * enemyTeam), false); if (potentialTarget != null &&
 			 * rc.canFireSingleShot()) {
 			 * rc.fireSingleShot(rc.getLocation().directionTo(potentialTarget.
 			 * location)); }

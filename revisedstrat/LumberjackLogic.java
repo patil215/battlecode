@@ -9,10 +9,13 @@ import revisedstrat.BroadcastManager.LocationInfoType;
 public class LumberjackLogic extends RobotLogic {
 
 	Direction moveDir;
+	boolean respondToBroadcast;
 
 	public LumberjackLogic(RobotController rc) {
 		super(rc);
 		moveDir = Utils.randomDirection();
+		// TODO: Replace with actual logic
+		respondToBroadcast = Math.random() > .5;
 	}
 
 	@Override
@@ -22,14 +25,14 @@ public class LumberjackLogic extends RobotLogic {
 
 				/*
 				 * // Combat mode RobotInfo[] enemyRobots =
-				 * rc.senseNearbyRobots(-1, getEnemyTeam()); if
+				 * rc.senseNearbyRobots(-1, enemyTeam); if
 				 * (enemyRobots.length > 0) { executeCombat(enemyRobots);
 				 * Clock.yield(); continue; }
 				 */
 
 				// Attack enemy if there are no trees to cut
 				boolean foundEnemyToTarget = false;
-				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, getEnemyTeam());
+				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
 				for (RobotInfo enemy : enemyRobots) {
 					if (enemy.type != RobotType.SOLDIER && enemy.type != RobotType.TANK) {
 						foundEnemyToTarget = true;
@@ -42,30 +45,39 @@ public class LumberjackLogic extends RobotLogic {
 				}
 
 				// Tree cutting mode
-				TreeInfo[] enemyTrees = rc.senseNearbyTrees(-1, getEnemyTeam());
+				TreeInfo[] enemyTrees = rc.senseNearbyTrees(-1, enemyTeam);
 				if (enemyTrees.length > 0) {
 					moveTowardsAndChop(enemyTrees);
 					endTurn();
 					continue;
 				}
 
-				if (getDestination() != null) {
-					moveTowardsAndChop(getDestination());
-					if (rc.getLocation().distanceTo(getDestination()) < DISTANCE_TO_CLEAR_DESTINATION) {
-						setDestination(null);
+				TreeInfo[] neutralTrees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
+				TreeInfo toChop = getTargetTree(neutralTrees);
+
+				if (respondToBroadcast) {
+					if (toChop != null && toChop.containedRobot != null
+							&& (this.getDestination() == null || getDestination().x != toChop.getLocation().x
+									|| getDestination().y != toChop.getLocation().y)) {
+						this.setDestination(toChop.location);
 					}
-					endTurn();
-					continue;
-				} else {
-					MapLocation destination = BroadcastManager.getRecentLocation(rc, LocationInfoType.LUMBERJACK_GET_HELP);
-					this.setDestination(destination);
-					if(Math.random()>.3){
+
+					if (getDestination() != null) {
+						moveTowardsAndChop(getDestination());
+						if (rc.getLocation().distanceTo(getDestination()) < DISTANCE_TO_CLEAR_DESTINATION) {
+							setDestination(null);
+						}
+						endTurn();
+						continue;
+					} else {
+						MapLocation destination = BroadcastManager.getRecentLocation(rc,
+								LocationInfoType.LUMBERJACK_GET_HELP);
+						this.setDestination(destination);
 						BroadcastManager.invalidateLocation(rc, LocationInfoType.LUMBERJACK_GET_HELP);
 					}
 				}
 
 				// Neutral tree cutting mode
-				TreeInfo[] neutralTrees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
 				if (neutralTrees.length > 0) {
 					moveTowardsAndChop(neutralTrees);
 					endTurn();
@@ -73,10 +85,14 @@ public class LumberjackLogic extends RobotLogic {
 				}
 
 				// Move randomly
-				Direction towardsEnemy = rc.getLocation().directionTo(getRandomEnemyInitialArchonLocation());
+				MapLocation archonLocation = getRandomEnemyInitialArchonLocation();
+				Direction towardsEnemy = rc.getLocation().directionTo(archonLocation);
 				towardsEnemy = moveTowards(towardsEnemy);
 				if (towardsEnemy != null) {
 					rc.move(towardsEnemy);
+					if(rc.canSenseLocation(archonLocation)){
+						respondToBroadcast=true;
+					}
 				} else {
 					this.moveDir = this.moveWithRandomBounce(moveDir);
 				}
@@ -113,21 +129,34 @@ public class LumberjackLogic extends RobotLogic {
 	}
 
 	private void moveTowardsAndChop(MapLocation destination) throws GameActionException {
-		Direction toTree = rc.getLocation().directionTo(destination);
 		rc.setIndicatorLine(rc.getLocation(), destination, 80, 80, 0);
 		TreeInfo[] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
-		TreeInfo treeInFront = getClosestTreeThatCanBeChopped(trees);
+		TreeInfo treeInFront = getClosestTreeThatCanBeChopped(trees, rc.getLocation().directionTo(destination));
 		boolean chopped = false;
 		if (treeInFront != null && rc.canChop(treeInFront.ID)) {
 			rc.chop(treeInFront.ID);
 			chopped = true;
 		}
 		if (!chopped) {
-			Direction toMove = moveTowards(destination);
-			if (toMove != null) {
-				move(toMove);
+			this.tryToMoveToDestination();
+		}
+	}
+
+	/*
+	 * Passed direction is the direction that you want to move.
+	 */
+	private TreeInfo getClosestTreeThatCanBeChopped(TreeInfo[] trees, Direction directionTo) {
+		TreeInfo toChop = null;
+		float closestDistance = Float.MAX_VALUE;
+		for (TreeInfo tree : trees) {
+			float distance = rc.getLocation().distanceTo(tree.location);
+			if (Math.abs(rc.getLocation().directionTo(tree.location).degreesBetween(directionTo)) < 90
+					&& tree.team != rc.getTeam() && distance < closestDistance) {
+				closestDistance = distance;
+				toChop = tree;
 			}
 		}
+		return toChop;
 	}
 
 	private TreeInfo getClosestTreeThatCanBeChopped(TreeInfo[] trees) {
@@ -135,7 +164,7 @@ public class LumberjackLogic extends RobotLogic {
 		float closestDistance = Float.MAX_VALUE;
 		for (TreeInfo tree : trees) {
 			float distance = rc.getLocation().distanceTo(tree.location);
-			if (tree.team != rc.getTeam() && distance < closestDistance) {
+			if (tree.team != allyTeam && distance < closestDistance) {
 				closestDistance = distance;
 				toChop = tree;
 			}

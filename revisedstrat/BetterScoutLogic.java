@@ -21,7 +21,7 @@ public class BetterScoutLogic extends RobotLogic {
 
 			try {
 
-				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, getEnemyTeam());
+				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
 				RobotInfo closestEconUnit = findClosestEconUnit(enemyRobots);
 
 				if (closestEconUnit != null) {
