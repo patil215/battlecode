@@ -25,14 +25,14 @@ public class LumberjackLogic extends RobotLogic {
 
 				/*
 				 * // Combat mode RobotInfo[] enemyRobots =
-				 * rc.senseNearbyRobots(-1, getEnemyTeam()); if
+				 * rc.senseNearbyRobots(-1, enemyTeam); if
 				 * (enemyRobots.length > 0) { executeCombat(enemyRobots);
 				 * Clock.yield(); continue; }
 				 */
 
 				// Attack enemy if there are no trees to cut
 				boolean foundEnemyToTarget = false;
-				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, getEnemyTeam());
+				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
 				for (RobotInfo enemy : enemyRobots) {
 					if (enemy.type != RobotType.SOLDIER && enemy.type != RobotType.TANK) {
 						foundEnemyToTarget = true;
@@ -45,7 +45,7 @@ public class LumberjackLogic extends RobotLogic {
 				}
 
 				// Tree cutting mode
-				TreeInfo[] enemyTrees = rc.senseNearbyTrees(-1, getEnemyTeam());
+				TreeInfo[] enemyTrees = rc.senseNearbyTrees(-1, enemyTeam);
 				if (enemyTrees.length > 0) {
 					moveTowardsAndChop(enemyTrees);
 					endTurn();
@@ -164,7 +164,7 @@ public class LumberjackLogic extends RobotLogic {
 		float closestDistance = Float.MAX_VALUE;
 		for (TreeInfo tree : trees) {
 			float distance = rc.getLocation().distanceTo(tree.location);
-			if (tree.team != rc.getTeam() && distance < closestDistance) {
+			if (tree.team != allyTeam && distance < closestDistance) {
 				closestDistance = distance;
 				toChop = tree;
 			}

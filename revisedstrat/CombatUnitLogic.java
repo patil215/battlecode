@@ -10,7 +10,6 @@ public class CombatUnitLogic extends RobotLogic {
 
 	private final int SOLDIER_UNIT_COUNT_ATTACK_THRESHOLD = 15;
 
-	private MapLocation[] enemyArchonLocations;
 	private int archonVisitedIndex;
 	private final static int GARDENER_HELP_PRIORITY = 3;
 	private final static int ARCHON_HELP_PRIORITY = 2;
@@ -22,7 +21,6 @@ public class CombatUnitLogic extends RobotLogic {
 
 	public CombatUnitLogic(RobotController rc) {
 		super(rc);
-		enemyArchonLocations = rc.getInitialArchonLocations(getEnemyTeam());
 		archonVisitedIndex = 0;
 		currentDestinationType = 0;
 		birthLocation = rc.getLocation();
@@ -60,7 +58,7 @@ public class CombatUnitLogic extends RobotLogic {
 				}
 
 				// Combat mode
-				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, getEnemyTeam());
+				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
 				if (enemyRobots.length > 0) {
 					currentDestinationType = 0;
 					setDestination(null);
@@ -148,7 +146,7 @@ public class CombatUnitLogic extends RobotLogic {
 		System.out.println("run");
 		return this.getClosestDistance() <= DISTANCE_TO_CLEAR_DESTINATION
 				|| rc.getLocation().distanceTo(destination) <= DISTANCE_TO_CLEAR_DESTINATION
-				|| (rc.canSenseLocation(destination) && frontRobot != null && frontRobot.team == rc.getTeam());
+				|| (rc.canSenseLocation(destination) && frontRobot != null && frontRobot.team == allyTeam);
 	}
 
 	private void checkVisitedArchonLocation() {
@@ -157,7 +155,7 @@ public class CombatUnitLogic extends RobotLogic {
 			return;
 		}
 		if (rc.getLocation().distanceTo(enemyArchonLocations[archonVisitedIndex]) < rc.getType().sensorRadius * 0.8
-				&& rc.senseNearbyRobots(-1, getEnemyTeam()).length == 0) {
+				&& rc.senseNearbyRobots(-1, enemyTeam).length == 0) {
 			// This archon has been visited and there's no one here, move onto
 			// the next one
 			archonVisitedIndex++;
@@ -288,7 +286,7 @@ public class CombatUnitLogic extends RobotLogic {
 
 			if (body.isRobot()) {
 				RobotInfo robot = (RobotInfo) body;
-				if (robot.getTeam().equals(rc.getTeam())) {
+				if (robot.getTeam().equals(allyTeam)) {
 					sum += -1.5 * Math.abs(robot.getType().attackPower)
 							/ (Math.max(robot.health, 1) * rc.getLocation().distanceTo(robot.getLocation()));
 				} else {
