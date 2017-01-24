@@ -202,7 +202,9 @@ public class CombatUnitLogic extends RobotLogic {
 		}
 
 		// Shoot
+		System.out.println("Start bytecode for highestPriorityTarget = " + Clock.getBytecodeNum());
 		RobotInfo target = getHighestPriorityTarget(enemyRobots, true);
+		System.out.println("End bytecode for highestPriorityTarget = " + Clock.getBytecodeNum());
 		if (target != null) {
 			System.out.println("Found a target");
 			// Broadcast the location of the target
@@ -244,12 +246,12 @@ public class CombatUnitLogic extends RobotLogic {
 		Team opponent = rc.getTeam().opponent();
 		float radius = rc.getType().sensorRadius;
 
-		if (getFirstHitTeam(currLoc, toTarget.rotateLeftDegrees(-20),
+		if (getFirstHitTeamAprox(currLoc, toTarget.rotateLeftDegrees(-20),
 				true, radius) == opponent) {
 			numHit++;
 		}
 
-		if (getFirstHitTeam(currLoc, toTarget.rotateLeftDegrees(20),
+		if (getFirstHitTeamAprox(currLoc, toTarget.rotateLeftDegrees(20),
 				true, radius) == rc.getTeam().opponent()) {
 			numHit++;
 		}
@@ -266,13 +268,13 @@ public class CombatUnitLogic extends RobotLogic {
 		Team opponent = rc.getTeam().opponent();
 		float radius = rc.getType().sensorRadius;
 
-		if (getFirstHitTeam(currLoc, toTarget.rotateRightDegrees(GameConstants.PENTAD_SPREAD_DEGREES*2),
+		if (getFirstHitTeamAprox(currLoc, toTarget.rotateRightDegrees(GameConstants.PENTAD_SPREAD_DEGREES*2),
 				true, radius) == opponent) {
 			System.out.println("Found right target");
 			return true;
 		}
 
-		if (getFirstHitTeam(currLoc, toTarget.rotateLeftDegrees(GameConstants.PENTAD_SPREAD_DEGREES*2),
+		if (getFirstHitTeamAprox(currLoc, toTarget.rotateLeftDegrees(GameConstants.PENTAD_SPREAD_DEGREES*2),
 				true, radius) == opponent) {
 			System.out.println("Found left target");
 			return true;
@@ -282,16 +284,23 @@ public class CombatUnitLogic extends RobotLogic {
 	}
 
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
+		int startByteCode = Clock.getBytecodeNum();
 		Direction shotDir = rc.getLocation().directionTo(target.location);
 		if (rc.canFireSingleShot()) {
 			if (shouldFirePentadShot(target) && rc.canFirePentadShot()) {
 				rc.firePentadShot(shotDir);
-			} else {
+			} else if(Math.abs(Clock.getBytecodeNum()-startByteCode)<4000){
 				if (shouldFireTriShot(target) && rc.canFireTriadShot()) {
 					rc.fireTriadShot(shotDir);
 				} else {
 					rc.fireSingleShot(shotDir);
 				}
+			} else if(rc.canFirePentadShot()){
+				rc.firePentadShot(shotDir);
+			} else if(rc.canFireTriadShot()){
+				rc.fireTriadShot(shotDir);
+			} else{
+				rc.fireSingleShot(shotDir);
 			}
 		}
 	}

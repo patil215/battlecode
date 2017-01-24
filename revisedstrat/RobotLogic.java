@@ -32,6 +32,8 @@ public abstract class RobotLogic {
 
 	private static boolean needToSetDirection;
 
+	private static float DELTA_BULLET_DISTANCE = .5f;
+
 	public Team allyTeam;
 	public Team enemyTeam;
 
@@ -311,7 +313,8 @@ public abstract class RobotLogic {
 	 * It returns the team of the first object that it will hit. If no object
 	 * will be hit, this method returns NEUTRAL.
 	 */
-	public Team getFirstHitTeam(MapLocation location, Direction direction, boolean hitTrees, float maxDistance) throws GameActionException {
+	public Team getFirstHitTeam(MapLocation location, Direction direction, boolean hitTrees, float maxDistance)
+			throws GameActionException {
 
 		// Detect tree collisions.
 		TreeInfo[] trees = rc.senseNearbyTrees(maxDistance);
@@ -319,9 +322,17 @@ public abstract class RobotLogic {
 		float minTreeDistance = Float.MAX_VALUE;
 		TreeInfo hitTree = null;
 
+		float bodyRadius = rc.getType().bodyRadius;
+
 		for (TreeInfo tree : trees) {
-			if (FLAG || Math.abs(rc.getLocation().directionTo(tree.location).radiansBetween(direction)) < Math.PI / 2) {
-				rc.setIndicatorDot(tree.location, 34, 38, 1);
+			double targetOffsetRadius = Math.asin(tree.getRadius() / (tree.getRadius() + bodyRadius));
+			if (FLAG || Math
+					.abs(rc.getLocation().directionTo(tree.location).radiansBetween(direction)) < targetOffsetRadius) {
+				if (rc.getTeam() == Team.A) {
+					rc.setIndicatorDot(tree.location, 34, 0, 0);
+				} else {
+					rc.setIndicatorDot(tree.location, 0, 34, 0);
+				}
 				float distance = getIntersectionDistance(location, direction, tree);
 
 				if (distance < minTreeDistance && distance != NO_INTERSECT) {
@@ -338,8 +349,14 @@ public abstract class RobotLogic {
 		RobotInfo hitRobot = null;
 
 		for (RobotInfo robot : robots) {
-
-			if (FLAG || Math.abs(rc.getLocation().directionTo(robot.location).radiansBetween(direction)) < Math.PI / 2) {
+			double targetOffsetRadius = Math.asin(robot.getRadius() / (robot.getRadius() + bodyRadius));
+			if (FLAG || Math
+					.abs(rc.getLocation().directionTo(robot.location).radiansBetween(direction)) < targetOffsetRadius) {
+				if (rc.getTeam() == Team.A) {
+					rc.setIndicatorDot(robot.location, 34, 0, 0);
+				} else {
+					rc.setIndicatorDot(robot.location, 0, 34, 0);
+				}
 				float distance = getIntersectionDistance(location, direction, robot);
 
 				if (distance < minRobotDistance && distance != NO_INTERSECT) {
@@ -381,6 +398,33 @@ public abstract class RobotLogic {
 				return hitRobot.getTeam();
 			}
 		}
+	}
+
+	public Team getFirstHitTeamAprox(MapLocation location, Direction direction, boolean hitTrees, float maxDistance)
+			throws GameActionException {
+		MapLocation testLocation = location.add(direction, rc.getType().bodyRadius+GameConstants.BULLET_SPAWN_OFFSET);
+		while (rc.canSenseLocation(testLocation)) {
+			if (rc.isLocationOccupied(testLocation)) {
+				RobotInfo targetRobot = rc.senseRobotAtLocation(testLocation);
+				if (targetRobot != null) {
+					return targetRobot.team;
+				}
+				TreeInfo targetTree = rc.senseTreeAtLocation(testLocation);
+				if (targetTree != null) {
+					if (hitTrees) {
+						return targetTree.getTeam();
+					} else {
+						return Team.NEUTRAL;
+					}
+				} else {
+					System.out.println("This should never happen");
+					return Team.NEUTRAL;
+				}
+			} else{
+				testLocation = testLocation.add(direction, DELTA_BULLET_DISTANCE);
+			}
+		}
+		return Team.NEUTRAL;
 	}
 
 	/*
@@ -466,8 +510,7 @@ public abstract class RobotLogic {
 		// Compute the distance the bullet travels to get to the point of
 		// closest approach
 		float distSquared = dist * dist;
-		float lengthToClosestApproach = (float) Math
-				.sqrt((dx) * (dx) + (dy) * (dy) - distSquared);
+		float lengthToClosestApproach = (float) Math.sqrt((dx) * (dx) + (dy) * (dy) - distSquared);
 
 		// Compute the distance the bullet travels from the intersection point
 		// to the closest approach
@@ -535,14 +578,9 @@ public abstract class RobotLogic {
 				float spawnOffset = rc.getType().bodyRadius + GameConstants.BULLET_SPAWN_OFFSET;
 
 				MapLocation bulletSpawnPoint = rc.getLocation().add(toEnemy, spawnOffset);
-
-				System.out.println("Our priority is sufficiently high");
-				System.out.println("We will hit " + getFirstHitTeam(bulletSpawnPoint, toEnemy, hitTrees,
-						rc.getLocation().distanceTo(enemies[index].getLocation())));
-				System.out.println("We are on team " + allyTeam);
-
+				
 				// Only attack if we will hit an enemy.
-				if (getFirstHitTeam(bulletSpawnPoint, toEnemy, hitTrees,
+				if (getFirstHitTeamAprox(bulletSpawnPoint, toEnemy, hitTrees,
 						rc.getLocation().distanceTo(enemies[index].getLocation())) == enemyTeam) {
 					maxIndex = index;
 					maxPriority = priority;
@@ -615,17 +653,16 @@ public abstract class RobotLogic {
 	public void drawBullshitLine() {
 		/*
 		 * int[] color = getRandomColor(); MapLocation[] enemyLocs =
-		 * enemyArchonLocations; MapLocation[] allyLocs
-		 * = allyArchonLocations; MapLocation[] locs =
-		 * new MapLocation[allyLocs.length + enemyLocs.length]; for(int i = 0; i
-		 * < enemyLocs.length; i++) { locs[i] = enemyLocs[i]; } for(int i =
-		 * enemyLocs.length; i < allyLocs.length + enemyLocs.length; i++) {
-		 * locs[i] = allyLocs[i - enemyLocs.length]; } float minX =
-		 * Float.MAX_VALUE; float maxX = Float.MIN_VALUE; float minY =
-		 * Float.MAX_VALUE; float maxY = Float.MIN_VALUE; for(MapLocation loc :
-		 * locs) { if(loc.x < minX) { minX = loc.x; } if(loc.y < minY) { minY =
-		 * loc.y; } if(loc.x > maxX) { maxX = loc.x; } if(loc.y > maxY) { maxY =
-		 * loc.y; } }
+		 * enemyArchonLocations; MapLocation[] allyLocs = allyArchonLocations;
+		 * MapLocation[] locs = new MapLocation[allyLocs.length +
+		 * enemyLocs.length]; for(int i = 0; i < enemyLocs.length; i++) {
+		 * locs[i] = enemyLocs[i]; } for(int i = enemyLocs.length; i <
+		 * allyLocs.length + enemyLocs.length; i++) { locs[i] = allyLocs[i -
+		 * enemyLocs.length]; } float minX = Float.MAX_VALUE; float maxX =
+		 * Float.MIN_VALUE; float minY = Float.MAX_VALUE; float maxY =
+		 * Float.MIN_VALUE; for(MapLocation loc : locs) { if(loc.x < minX) {
+		 * minX = loc.x; } if(loc.y < minY) { minY = loc.y; } if(loc.x > maxX) {
+		 * maxX = loc.x; } if(loc.y > maxY) { maxY = loc.y; } }
 		 * 
 		 * float x = minX + (float) (Math.random() * (maxX - minX)); float y =
 		 * minY + (float) (Math.random() * (maxY - minY));
@@ -1033,7 +1070,7 @@ public abstract class RobotLogic {
 		}
 
 		MapLocation originDir = new MapLocation(0, 0);
-		if(!loc.equals(originDir)) {
+		if (!loc.equals(originDir)) {
 			return originDir.directionTo(loc).opposite();
 		}
 		return null;
