@@ -611,17 +611,16 @@ public abstract class RobotLogic {
 	public void drawBullshitLine() {
 		/*
 		 * int[] color = getRandomColor(); MapLocation[] enemyLocs =
-		 * enemyArchonLocations; MapLocation[] allyLocs
-		 * = allyArchonLocations; MapLocation[] locs =
-		 * new MapLocation[allyLocs.length + enemyLocs.length]; for(int i = 0; i
-		 * < enemyLocs.length; i++) { locs[i] = enemyLocs[i]; } for(int i =
-		 * enemyLocs.length; i < allyLocs.length + enemyLocs.length; i++) {
-		 * locs[i] = allyLocs[i - enemyLocs.length]; } float minX =
-		 * Float.MAX_VALUE; float maxX = Float.MIN_VALUE; float minY =
-		 * Float.MAX_VALUE; float maxY = Float.MIN_VALUE; for(MapLocation loc :
-		 * locs) { if(loc.x < minX) { minX = loc.x; } if(loc.y < minY) { minY =
-		 * loc.y; } if(loc.x > maxX) { maxX = loc.x; } if(loc.y > maxY) { maxY =
-		 * loc.y; } }
+		 * enemyArchonLocations; MapLocation[] allyLocs = allyArchonLocations;
+		 * MapLocation[] locs = new MapLocation[allyLocs.length +
+		 * enemyLocs.length]; for(int i = 0; i < enemyLocs.length; i++) {
+		 * locs[i] = enemyLocs[i]; } for(int i = enemyLocs.length; i <
+		 * allyLocs.length + enemyLocs.length; i++) { locs[i] = allyLocs[i -
+		 * enemyLocs.length]; } float minX = Float.MAX_VALUE; float maxX =
+		 * Float.MIN_VALUE; float minY = Float.MAX_VALUE; float maxY =
+		 * Float.MIN_VALUE; for(MapLocation loc : locs) { if(loc.x < minX) {
+		 * minX = loc.x; } if(loc.y < minY) { minY = loc.y; } if(loc.x > maxX) {
+		 * maxX = loc.x; } if(loc.y > maxY) { maxY = loc.y; } }
 		 * 
 		 * float x = minX + (float) (Math.random() * (maxX - minX)); float y =
 		 * minY + (float) (Math.random() * (maxY - minY));
@@ -983,7 +982,7 @@ public abstract class RobotLogic {
 
 		int byteCodeStart = Clock.getBytecodeNum();
 		System.out.println("Outside");
-		while (Clock.getBytecodeNum() - byteCodeStart < 3000) {
+		while (Clock.getBytecodeNum() - byteCodeStart < 4000) {
 			if (Clock.getBytecodeNum() < byteCodeStart) {
 				break;
 			}
@@ -1015,7 +1014,7 @@ public abstract class RobotLogic {
 		System.out.println(sb.toString());
 	}
 
-	public Direction getDirectionAway(RobotInfo[] otherRobots) {
+	public Direction getDirectionAway(RobotInfo[] otherRobots) throws GameActionException {
 		MapLocation loc = new MapLocation(0, 0);
 
 		for (RobotInfo robot : otherRobots) {
@@ -1024,12 +1023,32 @@ public abstract class RobotLogic {
 				multiplier = 3;
 			}
 
-			float magnitude = (float) (Math.pow(rc.getLocation().distanceTo(robot.getLocation()), 2) * multiplier);
+			float magnitude = (float) ((1 / Math.max(rc.getLocation().distanceTo(robot.getLocation()), 1)) * multiplier);
 			loc = loc.add(rc.getLocation().directionTo(robot.getLocation()), magnitude);
 		}
 
+		float distanceMultiplier = 3;
+
+		if (!rc.onTheMap(rc.getLocation().add(Direction.WEST, distanceMultiplier))) {
+			loc = loc.add(Direction.WEST, distanceMultiplier);
+		}
+
+		if (!rc.onTheMap(rc.getLocation().add(Direction.NORTH, distanceMultiplier))) {
+			loc = loc.add(Direction.NORTH, distanceMultiplier);
+		}
+
+		if (!rc.onTheMap(rc.getLocation().add(Direction.SOUTH, distanceMultiplier))) {
+			loc = loc.add(Direction.SOUTH, distanceMultiplier);
+		}
+
+		if (!rc.onTheMap(rc.getLocation().add(Direction.EAST, distanceMultiplier))) {
+			loc = loc.add(Direction.EAST, distanceMultiplier);
+		}
+
 		MapLocation originDir = new MapLocation(0, 0);
-		if(!loc.equals(originDir)) {
+		if (!loc.equals(originDir)) {
+			rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(originDir.directionTo(loc).opposite(), 2), 128, 128,
+					128);
 			return originDir.directionTo(loc).opposite();
 		}
 		return null;
