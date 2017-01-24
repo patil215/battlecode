@@ -45,16 +45,12 @@ public abstract class RobotLogic {
 		isLeftUnit = Math.random() > .5;
 		needToSetDirection = true;
 		allyTeam = rc.getTeam();
-		enemyTeam = getEnemyTeam();
+		enemyTeam = rc.getTeam().opponent();
 		allyArchonLocations = rc.getInitialArchonLocations(allyTeam);
 		enemyArchonLocations = rc.getInitialArchonLocations(enemyTeam);
 	}
 
 	public abstract void run();
-
-	private Team getEnemyTeam() {
-		return allyTeam.opponent();
-	}
 
 	public MapLocation getRandomEnemyInitialArchonLocation() {
 		return enemyArchonLocations[(int) (enemyArchonLocations.length * (Math.random()))];
@@ -174,8 +170,8 @@ public abstract class RobotLogic {
 		}
 	}
 
-	private boolean findBestDirection(MapLocation destination2) {
-		Direction toMove = rc.getLocation().directionTo(destination2);
+	private boolean findBestDirection(MapLocation destination) {
+		Direction toMove = rc.getLocation().directionTo(destination);
 		for (int count = 0; count < 180; count += 10) {
 			if (rc.canMove(toMove.rotateLeftDegrees(count))) {
 				return true;
@@ -187,19 +183,6 @@ public abstract class RobotLogic {
 		return false;
 	}
 
-	/*
-	 * If it is possible to move towards the target, then this method returns
-	 * the best angle to do so with. Otherwise, null is returned. The method
-	 * will also disallow angles that will result in the robot getting hit by a
-	 * bullet.
-	 */
-	public Direction moveTowards(MapLocation destination) {
-		if (!rc.getLocation().equals(destination)) {
-			Direction toMove = rc.getLocation().directionTo(destination);
-			return moveTowards(toMove);
-		}
-		return null;
-	}
 
 	/*
 	 * This method returns the bullets that will hit the player in some
@@ -227,6 +210,22 @@ public abstract class RobotLogic {
 		return false;
 	}
 
+	public boolean move(Direction direction) throws GameActionException {
+		if (!rc.hasMoved() && rc.canMove(direction)) {
+			rc.move(direction);
+			return true;
+		}
+		return false;
+	}
+
+	public boolean move(Direction direction, float distance) throws GameActionException {
+		if (!rc.hasMoved() && rc.canMove(direction, distance)) {
+			rc.move(direction, distance);
+			return true;
+		}
+		return false;
+	}
+
 	public void endTurn() throws GameActionException {
 		tryAndShakeATree();
 		econWinIfPossible();
@@ -242,20 +241,18 @@ public abstract class RobotLogic {
 		Clock.yield();
 	}
 
-	public boolean move(Direction direction) throws GameActionException {
-		if (!rc.hasMoved() && rc.canMove(direction)) {
-			rc.move(direction);
-			return true;
+	/*
+	 * If it is possible to move towards the target, then this method returns
+	 * the best angle to do so with. Otherwise, null is returned. The method
+	 * will also disallow angles that will result in the robot getting hit by a
+	 * bullet.
+	 */
+	public Direction moveTowards(MapLocation destination) {
+		if (!rc.getLocation().equals(destination)) {
+			Direction toMove = rc.getLocation().directionTo(destination);
+			return moveTowards(toMove);
 		}
-		return false;
-	}
-
-	public boolean move(Direction direction, float distance) throws GameActionException {
-		if (!rc.hasMoved()) {
-			rc.move(direction, distance);
-			return true;
-		}
-		return false;
+		return null;
 	}
 
 	/*
@@ -650,6 +647,7 @@ public abstract class RobotLogic {
 		return new Direction(avgX, avgY);
 	}
 
+<<<<<<< HEAD
 	public void drawBullshitLine() {
 		/*
 		 * int[] color = getRandomColor(); MapLocation[] enemyLocs =
@@ -672,6 +670,8 @@ public abstract class RobotLogic {
 		 */
 	}
 
+=======
+>>>>>>> 134d990cfdaa524b0645671ac930e837f9b43e90
 	protected BulletInfo[] getAllIncomingBullets(BulletInfo[] bullets, MapLocation location, float angleTolerance) {
 		ArrayList<BulletInfo> incoming = new ArrayList<>();
 		for (BulletInfo bullet : bullets) {
@@ -684,10 +684,6 @@ public abstract class RobotLogic {
 		return incoming.toArray(new BulletInfo[incoming.size()]);
 	}
 
-	public int[] getRandomColor() {
-		return new int[] { (int) (Math.random() * 256), (int) (Math.random() * 256), (int) (Math.random() * 256) };
-	}
-
 	protected void moveAndDodge(MapLocation enemy, BulletInfo[] bullets) throws GameActionException {
 		MapLocation currLocation = rc.getLocation();
 		Direction toEnemy = currLocation.directionTo(enemy);
@@ -696,7 +692,7 @@ public abstract class RobotLogic {
 		int bestAngle = -40;
 		for (int angle = -40; angle < 40; angle += 10) {
 			MapLocation expectedLocation = currLocation.add(toEnemy.rotateLeftDegrees(angle),
-					(float) getStrideRadius(rc.getType()));
+					(float) rc.getType().strideRadius);
 			float damage = expectedDamage(bullets, expectedLocation);
 
 			if (damage < minDamage) {
@@ -706,31 +702,6 @@ public abstract class RobotLogic {
 		}
 
 		move(toEnemy.rotateLeftDegrees(bestAngle));
-	}
-
-	public static double getStrideRadius(RobotType rt) {
-		switch (rt) {
-		case ARCHON:
-		case TANK:
-		case SOLDIER: {
-			return 1;
-		}
-
-		case GARDENER: {
-			return 2;
-		}
-
-		case SCOUT: {
-			return 2.5;
-		}
-
-		case LUMBERJACK: {
-			return 1.5;
-		}
-
-		default:
-			return 1;
-		}
 	}
 
 	protected void dodge(BulletInfo[] bullets) throws GameActionException {
@@ -946,67 +917,6 @@ public abstract class RobotLogic {
 				(float) (Math.random() * (rc.getType().strideRadius - (bodyRadius / 2))) + bodyRadius / 2);
 	}
 
-	public MapLocation getBulletAvoidingLocationpo(RobotController rc) {
-		float maxMovement = rc.getType().strideRadius;
-		float hitRadius = rc.getType().bodyRadius;
-		float maxBulletSpeed = 1;
-
-		// float bulletConsiderationRadius = maxMovement + maxBulletSpeed +
-		// hitRadius;
-		float bulletConsiderationRadius = maxMovement + hitRadius + maxBulletSpeed;
-
-		BulletInfo[] bullets = rc.senseNearbyBullets(bulletConsiderationRadius);
-		if (bullets.length <= 0) {
-			return null;
-		}
-
-		MapLocation[][] segments = getSegments(bullets);
-
-		int byteCodeStart = Clock.getBytecodeNum();
-
-		System.out.println("WOEIJFOWIEJF");
-
-		MapLocation[] possibleLocs = new MapLocation[100];
-		int tries = 0;
-		while (Math.abs(Clock.getBytecodeNum() - byteCodeStart) < 6000 && tries < possibleLocs.length) {
-			System.out.println("In loop");
-			tries++;
-			int index = (int) (Math.random() * segments.length);
-			MapLocation[] startSegment = segments[index];
-			// MapLocation startLoc =
-			// getRandomTangentLocationToSegment(startSegment, hitRadius);
-			MapLocation startLoc = getRandomLocation();
-			if (startLoc == null) {
-				System.out.println("***REMOVED*** nothing found");
-				continue;
-			}
-			// rc.setIndicatorDot(startLoc, 50, 50, 50);
-			// rc.setIndicatorLine(rc.getLocation(), startLoc, 128, 0, 0);
-			MapLocation[] conflictingSegment = getClosestLineSegmentWithinThreshold(startLoc, segments, hitRadius);
-			if (conflictingSegment == null && rc.canMove(startLoc)) {
-				// We good ***REMOVED*** yea
-				possibleLocs[tries] = startLoc;
-			}
-		}
-
-		float minDist = Float.MAX_VALUE;
-		MapLocation minLoc = null;
-		for (int i = 0; i < possibleLocs.length; i++) {
-			MapLocation possibleLoc = possibleLocs[i];
-			if (possibleLoc == null) {
-				continue;
-			}
-			float dist = possibleLoc.distanceTo(rc.getLocation());
-			System.out.println(dist);
-			if (dist < minDist) {
-				minLoc = possibleLoc;
-				minDist = dist;
-			}
-		}
-
-		return minLoc;
-	}
-
 	public MapLocation getBulletAvoidingLocation(RobotController rc) {
 
 		float maxMovement = rc.getType().strideRadius;
@@ -1024,7 +934,7 @@ public abstract class RobotLogic {
 
 		int byteCodeStart = Clock.getBytecodeNum();
 		System.out.println("Outside");
-		while (Clock.getBytecodeNum() - byteCodeStart < 3000) {
+		while (Clock.getBytecodeNum() - byteCodeStart < 4000) {
 			if (Clock.getBytecodeNum() < byteCodeStart) {
 				break;
 			}
@@ -1056,7 +966,7 @@ public abstract class RobotLogic {
 		System.out.println(sb.toString());
 	}
 
-	public Direction getDirectionAway(RobotInfo[] otherRobots) {
+	public Direction getDirectionAway(RobotInfo[] otherRobots) throws GameActionException {
 		MapLocation loc = new MapLocation(0, 0);
 
 		for (RobotInfo robot : otherRobots) {
@@ -1065,12 +975,35 @@ public abstract class RobotLogic {
 				multiplier = 3;
 			}
 
-			float magnitude = (float) (Math.pow(rc.getLocation().distanceTo(robot.getLocation()), 2) * multiplier);
+			float magnitude = (float) ((1 / Math.max(rc.getLocation().distanceTo(robot.getLocation()), 1)) * multiplier);
 			loc = loc.add(rc.getLocation().directionTo(robot.getLocation()), magnitude);
+		}
+
+		float distanceMultiplier = 3;
+
+		if (!rc.onTheMap(rc.getLocation().add(Direction.WEST, distanceMultiplier))) {
+			loc = loc.add(Direction.WEST, distanceMultiplier);
+		}
+
+		if (!rc.onTheMap(rc.getLocation().add(Direction.NORTH, distanceMultiplier))) {
+			loc = loc.add(Direction.NORTH, distanceMultiplier);
+		}
+
+		if (!rc.onTheMap(rc.getLocation().add(Direction.SOUTH, distanceMultiplier))) {
+			loc = loc.add(Direction.SOUTH, distanceMultiplier);
+		}
+
+		if (!rc.onTheMap(rc.getLocation().add(Direction.EAST, distanceMultiplier))) {
+			loc = loc.add(Direction.EAST, distanceMultiplier);
 		}
 
 		MapLocation originDir = new MapLocation(0, 0);
 		if (!loc.equals(originDir)) {
+<<<<<<< HEAD
+=======
+			rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(originDir.directionTo(loc).opposite(), 2), 128, 128,
+					128);
+>>>>>>> 134d990cfdaa524b0645671ac930e837f9b43e90
 			return originDir.directionTo(loc).opposite();
 		}
 		return null;
