@@ -108,8 +108,8 @@ public abstract class RobotLogic {
 	public MapLocation getDestination() {
 		return destination;
 	}
-	
-	public float getClosestDistance(){
+
+	public float getClosestDistance() {
 		return distanceToDestination;
 	}
 
@@ -124,13 +124,13 @@ public abstract class RobotLogic {
 		if (destination == null) {
 			return false;
 		}
-		//rc.setIndicatorLine(rc.getLocation(), destination, 40, 0, 40);
+		// rc.setIndicatorLine(rc.getLocation(), destination, 40, 0, 40);
 		MapLocation currentLocation = rc.getLocation();
 		Direction toMove = rc.getLocation().directionTo(destination);
 		float currentDistance = currentLocation.distanceTo(destination);
 		System.out.println("Current distance is: " + currentDistance + " closest distance is : " + distanceToDestination
-				+ " canMove returns " + rc.canMove(toMove)
-				+ "If the next statement is true, then this unit leans left " + isLeftUnit);
+				+ " canMove returns " + rc.canMove(toMove) + "If the next statement is true, then this unit leans left "
+				+ isLeftUnit);
 		if (currentDistance <= distanceToDestination && rc.canMove(toMove)) {
 			rc.move(toMove);
 			distanceToDestination = currentDistance;
@@ -370,7 +370,11 @@ public abstract class RobotLogic {
 		// If both are intersected, return the team of whichever is closer
 		else {
 			if (minTreeDistance < minRobotDistance) {
-				return Team.NEUTRAL;
+				if (hitTrees) {
+					return hitTree.team;
+				} else {
+					return Team.NEUTRAL;
+				}
 			} else {
 				return hitRobot.getTeam();
 			}
@@ -512,6 +516,8 @@ public abstract class RobotLogic {
 						* rc.getLocation().distanceTo(enemies[index].getLocation()));
 			}
 
+			System.out.println("Priority is: " + priority);
+
 			// TODO: Refactor
 			if ((priority > maxPriority || (maxPriority == 0 && enemies[index].health < enemies[maxIndex].health))) {
 
@@ -525,11 +531,17 @@ public abstract class RobotLogic {
 
 				MapLocation bulletSpawnPoint = rc.getLocation().add(toEnemy, spawnOffset);
 
+				System.out.println("Our priority is sufficiently high");
+				System.out.println("We will hit " + getFirstHitTeam(bulletSpawnPoint, toEnemy, hitTrees,
+						rc.getLocation().distanceTo(enemies[index].getLocation())));
+				System.out.println("We are on team " + rc.getTeam());
+
 				// Only attack if we will hit an enemy.
 				if (getFirstHitTeam(bulletSpawnPoint, toEnemy, hitTrees,
 						rc.getLocation().distanceTo(enemies[index].getLocation())) == getEnemyTeam()) {
 					maxIndex = index;
 					maxPriority = priority;
+					System.out.println("We have found a new target");
 				}
 			}
 		}
@@ -970,8 +982,8 @@ public abstract class RobotLogic {
 
 		int byteCodeStart = Clock.getBytecodeNum();
 		System.out.println("Outside");
-		while (Clock.getBytecodeNum()-byteCodeStart < 3000) {
-			if(Clock.getBytecodeNum()<byteCodeStart){
+		while (Clock.getBytecodeNum() - byteCodeStart < 3000) {
+			if (Clock.getBytecodeNum() < byteCodeStart) {
 				break;
 			}
 			System.out.println("In loop 2");
@@ -997,7 +1009,8 @@ public abstract class RobotLogic {
 
 	public static void printBytecodeUsed() {
 		int currentBytecode = Clock.getBytecodeNum();
-		StringBuilder sb = new StringBuilder().append(trackingId).append(", ").append(currentBytecode - bytecodeNum).append(" bt used");
+		StringBuilder sb = new StringBuilder().append(trackingId).append(", ").append(currentBytecode - bytecodeNum)
+				.append(" bt used");
 		System.out.println(sb.toString());
 	}
 
