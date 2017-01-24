@@ -1,6 +1,7 @@
 package revisedstrat;
 
 import battlecode.common.*;
+import revisedstrat.BroadcastManager.LocationInfoType;
 
 /**
  * Created by patil215 on 1/18/17.
@@ -48,6 +49,21 @@ public class LumberjackLogic extends RobotLogic {
 					continue;
 				}
 
+				if (getDestination() != null) {
+					moveTowardsAndChop(getDestination());
+					if (rc.getLocation().distanceTo(getDestination()) < DISTANCE_TO_CLEAR_DESTINATION) {
+						setDestination(null);
+					}
+					endTurn();
+					continue;
+				} else {
+					MapLocation destination = BroadcastManager.getRecentLocation(rc, LocationInfoType.LUMBERJACK_GET_HELP);
+					this.setDestination(destination);
+					if(Math.random()>.3){
+						BroadcastManager.invalidateLocation(rc, LocationInfoType.LUMBERJACK_GET_HELP);
+					}
+				}
+
 				// Neutral tree cutting mode
 				TreeInfo[] neutralTrees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
 				if (neutralTrees.length > 0) {
@@ -59,9 +75,9 @@ public class LumberjackLogic extends RobotLogic {
 				// Move randomly
 				Direction towardsEnemy = rc.getLocation().directionTo(getRandomEnemyInitialArchonLocation());
 				towardsEnemy = moveTowards(towardsEnemy);
-				if(towardsEnemy!=null){
+				if (towardsEnemy != null) {
 					rc.move(towardsEnemy);
-				} else{
+				} else {
 					this.moveDir = this.moveWithRandomBounce(moveDir);
 				}
 				endTurn();
@@ -74,6 +90,7 @@ public class LumberjackLogic extends RobotLogic {
 
 	private void moveTowardsAndChop(TreeInfo[] trees) throws GameActionException {
 		TreeInfo toChop = getTargetTree(trees);
+		System.out.println("Found a tree");
 		if (toChop != null) {
 			Direction toTree = rc.getLocation().directionTo(toChop.location);
 			rc.setIndicatorLine(rc.getLocation(), toChop.location, 80, 80, 0);
@@ -95,12 +112,30 @@ public class LumberjackLogic extends RobotLogic {
 		}
 	}
 
+	private void moveTowardsAndChop(MapLocation destination) throws GameActionException {
+		Direction toTree = rc.getLocation().directionTo(destination);
+		rc.setIndicatorLine(rc.getLocation(), destination, 80, 80, 0);
+		TreeInfo[] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
+		TreeInfo treeInFront = getClosestTreeThatCanBeChopped(trees);
+		boolean chopped = false;
+		if (treeInFront != null && rc.canChop(treeInFront.ID)) {
+			rc.chop(treeInFront.ID);
+			chopped = true;
+		}
+		if (!chopped) {
+			Direction toMove = moveTowards(destination);
+			if (toMove != null) {
+				move(toMove);
+			}
+		}
+	}
+
 	private TreeInfo getClosestTreeThatCanBeChopped(TreeInfo[] trees) {
 		TreeInfo toChop = null;
 		float closestDistance = Float.MAX_VALUE;
-		for(TreeInfo tree: trees){
+		for (TreeInfo tree : trees) {
 			float distance = rc.getLocation().distanceTo(tree.location);
-			if(tree.team!=rc.getTeam() && distance < closestDistance){
+			if (tree.team != rc.getTeam() && distance < closestDistance) {
 				closestDistance = distance;
 				toChop = tree;
 			}
@@ -144,6 +179,12 @@ public class LumberjackLogic extends RobotLogic {
 		if ((rc.getLocation().distanceTo(target.location) < GameConstants.LUMBERJACK_STRIKE_RADIUS
 				+ target.getType().bodyRadius) && rc.canStrike()) {
 			rc.strike();
+		} else {
+			TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
+			TreeInfo toChop = (TreeInfo) getClosestBody(nearbyTrees);
+			if (rc.canChop(toChop.ID)) {
+				rc.chop(toChop.ID);
+			}
 		}
 	}
 

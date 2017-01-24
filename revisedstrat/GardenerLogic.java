@@ -1,6 +1,7 @@
 package revisedstrat;
 
 import battlecode.common.*;
+import revisedstrat.BroadcastManager.LocationInfoType;
 
 /**
  * Created by patil215 on 1/12/17.
@@ -54,7 +55,7 @@ public class GardenerLogic extends RobotLogic {
 				}
 
 				detectEnemiesAndSendHelpBroadcast();
-
+				detectTreesAndAskLumberjacksForHelp();
 				waterLowestHealthTree();
 				drawBullshitLine();
 
@@ -65,6 +66,13 @@ public class GardenerLogic extends RobotLogic {
 			e.printStackTrace();
 		}
 
+	}
+
+	private void detectTreesAndAskLumberjacksForHelp() throws GameActionException {
+		TreeInfo [] treesInWay = rc.senseNearbyTrees(5, Team.NEUTRAL);
+		if(treesInWay.length!=0){
+			BroadcastManager.saveLocation(rc, treesInWay[0].location, LocationInfoType.LUMBERJACK_GET_HELP);
+		}
 	}
 
 	private void createTreeRingAndSpawnUnits() throws GameActionException {
@@ -112,7 +120,7 @@ public class GardenerLogic extends RobotLogic {
 					tryAndBuildUnit(RobotType.SOLDIER);
 					System.out.println("First build is soldier");
 				}
-			} else{
+			} else {
 				tryAndBuildUnit(RobotType.SOLDIER);
 				System.out.println("First build is soldier");
 			}
@@ -180,6 +188,8 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private double getLumberjackSpawnChance() {
+		// TODO: Fix logical error with trees that are only partially in the
+		// sense radius.
 		double senseArea = Math.pow(rc.getType().sensorRadius, 2);
 		double treeArea = 0;
 		TreeInfo[] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
