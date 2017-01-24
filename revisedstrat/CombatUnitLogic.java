@@ -3,6 +3,8 @@ package revisedstrat;
 import battlecode.common.*;
 import revisedstrat.BroadcastManager.LocationInfoType;
 
+import java.util.Arrays;
+
 /**
  * Created by patil215 on 1/17/17.
  */
@@ -226,15 +228,84 @@ public class CombatUnitLogic extends RobotLogic {
 		}
 	}
 
+	private void tryAndFireASmartShot(RobotInfo target) throws GameActionException {
+		RobotInfo[] enemies = Arrays.stream(rc.senseNearbyRobots())
+				.filter(r -> r.team == rc.getTeam().opponent()).toArray(RobotInfo[]::new);
+
+
+	}
+
+	private boolean shouldFireTriShot(RobotInfo target) throws GameActionException {
+		MapLocation currLoc = rc.getLocation();
+		MapLocation targetLoc = target.getLocation();
+		Direction toTarget = currLoc.directionTo(targetLoc);
+
+		int numHit = 0;
+		Team opponent = rc.getTeam().opponent();
+		float radius = rc.getType().sensorRadius;
+
+		if (getFirstHitTeam(currLoc, toTarget.rotateLeftDegrees(-20),
+				true, radius) == opponent) {
+			numHit++;
+		}
+
+		if (getFirstHitTeam(currLoc, toTarget.rotateLeftDegrees(20),
+				true, radius) == rc.getTeam().opponent()) {
+			numHit++;
+		}
+
+		return numHit > 0;
+	}
+
+	private boolean shouldFirePentadShot(RobotInfo target) throws GameActionException {
+		
+		MapLocation currLoc = rc.getLocation();
+		MapLocation targetLoc = target.getLocation();
+		Direction toTarget = currLoc.directionTo(targetLoc);
+
+		Team opponent = rc.getTeam().opponent();
+		float radius = rc.getType().sensorRadius;
+
+		if (getFirstHitTeam(currLoc, toTarget.rotateRightDegrees(GameConstants.PENTAD_SPREAD_DEGREES*2),
+				true, radius) == opponent) {
+			System.out.println("Found right target");
+			return true;
+		}
+
+		if (getFirstHitTeam(currLoc, toTarget.rotateLeftDegrees(GameConstants.PENTAD_SPREAD_DEGREES*2),
+				true, radius) == opponent) {
+			System.out.println("Found left target");
+			return true;
+		}
+
+		return false;
+	}
+
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
-		if (rc.canFirePentadShot() && rc.getTeamBullets() > 70) {
-			rc.firePentadShot(rc.getLocation().directionTo(target.location));
-		} else if (rc.canFireTriadShot() && rc.getTeamBullets() > 30) {
-			rc.fireTriadShot(rc.getLocation().directionTo(target.location));
-		} else if (rc.canFireSingleShot()) {
-			rc.fireSingleShot(rc.getLocation().directionTo(target.location));
+		Direction shotDir = rc.getLocation().directionTo(target.location);
+		if (rc.canFireSingleShot()) {
+			if (shouldFirePentadShot(target) && rc.canFirePentadShot()) {
+				rc.firePentadShot(shotDir);
+			} else {
+				if (shouldFireTriShot(target) && rc.canFireTriadShot()) {
+					rc.fireTriadShot(shotDir);
+				} else {
+					rc.fireSingleShot(shotDir);
+				}
+			}
 		}
 	}
+
+//	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
+////		tryAndFireASmartShot(target);
+//		if (rc.canFirePentadShot() && rc.getTeamBullets() > 70) {
+//			rc.firePentadShot(rc.getLocation().directionTo(target.location));
+//		} else if (rc.canFireTriadShot() && rc.getTeamBullets() > 30) {
+//			rc.fireTriadShot(rc.getLocation().directionTo(target.location));
+//		} else if (rc.canFireSingleShot()) {
+//			rc.fireSingleShot(rc.getLocation().directionTo(target.location));
+//		}
+//	}
 
 	/*
 	 * Returns true if unit was able to move towards the map location.

@@ -311,7 +311,7 @@ public abstract class RobotLogic {
 	 * It returns the team of the first object that it will hit. If no object
 	 * will be hit, this method returns NEUTRAL.
 	 */
-	public Team getFirstHitTeam(MapLocation location, Direction direction, boolean hitTrees, float maxDistance) {
+	public Team getFirstHitTeam(MapLocation location, Direction direction, boolean hitTrees, float maxDistance) throws GameActionException {
 
 		// Detect tree collisions.
 		TreeInfo[] trees = rc.senseNearbyTrees(maxDistance);
@@ -320,7 +320,8 @@ public abstract class RobotLogic {
 		TreeInfo hitTree = null;
 
 		for (TreeInfo tree : trees) {
-			if (FLAG || rc.getLocation().directionTo(tree.location).radiansBetween(direction) < Math.PI / 2) {
+			if (FLAG || Math.abs(rc.getLocation().directionTo(tree.location).radiansBetween(direction)) < Math.PI / 2) {
+				rc.setIndicatorDot(tree.location, 34, 38, 1);
 				float distance = getIntersectionDistance(location, direction, tree);
 
 				if (distance < minTreeDistance && distance != NO_INTERSECT) {
@@ -338,7 +339,7 @@ public abstract class RobotLogic {
 
 		for (RobotInfo robot : robots) {
 
-			if (FLAG || rc.getLocation().directionTo(robot.location).radiansBetween(direction) < Math.PI / 2) {
+			if (FLAG || Math.abs(rc.getLocation().directionTo(robot.location).radiansBetween(direction)) < Math.PI / 2) {
 				float distance = getIntersectionDistance(location, direction, robot);
 
 				if (distance < minRobotDistance && distance != NO_INTERSECT) {
@@ -449,10 +450,12 @@ public abstract class RobotLogic {
 		float xStart = location.x;
 		float yStart = location.y;
 
+		float dx = xTarget - xStart;
+		float dy = yTarget - yStart;
 		// Compute the shortest distance between the bullet and the center of
 		// the target
 		float angle = direction.radians;
-		float dist = (float) Math.abs(Math.sin(angle) * (xTarget - xStart) - Math.cos(angle) * (yTarget - yStart));
+		float dist = (float) Math.abs(Math.sin(angle) * (dx) - Math.cos(angle) * dy);
 
 		// If the shortest distance is too large, the bullet won't ever
 		// intersect the target
@@ -462,12 +465,13 @@ public abstract class RobotLogic {
 
 		// Compute the distance the bullet travels to get to the point of
 		// closest approach
+		float distSquared = dist * dist;
 		float lengthToClosestApproach = (float) Math
-				.sqrt((xTarget - xStart) * (xTarget - xStart) + (yTarget - yStart) * (yTarget - yStart) - dist * dist);
+				.sqrt((dx) * (dx) + (dy) * (dy) - distSquared);
 
 		// Compute the distance the bullet travels from the intersection point
 		// to the closest approach
-		float excessDistance = (float) Math.sqrt(targetRadius * targetRadius - dist * dist);
+		float excessDistance = (float) Math.sqrt(targetRadius * targetRadius - distSquared);
 
 		return lengthToClosestApproach - excessDistance;
 	}
