@@ -1001,4 +1001,24 @@ public abstract class RobotLogic {
 		System.out.println(sb.toString());
 	}
 
+	public Direction getDirectionAway(RobotInfo[] otherRobots) {
+		MapLocation loc = new MapLocation(0, 0);
+
+		for (RobotInfo robot : otherRobots) {
+			double multiplier = 1;
+			if (robot.getTeam().equals(getEnemyTeam())) {
+				multiplier = 3;
+			}
+
+			float magnitude = (float) (Math.pow(rc.getLocation().distanceTo(robot.getLocation()), 2) * multiplier);
+			loc = loc.add(rc.getLocation().directionTo(robot.getLocation()), magnitude);
+		}
+
+		MapLocation originDir = new MapLocation(0, 0);
+		if(!loc.equals(originDir)) {
+			return originDir.directionTo(loc).opposite();
+		}
+		return null;
+	}
+
 }

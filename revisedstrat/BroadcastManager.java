@@ -73,7 +73,7 @@ public class BroadcastManager {
 	 * Sets up the initial values for the locationPointerIndex values
 	 * Returns true if this is the first time this method has been called.
 	 */
-	public static boolean tryAndSetUpLocationPointerIndexValues(RobotController rc) throws GameActionException{
+	public static boolean initializeLocationPointerIndexValues(RobotController rc) throws GameActionException{
 		if(rc.readBroadcast(SETUP_INDEX)==0){
 			rc.broadcast(SETUP_INDEX, 1);
 			for(LocationInfoType type : LocationInfoType.values()) {
