@@ -311,7 +311,7 @@ public abstract class RobotLogic {
 	 * It returns the team of the first object that it will hit. If no object
 	 * will be hit, this method returns NEUTRAL.
 	 */
-	public Team getFirstHitTeam(MapLocation location, Direction direction, boolean hitTrees, float maxDistance) {
+	public Team getFirstHitTeam(MapLocation location, Direction direction, boolean hitTrees, float maxDistance) throws GameActionException {
 
 		// Detect tree collisions.
 		TreeInfo[] trees = rc.senseNearbyTrees(maxDistance);
@@ -320,7 +320,8 @@ public abstract class RobotLogic {
 		TreeInfo hitTree = null;
 
 		for (TreeInfo tree : trees) {
-			if (FLAG || rc.getLocation().directionTo(tree.location).radiansBetween(direction) < Math.PI / 2) {
+			if (FLAG || Math.abs(rc.getLocation().directionTo(tree.location).radiansBetween(direction)) < Math.PI / 2) {
+				rc.setIndicatorDot(tree.location, 34, 38, 1);
 				float distance = getIntersectionDistance(location, direction, tree);
 
 				if (distance < minTreeDistance && distance != NO_INTERSECT) {
@@ -338,7 +339,7 @@ public abstract class RobotLogic {
 
 		for (RobotInfo robot : robots) {
 
-			if (FLAG || rc.getLocation().directionTo(robot.location).radiansBetween(direction) < Math.PI / 2) {
+			if (FLAG || Math.abs(rc.getLocation().directionTo(robot.location).radiansBetween(direction)) < Math.PI / 2) {
 				float distance = getIntersectionDistance(location, direction, robot);
 
 				if (distance < minRobotDistance && distance != NO_INTERSECT) {

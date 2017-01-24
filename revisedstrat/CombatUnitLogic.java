@@ -235,7 +235,7 @@ public class CombatUnitLogic extends RobotLogic {
 
 	}
 
-	private boolean shouldFireTriShot(RobotInfo target) {
+	private boolean shouldFireTriShot(RobotInfo target) throws GameActionException {
 		MapLocation currLoc = rc.getLocation();
 		MapLocation targetLoc = target.getLocation();
 		Direction toTarget = currLoc.directionTo(targetLoc);
@@ -257,26 +257,28 @@ public class CombatUnitLogic extends RobotLogic {
 		return numHit > 0;
 	}
 
-	private boolean shouldFirePentadShot(RobotInfo target) {
+	private boolean shouldFirePentadShot(RobotInfo target) throws GameActionException {
+		
 		MapLocation currLoc = rc.getLocation();
 		MapLocation targetLoc = target.getLocation();
 		Direction toTarget = currLoc.directionTo(targetLoc);
 
-		int numHit = 0;
 		Team opponent = rc.getTeam().opponent();
 		float radius = rc.getType().sensorRadius;
 
-		if (getFirstHitTeam(currLoc, toTarget.rotateLeftDegrees(-30),
+		if (getFirstHitTeam(currLoc, toTarget.rotateRightDegrees(GameConstants.PENTAD_SPREAD_DEGREES*2),
 				true, radius) == opponent) {
-			numHit++;
+			System.out.println("Found right target");
+			return true;
 		}
 
-		if (getFirstHitTeam(currLoc, toTarget.rotateLeftDegrees(30),
-				true, radius) == rc.getTeam().opponent()) {
-			numHit++;
+		if (getFirstHitTeam(currLoc, toTarget.rotateLeftDegrees(GameConstants.PENTAD_SPREAD_DEGREES*2),
+				true, radius) == opponent) {
+			System.out.println("Found left target");
+			return true;
 		}
 
-		return numHit > 0;
+		return false;
 	}
 
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
