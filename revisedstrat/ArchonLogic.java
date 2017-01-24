@@ -77,7 +77,7 @@ public class ArchonLogic extends RobotLogic {
 
 	// Only spawn initial gardener if no other archons have spawned a unit.
 	private boolean shouldSpawnInitialGardener() {
-		return rc.getInitialArchonLocations(rc.getTeam()).length >= rc.getRobotCount();
+		return allyArchonLocations.length >= rc.getRobotCount();
 	}
 
 	private final int ROUNDS_TO_WAIT_BEFORE_SPAWNING_MORE_THAN_INITIAL_GARDENER = 125;
@@ -125,13 +125,13 @@ public class ArchonLogic extends RobotLogic {
 		if (!rc.canMove(location)) {
 			return false;
 		}
-		MapLocation avgEnemyLoc = Utils.getAvgArchonLocations(rc, getEnemyTeam());
-		MapLocation avgAllyLoc = Utils.getAvgArchonLocations(rc, rc.getTeam());
+		MapLocation avgEnemyLoc = Utils.getAvgArchonLocations(rc, enemyTeam);
+		MapLocation avgAllyLoc = Utils.getAvgArchonLocations(rc, allyTeam);
 		return location.distanceTo(avgAllyLoc) <= ((location.distanceTo(avgEnemyLoc) * 0.7) + 0.01);
 	}
 
 	private void broadcastForHelpIfNeeded() throws GameActionException {
-		RobotInfo[] foes = rc.senseNearbyRobots(-1, getEnemyTeam());
+		RobotInfo[] foes = rc.senseNearbyRobots(-1, enemyTeam);
 
 		if (foes.length > 0) {
 			BroadcastManager.saveLocation(rc, foes[0].location, LocationInfoType.ARCHON_HELP);

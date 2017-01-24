@@ -32,21 +32,30 @@ public abstract class RobotLogic {
 
 	private static boolean needToSetDirection;
 
+	public Team allyTeam;
+	public Team enemyTeam;
+
+	public MapLocation[] allyArchonLocations;
+	public MapLocation[] enemyArchonLocations;
+
 	public RobotLogic(RobotController rc) {
 		this.rc = rc;
 		isLeftUnit = Math.random() > .5;
 		needToSetDirection = true;
+		allyTeam = rc.getTeam();
+		enemyTeam = getEnemyTeam();
+		allyArchonLocations = rc.getInitialArchonLocations(allyTeam);
+		enemyArchonLocations = rc.getInitialArchonLocations(enemyTeam);
 	}
 
 	public abstract void run();
 
-	public Team getEnemyTeam() {
-		return rc.getTeam().opponent();
+	private Team getEnemyTeam() {
+		return allyTeam.opponent();
 	}
 
 	public MapLocation getRandomEnemyInitialArchonLocation() {
-		MapLocation[] enemyLocs = rc.getInitialArchonLocations(getEnemyTeam());
-		return enemyLocs[(int) (enemyLocs.length * (Math.random()))];
+		return enemyArchonLocations[(int) (enemyArchonLocations.length * (Math.random()))];
 	}
 
 	/*
@@ -245,14 +254,6 @@ public abstract class RobotLogic {
 			return true;
 		}
 		return false;
-	}
-
-	public void detectEnemiesAndSendHelpBroadcast() throws GameActionException {
-		RobotInfo[] foes = rc.senseNearbyRobots(-1, getEnemyTeam());
-
-		if (foes.length > 0) {
-			BroadcastManager.saveLocation(rc, foes[0].location, BroadcastManager.LocationInfoType.GARDENER_HELP);
-		}
 	}
 
 	/*
@@ -473,7 +474,7 @@ public abstract class RobotLogic {
 
 	public boolean closeToLocationAndNoEnemies(RobotController rc, MapLocation location) throws GameActionException {
 		if (rc.getLocation().distanceTo(location) < (rc.getType().sensorRadius * .8)
-				&& rc.senseNearbyRobots(-1, getEnemyTeam()).length == 0) {
+				&& rc.senseNearbyRobots(-1, enemyTeam).length == 0) {
 			return true;
 		}
 		return false;
@@ -481,7 +482,7 @@ public abstract class RobotLogic {
 
 	public boolean closeToLocationAndJustArchons(RobotController rc, MapLocation location) throws GameActionException {
 		boolean enemy = false;
-		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(-1, getEnemyTeam());
+		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(-1, enemyTeam);
 		for (RobotInfo info : nearbyRobots) {
 			if (info.getType() != RobotType.ARCHON) {
 				enemy = true;
@@ -534,11 +535,11 @@ public abstract class RobotLogic {
 				System.out.println("Our priority is sufficiently high");
 				System.out.println("We will hit " + getFirstHitTeam(bulletSpawnPoint, toEnemy, hitTrees,
 						rc.getLocation().distanceTo(enemies[index].getLocation())));
-				System.out.println("We are on team " + rc.getTeam());
+				System.out.println("We are on team " + allyTeam);
 
 				// Only attack if we will hit an enemy.
 				if (getFirstHitTeam(bulletSpawnPoint, toEnemy, hitTrees,
-						rc.getLocation().distanceTo(enemies[index].getLocation())) == getEnemyTeam()) {
+						rc.getLocation().distanceTo(enemies[index].getLocation())) == enemyTeam) {
 					maxIndex = index;
 					maxPriority = priority;
 					System.out.println("We have found a new target");
@@ -610,8 +611,8 @@ public abstract class RobotLogic {
 	public void drawBullshitLine() {
 		/*
 		 * int[] color = getRandomColor(); MapLocation[] enemyLocs =
-		 * rc.getInitialArchonLocations(getEnemyTeam()); MapLocation[] allyLocs
-		 * = rc.getInitialArchonLocations(rc.getTeam()); MapLocation[] locs =
+		 * enemyArchonLocations; MapLocation[] allyLocs
+		 * = allyArchonLocations; MapLocation[] locs =
 		 * new MapLocation[allyLocs.length + enemyLocs.length]; for(int i = 0; i
 		 * < enemyLocs.length; i++) { locs[i] = enemyLocs[i]; } for(int i =
 		 * enemyLocs.length; i < allyLocs.length + enemyLocs.length; i++) {
@@ -1019,7 +1020,7 @@ public abstract class RobotLogic {
 
 		for (RobotInfo robot : otherRobots) {
 			double multiplier = 1;
-			if (robot.getTeam().equals(getEnemyTeam())) {
+			if (robot.getTeam().equals(enemyTeam)) {
 				multiplier = 3;
 			}
 
@@ -1032,6 +1033,15 @@ public abstract class RobotLogic {
 			return originDir.directionTo(loc).opposite();
 		}
 		return null;
+	}
+
+	public boolean edgeWithinRadius(float radius) throws GameActionException {
+		MapLocation loc = rc.getLocation();
+		float threshold = (float) Math.ceil(radius / 2);
+		return !rc.onTheMap(loc.add(Direction.getNorth(), threshold))
+				|| !rc.onTheMap(loc.add(Direction.getEast(), threshold))
+				|| !rc.onTheMap(loc.add(Direction.getWest(), threshold))
+				|| !rc.onTheMap(loc.add(Direction.getSouth(), threshold));
 	}
 
 }
