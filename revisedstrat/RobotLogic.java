@@ -448,10 +448,12 @@ public abstract class RobotLogic {
 		float xStart = location.x;
 		float yStart = location.y;
 
+		float dx = xTarget - xStart;
+		float dy = yTarget - yStart;
 		// Compute the shortest distance between the bullet and the center of
 		// the target
 		float angle = direction.radians;
-		float dist = (float) Math.abs(Math.sin(angle) * (xTarget - xStart) - Math.cos(angle) * (yTarget - yStart));
+		float dist = (float) Math.abs(Math.sin(angle) * (dx) - Math.cos(angle) * dy);
 
 		// If the shortest distance is too large, the bullet won't ever
 		// intersect the target
@@ -461,12 +463,13 @@ public abstract class RobotLogic {
 
 		// Compute the distance the bullet travels to get to the point of
 		// closest approach
+		float distSquared = dist * dist;
 		float lengthToClosestApproach = (float) Math
-				.sqrt((xTarget - xStart) * (xTarget - xStart) + (yTarget - yStart) * (yTarget - yStart) - dist * dist);
+				.sqrt((dx) * (dx) + (dy) * (dy) - distSquared);
 
 		// Compute the distance the bullet travels from the intersection point
 		// to the closest approach
-		float excessDistance = (float) Math.sqrt(targetRadius * targetRadius - dist * dist);
+		float excessDistance = (float) Math.sqrt(targetRadius * targetRadius - distSquared);
 
 		return lengthToClosestApproach - excessDistance;
 	}
