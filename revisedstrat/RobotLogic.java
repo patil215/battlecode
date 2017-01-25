@@ -1,7 +1,6 @@
 package revisedstrat;
 
 import battlecode.common.*;
-import revisedstrat.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -588,8 +587,7 @@ public abstract class RobotLogic {
 	protected BulletInfo[] getAllIncomingBullets(BulletInfo[] bullets, MapLocation location, float angleTolerance) {
 		ArrayList<BulletInfo> incoming = new ArrayList<>();
 		for (BulletInfo bullet : bullets) {
-			if (Math.abs(bullet.location.directionTo(location).degreesBetween(bullet.dir)) < angleTolerance
-					&& bullet.location.distanceTo(location) < 5) {
+			if (Math.abs(bullet.location.directionTo(location).degreesBetween(bullet.dir)) < angleTolerance) {
 				incoming.add(bullet);
 			}
 		}

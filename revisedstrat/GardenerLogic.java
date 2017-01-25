@@ -1,10 +1,7 @@
 package revisedstrat;
 
 import battlecode.common.*;
-import revisedstrat.BroadcastManager;
 import revisedstrat.BroadcastManager.LocationInfoType;
-import revisedstrat.RobotLogic;
-import revisedstrat.Utils;
 
 /**
  * Created by patil215 on 1/12/17.
@@ -54,20 +51,15 @@ public class GardenerLogic extends RobotLogic {
 						settled = moveTowardsGoodSpot();
 						System.out.println("spawning unit");
 						spawnUnit(Utils.randomDirection());
+					} else if(inDanger()) {
+						tryToBuildUnit(RobotType.SOLDIER);
 					} else {
 						numRoundsSettling++;
-						if (rc.getBuildCooldownTurns() == 0 && rc.getRoundNum() > 150) {
-							tryToBuildUnit(determineUnitToSpawn(Utils.randomDirection()));
-						}
 						settled = moveTowardsGoodSpot();
 					}
 				} else {
 					settled = true;
-					if (inDanger()) {
-						tryToBuildUnit(RobotType.SOLDIER);
-					} else {
-						createTreeRingAndSpawnUnits();
-					}
+					createTreeRingAndSpawnUnits();
 					detectTreesAndAskLumberjacksForHelp();
 				}
 

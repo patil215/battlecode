@@ -1,11 +1,6 @@
 package econrush;
 
-import battlecode.common.Clock;
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
-import battlecode.common.RobotType;
-import battlecode.common.TreeInfo;
+import battlecode.common.*;
 
 public strictfp class RobotPlayer {
 	static RobotController rc;
