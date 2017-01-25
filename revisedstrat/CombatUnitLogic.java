@@ -191,19 +191,22 @@ public class CombatUnitLogic extends RobotLogic {
 	private void executeCombat(RobotInfo[] enemyRobots) throws GameActionException {
 		BulletInfo[] surroundingBullets = rc.senseNearbyBullets();
 
+		//willGetHitByABullet()
 		// Move
 		BulletInfo hittingBullet = getTargetingBullet(surroundingBullets);
 		if (hittingBullet != null) {
 			System.out.println("In combat");
-			MapLocation safeLocation = getBulletAvoidingLocation(rc);
-			if (safeLocation != null) {
-				move(safeLocation);
-			}
+//			MapLocation safeLocation = getBulletAvoidingLocation(rc);
+//			if (safeLocation != null) {
+//				move(safeLocation);
+//			}
+			dodge(hittingBullet);
 		}
 
 		// Shoot
 		System.out.println("Start bytecode for highestPriorityTarget = " + Clock.getBytecodeNum());
-		RobotInfo target = getHighestPriorityTarget(enemyRobots, true);
+		boolean hitTrees = rc.getTeamBullets() > 60;
+		RobotInfo target = getHighestPriorityTarget(enemyRobots, hitTrees);
 		System.out.println("End bytecode for highestPriorityTarget = " + Clock.getBytecodeNum());
 		if (target != null) {
 			System.out.println("Found a target");
@@ -284,22 +287,13 @@ public class CombatUnitLogic extends RobotLogic {
 	}
 
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
-		int startByteCode = Clock.getBytecodeNum();
 		Direction shotDir = rc.getLocation().directionTo(target.location);
 		if (rc.canFireSingleShot()) {
 			if (shouldFirePentadShot(target) && rc.canFirePentadShot()) {
 				rc.firePentadShot(shotDir);
-			} else if(Math.abs(Clock.getBytecodeNum()-startByteCode)<4000){
-				if (shouldFireTriShot(target) && rc.canFireTriadShot()) {
+			} else if (rc.canFireTriadShot() && getBulletGenerationSpeed() > 3) {
 					rc.fireTriadShot(shotDir);
-				} else {
-					rc.fireSingleShot(shotDir);
-				}
-			} else if(rc.canFirePentadShot()){
-				rc.firePentadShot(shotDir);
-			} else if(rc.canFireTriadShot()){
-				rc.fireTriadShot(shotDir);
-			} else{
+			} else {
 				rc.fireSingleShot(shotDir);
 			}
 		}

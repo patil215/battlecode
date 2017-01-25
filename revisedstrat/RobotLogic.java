@@ -504,6 +504,10 @@ public abstract class RobotLogic {
 			return NO_INTERSECT;
 		}
 
+		if(Math.abs(location.directionTo(rc.getLocation()).degreesBetween(direction)) > 90) {
+			return NO_INTERSECT;
+		}
+
 		// Compute the distance the bullet travels to get to the point of
 		// closest approach
 		float distSquared = dist * dist;
@@ -647,35 +651,11 @@ public abstract class RobotLogic {
 		return new Direction(avgX, avgY);
 	}
 
-<<<<<<< HEAD
-	public void drawBullshitLine() {
-		/*
-		 * int[] color = getRandomColor(); MapLocation[] enemyLocs =
-		 * enemyArchonLocations; MapLocation[] allyLocs = allyArchonLocations;
-		 * MapLocation[] locs = new MapLocation[allyLocs.length +
-		 * enemyLocs.length]; for(int i = 0; i < enemyLocs.length; i++) {
-		 * locs[i] = enemyLocs[i]; } for(int i = enemyLocs.length; i <
-		 * allyLocs.length + enemyLocs.length; i++) { locs[i] = allyLocs[i -
-		 * enemyLocs.length]; } float minX = Float.MAX_VALUE; float maxX =
-		 * Float.MIN_VALUE; float minY = Float.MAX_VALUE; float maxY =
-		 * Float.MIN_VALUE; for(MapLocation loc : locs) { if(loc.x < minX) {
-		 * minX = loc.x; } if(loc.y < minY) { minY = loc.y; } if(loc.x > maxX) {
-		 * maxX = loc.x; } if(loc.y > maxY) { maxY = loc.y; } }
-		 * 
-		 * float x = minX + (float) (Math.random() * (maxX - minX)); float y =
-		 * minY + (float) (Math.random() * (maxY - minY));
-		 * 
-		 * rc.setIndicatorLine(rc.getLocation(), new MapLocation(x, y),
-		 * color[0], color[1], color[2]);
-		 */
-	}
 
-=======
->>>>>>> 134d990cfdaa524b0645671ac930e837f9b43e90
 	protected BulletInfo[] getAllIncomingBullets(BulletInfo[] bullets, MapLocation location, float angleTolerance) {
 		ArrayList<BulletInfo> incoming = new ArrayList<>();
 		for (BulletInfo bullet : bullets) {
-			if (bullet.location.directionTo(location).degreesBetween(bullet.dir) < angleTolerance
+			if (Math.abs(bullet.location.directionTo(location).degreesBetween(bullet.dir)) < angleTolerance
 					&& bullet.location.distanceTo(location) < 5) {
 				incoming.add(bullet);
 			}
@@ -999,11 +979,6 @@ public abstract class RobotLogic {
 
 		MapLocation originDir = new MapLocation(0, 0);
 		if (!loc.equals(originDir)) {
-<<<<<<< HEAD
-=======
-			rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(originDir.directionTo(loc).opposite(), 2), 128, 128,
-					128);
->>>>>>> 134d990cfdaa524b0645671ac930e837f9b43e90
 			return originDir.directionTo(loc).opposite();
 		}
 		return null;
@@ -1016,6 +991,13 @@ public abstract class RobotLogic {
 				|| !rc.onTheMap(loc.add(Direction.getEast(), threshold))
 				|| !rc.onTheMap(loc.add(Direction.getWest(), threshold))
 				|| !rc.onTheMap(loc.add(Direction.getSouth(), threshold));
+	}
+
+	public float getBulletGenerationSpeed() {
+		float treeHealthMultiplier = 1;
+		float treeHealth = 50;
+		return (rc.getTreeCount() * GameConstants.BULLET_TREE_BULLET_PRODUCTION_RATE
+				* treeHealth * treeHealthMultiplier) + 2;
 	}
 
 }

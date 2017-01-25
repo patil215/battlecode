@@ -49,15 +49,19 @@ public class GardenerLogic extends RobotLogic {
 					if (numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER
 							&& UNIT_SPAWNER_ELIGIBLE) {
 						settled = moveTowardsGoodSpot();
+						System.out.println("spawning unit");
 						spawnUnit(Utils.randomDirection());
 					} else {
 						numRoundsSettling++;
+						if (rc.getBuildCooldownTurns() == 0 && rc.getRobotCount() - 2 <= allyArchonLocations.length) {
+							tryToBuildUnit(determineUnitToSpawn(Utils.randomDirection()));
+						}
 						settled = moveTowardsGoodSpot();
 					}
-					detectTreesAndAskLumberjacksForHelp();
 				} else {
 					settled = true;
 					createTreeRingAndSpawnUnits();
+					detectTreesAndAskLumberjacksForHelp();
 				}
 
 				sendHelpBroadcastIfNeeded();
@@ -75,7 +79,8 @@ public class GardenerLogic extends RobotLogic {
 	private void detectTreesAndAskLumberjacksForHelp() throws GameActionException {
 		TreeInfo[] treesInWay = rc.senseNearbyTrees(MIN_FREE_SPACE_REQUIREMENT, Team.NEUTRAL);
 		if (treesInWay.length > 0) {
-			BroadcastManager.saveLocation(rc, treesInWay[0].location, LocationInfoType.LUMBERJACK_GET_HELP);
+			TreeInfo closestTree = (TreeInfo) getClosestBody(treesInWay);
+			BroadcastManager.saveLocation(rc, closestTree.location, LocationInfoType.LUMBERJACK_GET_HELP);
 		}
 	}
 
@@ -151,8 +156,9 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private void tryToBuildUnit(RobotType toBuild) throws GameActionException {
+		System.out.println("trying to build unit");
 		Direction test = Direction.getNorth();
-		for (int deltaDegree = 0; deltaDegree < 360; deltaDegree++) {
+		for (int deltaDegree = (int) (Math.random() * 360), count = 0; count < 36; deltaDegree+=10, deltaDegree %= 360, count++) {
 			if (rc.canBuildRobot(toBuild, test.rotateLeftDegrees(deltaDegree))) {
 				rc.buildRobot(toBuild, test.rotateLeftDegrees(deltaDegree));
 				return;
@@ -216,9 +222,6 @@ public class GardenerLogic extends RobotLogic {
 	 * found after the move.
 	 */
 	private boolean moveTowardsGoodSpot() throws GameActionException {
-		if (rc.getBuildCooldownTurns() == 0) {
-			tryToBuildUnit(determineUnitToSpawn(Utils.randomDirection()));
-		}
 		// Try to find a free space to settle until 20 turns have elapsed
 		if (!isGoodLocation()) {
 			moveDir = moveWithDiagonalBounce(moveDir);

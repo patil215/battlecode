@@ -103,29 +103,14 @@ public class LumberjackLogic extends RobotLogic {
 		TreeInfo toChop = getTargetTree(trees);
 		if (toChop != null) {
 			rc.setIndicatorLine(rc.getLocation(), toChop.location, 80, 80, 0);
-<<<<<<< HEAD
-			TreeInfo treeInFront = getClosestTreeThatCanBeChopped(rc.senseNearbyTrees());
-			boolean chopped = false;
-			System.out.println("yea");
-			rc.setIndicatorDot(toChop.location, 128, 128, 0);
-			rc.setIndicatorDot(toChop.location, 128, 0, 0);
-=======
 			TreeInfo treeInFront = getClosestTreeThatCanBeChopped(trees, null);
->>>>>>> 134d990cfdaa524b0645671ac930e837f9b43e90
 			if (rc.canChop(toChop.getID())) {
 				System.out.println("sandwich");
 				rc.chop(toChop.getID());
 			} else if (treeInFront != null && rc.canChop(treeInFront.ID)) {
 				System.out.println("read");
 				rc.chop(treeInFront.ID);
-<<<<<<< HEAD
-				chopped = true;
-			}
-			if (!chopped) {
-				System.out.println("hm");
-=======
 			} else {
->>>>>>> 134d990cfdaa524b0645671ac930e837f9b43e90
 				Direction toMove = moveTowards(toChop.getLocation());
 				if (toMove != null) {
 					move(toMove);
@@ -140,22 +125,10 @@ public class LumberjackLogic extends RobotLogic {
 		rc.setIndicatorLine(rc.getLocation(), destination, 80, 80, 0);
 		TreeInfo[] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
 		TreeInfo treeInFront = getClosestTreeThatCanBeChopped(trees, rc.getLocation().directionTo(destination));
-<<<<<<< HEAD
-		boolean chopped = false;
-		System.out.println("hello");
-=======
->>>>>>> 134d990cfdaa524b0645671ac930e837f9b43e90
 		if (treeInFront != null && rc.canChop(treeInFront.ID)) {
 			System.out.println("Trying to chop");
 			rc.chop(treeInFront.ID);
-<<<<<<< HEAD
-			chopped = true;
-		}
-		if (!chopped) {
-			System.out.println("I'm a lumb");
-=======
 		} else {
->>>>>>> 134d990cfdaa524b0645671ac930e837f9b43e90
 			this.tryToMoveToDestination();
 		}
 	}
