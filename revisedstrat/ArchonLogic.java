@@ -1,18 +1,18 @@
 package revisedstrat;
 
 import battlecode.common.*;
-import revisedstrat.BroadcastManager;
 import revisedstrat.BroadcastManager.LocationInfoType;
-import revisedstrat.RobotLogic;
-import revisedstrat.Utils;
 
 /**
  * Created by patil215 on 1/12/17.
  */
 public class ArchonLogic extends RobotLogic {
 
+	private final float MIN_FREE_SPACE_REQUIREMENT;
+
 	public ArchonLogic(RobotController rc) {
 		super(rc);
+		MIN_FREE_SPACE_REQUIREMENT = rc.getType().bodyRadius + 1;
 	}
 
 	@Override
@@ -40,12 +40,19 @@ public class ArchonLogic extends RobotLogic {
 				}
 
 				broadcastForHelpIfNeeded();
-
+				detectTreesAndAskLumberjacksForHelp();
 				endTurn();
 			}
 
 		} catch (GameActionException e) {
 			e.printStackTrace();
+		}
+	}
+	private void detectTreesAndAskLumberjacksForHelp() throws GameActionException {
+		TreeInfo[] treesInWay = rc.senseNearbyTrees(MIN_FREE_SPACE_REQUIREMENT, Team.NEUTRAL);
+		if (treesInWay.length > 0) {
+			TreeInfo closestTree = (TreeInfo) getClosestBody(treesInWay);
+			doob.BroadcastManager.saveLocation(rc, closestTree.location, doob.BroadcastManager.LocationInfoType.LUMBERJACK_GET_HELP);
 		}
 	}
 
@@ -106,12 +113,11 @@ public class ArchonLogic extends RobotLogic {
 
 	private MapLocation pickNextLocation() throws GameActionException {
 
-		// Try to move away from other units first
-		Direction toEnemy = rc.getLocation().directionTo(enemyArchonLocations[0]);
+		/*Direction toEnemy = rc.getLocation().directionTo(enemyArchonLocations[0]);
 		MapLocation proposed = rc.getLocation().add(toEnemy, rc.getType().strideRadius - 0.01f);
 		if(isValidNextArchonLocation(proposed)) {
 			return proposed;
-		}
+		}*/
 
 		TreeInfo[] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
 		for (TreeInfo tree : trees) {

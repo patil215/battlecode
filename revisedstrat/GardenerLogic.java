@@ -1,10 +1,7 @@
 package revisedstrat;
 
 import battlecode.common.*;
-import revisedstrat.BroadcastManager;
 import revisedstrat.BroadcastManager.LocationInfoType;
-import revisedstrat.RobotLogic;
-import revisedstrat.Utils;
 
 /**
  * Created by patil215 on 1/12/17.
@@ -12,13 +9,14 @@ import revisedstrat.Utils;
 public class GardenerLogic extends RobotLogic {
 
 	private final int NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE = 200;
-	private final int NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE = 400;
-	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER = 50;
+	private final int NUM_ROUNDS_BEFORE_DEGENERATE_ELIGIBLE = 150;
+	private final int NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE = 450;
+	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER = 60;
 	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = 25;
 	private final float MIN_FREE_SPACE_REQUIREMENT = 5;
 
 	private Direction moveDir;
-	private final boolean UNIT_SPAWNER_ELIGIBLE;
+	private boolean UNIT_SPAWNER_ELIGIBLE;
 	private final boolean DEGENERATE_ELIGIBLE;
 	private final boolean SHOULD_SPAWN_TANKS;
 
@@ -29,8 +27,8 @@ public class GardenerLogic extends RobotLogic {
 		double TANK_SPAWNER_CHANCE = rc.getRoundNum() * 2.0 / rc.getRoundLimit();
 		SHOULD_SPAWN_TANKS = Math.random() < TANK_SPAWNER_CHANCE
 				&& !(rc.getRobotCount() - 1 == allyArchonLocations.length);
-		UNIT_SPAWNER_ELIGIBLE = rc.getRoundNum() > NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE;
-		DEGENERATE_ELIGIBLE = rc.getRoundNum() < NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE;
+		DEGENERATE_ELIGIBLE = NUM_ROUNDS_BEFORE_DEGENERATE_ELIGIBLE < rc.getRoundNum()
+				&& rc.getRoundNum() < NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE;
 	}
 
 	// TODO: make gardener only send help broadcast every 50 rounds
@@ -47,6 +45,32 @@ public class GardenerLogic extends RobotLogic {
 
 			while (true) {
 
+				UNIT_SPAWNER_ELIGIBLE = rc.getRoundNum() > NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE;
+
+				if(!settled) {
+					if(DEGENERATE_ELIGIBLE && numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE) {
+						settled = true;
+						continue;
+					}
+					if(UNIT_SPAWNER_ELIGIBLE && numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER) {
+						if (rc.getBuildCooldownTurns() == 0 && rc.getTeamBullets() >= 100) {
+							RobotType typeToBuild = determineUnitToSpawn(Utils.randomDirection());
+							tryToBuildUnit(typeToBuild);
+						}
+					}
+					numRoundsSettling++;
+					settled = moveTowardsGoodSpot();
+				} else {
+					if(inDanger()) {
+						tryToBuildUnit(RobotType.SOLDIER);
+					} else {
+						createTreeRingAndSpawnUnits();
+					}
+					detectTreesAndAskLumberjacksForHelp();
+				}
+
+
+				/*UNIT_SPAWNER_ELIGIBLE = rc.getRoundNum() > NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE;
 				if (!settled && !(DEGENERATE_ELIGIBLE
 						&& numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE)) {
 					if (numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER
@@ -69,7 +93,7 @@ public class GardenerLogic extends RobotLogic {
 						createTreeRingAndSpawnUnits();
 					}
 					detectTreesAndAskLumberjacksForHelp();
-				}
+				}*/
 
 				sendHelpBroadcastIfNeeded();
 				waterLowestHealthTree();

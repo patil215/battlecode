@@ -1,10 +1,7 @@
 package revisedstrat;
 
 import battlecode.common.*;
-import revisedstrat.BroadcastManager;
 import revisedstrat.BroadcastManager.LocationInfoType;
-import revisedstrat.RobotLogic;
-import revisedstrat.Utils;
 
 /**
  * Created by patil215 on 1/18/17.
@@ -14,6 +11,7 @@ public class LumberjackLogic extends RobotLogic {
 	private Direction moveDir;
 	private boolean respondToBroadcast;
 	private final int TREE_TOO_FAR_AWAY_DISTANCE = 15;
+	private final int ROUNDS_TO_TRY_TO_HELP = 200;
 
 	public LumberjackLogic(RobotController rc) {
 		super(rc);
@@ -24,6 +22,7 @@ public class LumberjackLogic extends RobotLogic {
 
 	@Override
 	public void run() {
+		int birthRound = rc.getRoundNum();
 		while (true) {
 			try {
 
@@ -53,25 +52,27 @@ public class LumberjackLogic extends RobotLogic {
 				TreeInfo[] neutralTrees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
 				TreeInfo toChop = getTargetTree(neutralTrees);
 
-				if (respondToBroadcast) {
-					if (toChop != null && toChop.containedRobot != null
-							&& (this.getDestination() == null || !getDestination().equals(toChop.getLocation()))) {
-						this.setDestination(toChop.location);
-					}
-
-					if (getDestination() != null
-							&& rc.getLocation().distanceTo(getDestination()) < TREE_TOO_FAR_AWAY_DISTANCE) {
-						moveTowardsAndChop(getDestination());
-						if (rc.getLocation().distanceTo(getDestination()) < DISTANCE_TO_CLEAR_DESTINATION) {
-							setDestination(null);
+				if(rc.getRoundNum() - birthRound < ROUNDS_TO_TRY_TO_HELP) {
+					if (respondToBroadcast) {
+						if (toChop != null && toChop.containedRobot != null
+								&& (this.getDestination() == null || !getDestination().equals(toChop.getLocation()))) {
+							this.setDestination(toChop.location);
 						}
-						endTurn();
-						continue;
-					} else {
-						MapLocation destination = BroadcastManager.getRecentLocation(rc,
-								LocationInfoType.LUMBERJACK_GET_HELP);
-						setDestination(destination);
-						BroadcastManager.invalidateLocation(rc, LocationInfoType.LUMBERJACK_GET_HELP);
+
+						if (getDestination() != null
+								&& rc.getLocation().distanceTo(getDestination()) < TREE_TOO_FAR_AWAY_DISTANCE) {
+							moveTowardsAndChop(getDestination());
+							if (rc.getLocation().distanceTo(getDestination()) < DISTANCE_TO_CLEAR_DESTINATION) {
+								setDestination(null);
+							}
+							endTurn();
+							continue;
+						} else {
+							MapLocation destination = BroadcastManager.getRecentLocation(rc,
+									LocationInfoType.LUMBERJACK_GET_HELP);
+							setDestination(destination);
+							BroadcastManager.invalidateLocation(rc, LocationInfoType.LUMBERJACK_GET_HELP);
+						}
 					}
 				}
 
