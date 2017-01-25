@@ -191,17 +191,30 @@ public class CombatUnitLogic extends RobotLogic {
 	private void executeCombat(RobotInfo[] enemyRobots) throws GameActionException {
 		BulletInfo[] surroundingBullets = rc.senseNearbyBullets();
 
-		//willGetHitByABullet()
-		// Move
-		BulletInfo hittingBullet = getTargetingBullet(surroundingBullets);
-		if (hittingBullet != null) {
-			System.out.println("In combat");
-//			MapLocation safeLocation = getBulletAvoidingLocation(rc);
-//			if (safeLocation != null) {
-//				move(safeLocation);
-//			}
-			dodge(hittingBullet);
+		if(surroundingBullets.length > 0) {
+			// Move
+			MapLocation bulletAvoidingLocation = getBulletAvoidingLocation(rc);
+			// If we are gonna get hit by a bullet
+			if (bulletAvoidingLocation != null) {
+				// Try random locations and move to that loc
+				move(bulletAvoidingLocation);
+			} else {
+				// If we're gonna get hit long term, move perpendicularly
+				BulletInfo hittingBullet = getTargetingBullet(surroundingBullets);
+				if (hittingBullet != null) {
+					dodge(hittingBullet);
+				}
+			}
+		} else {
+			// Move towards the enemy, especially if it's an econ unit
+			for(RobotInfo robotInfo : enemyRobots) {
+				if(robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON)) {
+					moveTowards(robotInfo.getLocation());
+					break;
+				}
+			}
 		}
+
 
 		// Shoot
 		System.out.println("Start bytecode for highestPriorityTarget = " + Clock.getBytecodeNum());

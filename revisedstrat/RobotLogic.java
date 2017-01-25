@@ -1,6 +1,7 @@
 package revisedstrat;
 
 import battlecode.common.*;
+import revisedstrat.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -907,6 +908,9 @@ public abstract class RobotLogic {
 				(float) (Math.random() * (rc.getType().strideRadius - (bodyRadius / 2))) + bodyRadius / 2);
 	}
 
+	/*
+	Returns null if no location found, or the player is not going to be hit by a bullet.
+	 */
 	public MapLocation getBulletAvoidingLocation(RobotController rc) {
 
 		float maxMovement = rc.getType().strideRadius;
@@ -921,6 +925,10 @@ public abstract class RobotLogic {
 		}
 
 		MapLocation[][] segments = getSegments(bullets);
+
+		if(getClosestLineSegmentWithinThreshold(rc.getLocation(), segments, hitRadius) == null) {
+			return null;
+		}
 
 		int byteCodeStart = Clock.getBytecodeNum();
 		System.out.println("Outside");
