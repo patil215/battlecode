@@ -735,6 +735,16 @@ public abstract class RobotLogic {
 
 		return danger * totalDamage;
 	}
+	
+	protected boolean inDanger() {
+		RobotInfo[] foes = rc.senseNearbyRobots(-1, this.enemyTeam);
+		for(RobotInfo enemy: foes){
+			if(enemy.getType()!=RobotType.ARCHON && enemy.getType()!=RobotType.GARDENER){
+				return true;
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * This method returns the expected damage which a specific location will

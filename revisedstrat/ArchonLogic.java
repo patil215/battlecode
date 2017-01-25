@@ -85,7 +85,7 @@ public class ArchonLogic extends RobotLogic {
 
 	private boolean shouldSpawnGardener() {
 		if (rc.getRoundNum() > ROUNDS_TO_WAIT_BEFORE_SPAWNING_MORE_THAN_INITIAL_GARDENER) {
-			if (Math.random() > GARDENER_SPAWN_CHANCE) {
+			if (Math.random() > GARDENER_SPAWN_CHANCE && (!inDanger() || rc.getTeamBullets() >= 200)) {
 				return true;
 			}
 		}
