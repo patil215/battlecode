@@ -1,7 +1,10 @@
 package revisedstrat;
 
 import battlecode.common.*;
+import revisedstrat.BroadcastManager;
 import revisedstrat.BroadcastManager.LocationInfoType;
+import revisedstrat.RobotLogic;
+import revisedstrat.Utils;
 
 /**
  * Created by patil215 on 1/12/17.
@@ -94,17 +97,6 @@ public class ArchonLogic extends RobotLogic {
 
 	private MapLocation pickNextLocation() throws GameActionException {
 
-		TreeInfo[] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
-		for (TreeInfo tree : trees) {
-			if (tree.containedBullets > 0 && rc.getLocation().distanceTo(tree.location) < rc.getType().sensorRadius * 0.75) {
-				Direction direction = moveTowards(tree.location);
-				MapLocation newLoc = rc.getLocation().add(direction, rc.getType().strideRadius);
-				if (isValidNextArchonLocation(newLoc)) {
-					return newLoc;
-				}
-			}
-		}
-
 		// Try to move away from other units first
 		Direction awayDir = getDirectionAway(rc.senseNearbyRobots());
 		if (awayDir != null) {
@@ -138,10 +130,7 @@ public class ArchonLogic extends RobotLogic {
 		}
 		MapLocation avgEnemyLoc = Utils.getAvgArchonLocations(rc, enemyTeam);
 		MapLocation avgAllyLoc = Utils.getAvgArchonLocations(rc, allyTeam);
-		if(rc.getLocation().distanceTo(avgAllyLoc) <= ((rc.getLocation().distanceTo(avgEnemyLoc) * 0.7) + 0.01)) {
-			return location.distanceTo(avgAllyLoc) <= ((location.distanceTo(avgEnemyLoc) * 0.7) + 0.01);
-		}
-		return true;
+		return location.distanceTo(avgAllyLoc) <= ((location.distanceTo(avgEnemyLoc) * 0.7) + 0.01);
 	}
 
 	private void broadcastForHelpIfNeeded() throws GameActionException {

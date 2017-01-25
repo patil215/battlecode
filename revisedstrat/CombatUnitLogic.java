@@ -191,10 +191,7 @@ public class CombatUnitLogic extends RobotLogic {
 	private void executeCombat(RobotInfo[] enemyRobots) throws GameActionException {
 		BulletInfo[] surroundingBullets = rc.senseNearbyBullets();
 
-		BulletInfo[] incomingBullets = getAllIncomingBullets(surroundingBullets, rc.getLocation(), 20);
-
-		if(incomingBullets.length > 0) {
-			System.out.println("incoming bullets");
+		if(surroundingBullets.length > 0) {
 			// Move
 			MapLocation bulletAvoidingLocation = getBulletAvoidingLocation(rc);
 			// If we are gonna get hit by a bullet
@@ -209,11 +206,10 @@ public class CombatUnitLogic extends RobotLogic {
 				}
 			}
 		} else {
-			System.out.println("no incoming bullets");
 			// Move towards the enemy, especially if it's an econ unit
 			for(RobotInfo robotInfo : enemyRobots) {
 				if(robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON)) {
-					move(moveTowards(robotInfo.getLocation()));
+					moveTowards(robotInfo.getLocation());
 					break;
 				}
 			}
@@ -279,17 +275,24 @@ public class CombatUnitLogic extends RobotLogic {
 		return numHit > 0;
 	}
 
-	private boolean shouldNotFirePentadShot(RobotInfo target) throws GameActionException {
+	private boolean shouldFirePentadShot(RobotInfo target) throws GameActionException {
 		
 		MapLocation currLoc = rc.getLocation();
 		MapLocation targetLoc = target.getLocation();
 		Direction toTarget = currLoc.directionTo(targetLoc);
 
+		Team opponent = rc.getTeam().opponent();
 		float radius = rc.getType().sensorRadius;
 
 		if (getFirstHitTeamAprox(currLoc, toTarget.rotateRightDegrees(GameConstants.PENTAD_SPREAD_DEGREES*2),
-				true, radius) == allyTeam && getFirstHitTeamAprox(currLoc, toTarget.rotateLeftDegrees(GameConstants.PENTAD_SPREAD_DEGREES*2),
-				true, radius) == allyTeam) {
+				true, radius) == opponent) {
+			System.out.println("Found right target");
+			return true;
+		}
+
+		if (getFirstHitTeamAprox(currLoc, toTarget.rotateLeftDegrees(GameConstants.PENTAD_SPREAD_DEGREES*2),
+				true, radius) == opponent) {
+			System.out.println("Found left target");
 			return true;
 		}
 
@@ -299,11 +302,11 @@ public class CombatUnitLogic extends RobotLogic {
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
 		Direction shotDir = rc.getLocation().directionTo(target.location);
 		if (rc.canFireSingleShot()) {
-			if (!shouldNotFirePentadShot(target) && rc.canFirePentadShot()/* && getBulletGenerationSpeed() > 3*/) {
+			if (shouldFirePentadShot(target) && rc.canFirePentadShot()) {
 				rc.firePentadShot(shotDir);
-			}/* else if (rc.canFireTriadShot() && getBulletGenerationSpeed() > 3) {
+			} else if (rc.canFireTriadShot() && getBulletGenerationSpeed() > 3) {
 					rc.fireTriadShot(shotDir);
-			}*/ else {
+			} else {
 				rc.fireSingleShot(shotDir);
 			}
 		}
