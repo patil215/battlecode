@@ -94,6 +94,25 @@ public abstract class RobotLogic {
 		return move;
 	}
 
+	/*
+	 * Sets the destination to the specified location. Used with
+	 * tryToMoveToDestination for path finding.
+	 * 
+	 * Passing in null clears the destination.
+	 */
+	public void setDestination(MapLocation newDesination) {
+		needToSetDirection = true;
+		if (newDesination != null) {
+			destination = newDesination;
+			distanceToDestination = Float.MAX_VALUE;
+			lastDirection = rc.getLocation().directionTo(destination);
+		} else {
+			destination = null;
+			distanceToDestination = 0;
+			lastDirection = null;
+		}
+	}
+
 	public MapLocation getDestination() {
 		return destination;
 	}
@@ -102,6 +121,55 @@ public abstract class RobotLogic {
 		return distanceToDestination;
 	}
 
+	/*
+	 * Tries to move the unit towards the destination using a bug algorithm. Set
+	 * the destination using setDestination.
+	 * 
+	 * Returns true if the robot moved in the desired direction. Otherwise,
+	 * false is returned.
+	 */
+	public boolean tryToMoveToDestination() throws GameActionException {
+		if (destination == null) {
+			return false;
+		}
+		// rc.setIndicatorLine(rc.getLocation(), destination, 40, 0, 40);
+		MapLocation currentLocation = rc.getLocation();
+		Direction toMove = rc.getLocation().directionTo(destination);
+		float currentDistance = currentLocation.distanceTo(destination);
+		System.out.println("Current distance is: " + currentDistance + " closest distance is : " + distanceToDestination
+				+ " canMove returns " + rc.canMove(toMove) + "If the next statement is true, then this unit leans left "
+				+ isLeftUnit);
+		if (currentDistance <= distanceToDestination && rc.canMove(toMove)) {
+			rc.move(toMove);
+			distanceToDestination = currentDistance;
+			needToSetDirection = true;
+			lastDirection = toMove;
+			return true;
+		} else if (rc.canMove(toMove)) {
+			toMove = lastDirection;
+			toMove = moveTowards(toMove);
+			if (toMove != null) {
+				lastDirection = toMove;
+				rc.move(toMove);
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			if (needToSetDirection) {
+				isLeftUnit = findBestDirection(destination);
+				needToSetDirection = false;
+			}
+			toMove = moveTowards(toMove);
+			if (toMove != null) {
+				lastDirection = toMove;
+				rc.move(toMove);
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
 
 	private boolean findBestDirection(MapLocation destination) {
 		Direction toMove = rc.getLocation().directionTo(destination);
@@ -199,7 +267,7 @@ public abstract class RobotLogic {
 			return toMove;
 		} else {
 			BulletInfo[] bullets = rc.senseNearbyBullets();
-			for (int deltaAngle = 0; deltaAngle < 360; deltaAngle += 5) {
+			for (int deltaAngle = 0; deltaAngle < 360; deltaAngle += 10) {
 				if (isLeftUnit) {
 					Direction leftDir = toMove.rotateLeftDegrees(deltaAngle);
 					if (rc.canMove(leftDir)
@@ -678,80 +746,6 @@ public abstract class RobotLogic {
 		}
 		return false;
 	}
-	
-	public void setDestination(MapLocation newDesination) {
-		needToSetDirection = true;
-		if (newDesination != null) {
-			destination = newDesination;
-			distanceToDestination = Float.MAX_VALUE;
-			lastDirection = rc.getLocation().directionTo(destination);
-		} else {
-			destination = null;
-			distanceToDestination = 0;
-			lastDirection = null;
-		}
-	}
-
-	
-	public boolean tryToMoveToDestination() throws GameActionException {
-		if (destination == null) {
-			return false;
-		}
-		rc.setIndicatorLine(rc.getLocation(), destination, 0, 0, 40);
-		MapLocation currentLocation = rc.getLocation();
-		Direction toMove = rc.getLocation().directionTo(destination);
-		float currentDistance = currentLocation.distanceTo(destination);
-		System.out.println("Current distance is: " + currentDistance + " closest distance is : " + distanceToDestination
-				+ " canMove returns " + rc.canMove(toMove) + "If the next statement is true, then this unit leans left "
-				+ isLeftUnit);
-		if (currentDistance <= distanceToDestination && rc.canMove(toMove)) {
-			rc.move(toMove);
-			distanceToDestination = currentDistance;
-			lastDirection = toMove;
-			return true;
-		} else if (rc.canMove(lastDirection)) {
-			toMove = findAngleThatBringsYouClosestToAnObstruction(lastDirection);
-			if (rc.canMove(toMove)) {
-				lastDirection = toMove;
-				rc.move(toMove);
-				distanceToDestination = Math.min(distanceToDestination, currentDistance);
-				return true;
-			} else {
-				toMove = moveTowards(toMove);
-				distanceToDestination = Math.min(distanceToDestination, currentDistance);
-				return false;
-			}
-		} else {
-			if (needToSetDirection) {
-				isLeftUnit = findBestDirection(destination);
-				needToSetDirection = false;
-			}
-			toMove = moveTowards(toMove);
-			if (toMove != null) {
-				lastDirection = toMove;
-				rc.move(toMove);
-				return true;
-			} else {
-				return false;
-			}
-		}
-	}
-
-
-	private Direction findAngleThatBringsYouClosestToAnObstruction(Direction lastDirection2) {
-		Direction testAngle = lastDirection2;
-		int directionMultiplyer;
-		if(this.isLeftUnit){
-			directionMultiplyer = 1;
-		} else{
-			directionMultiplyer = -1;
-		}
-		for(int deltaAngle = 0; deltaAngle < 360 && rc.canMove(testAngle); deltaAngle += 5){
-			testAngle = lastDirection.rotateRightDegrees(deltaAngle * directionMultiplyer);
-		}
-		return testAngle.rotateLeftDegrees(10*directionMultiplyer);
-	}
-
 
 	/**
 	 * This method returns the expected damage which a specific location will
