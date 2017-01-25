@@ -1,6 +1,7 @@
 package revisedstrat;
 
 import battlecode.common.RobotController;
+import revisedstrat.*;
 
 /**
  * Created by patil215 on 1/12/17.
