@@ -194,6 +194,7 @@ public class CombatUnitLogic extends RobotLogic {
 		BulletInfo[] incomingBullets = getAllIncomingBullets(surroundingBullets, rc.getLocation(), 20);
 
 		if(incomingBullets.length > 0) {
+			System.out.println("incoming bullets");
 			// Move
 			MapLocation bulletAvoidingLocation = getBulletAvoidingLocation(rc);
 			// If we are gonna get hit by a bullet
@@ -208,10 +209,11 @@ public class CombatUnitLogic extends RobotLogic {
 				}
 			}
 		} else {
+			System.out.println("no incoming bullets");
 			// Move towards the enemy, especially if it's an econ unit
 			for(RobotInfo robotInfo : enemyRobots) {
 				if(robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON)) {
-					moveTowards(robotInfo.getLocation());
+					move(moveTowards(robotInfo.getLocation()));
 					break;
 				}
 			}
@@ -297,7 +299,7 @@ public class CombatUnitLogic extends RobotLogic {
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
 		Direction shotDir = rc.getLocation().directionTo(target.location);
 		if (rc.canFireSingleShot()) {
-			if (!shouldNotFirePentadShot(target) && rc.canFirePentadShot() && getBulletGenerationSpeed() > 3) {
+			if (!shouldNotFirePentadShot(target) && rc.canFirePentadShot()/* && getBulletGenerationSpeed() > 3*/) {
 				rc.firePentadShot(shotDir);
 			}/* else if (rc.canFireTriadShot() && getBulletGenerationSpeed() > 3) {
 					rc.fireTriadShot(shotDir);
