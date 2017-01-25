@@ -56,14 +56,18 @@ public class GardenerLogic extends RobotLogic {
 						spawnUnit(Utils.randomDirection());
 					} else {
 						numRoundsSettling++;
-						if (rc.getBuildCooldownTurns() == 0 && rc.getRobotCount() - 2 <= allyArchonLocations.length) {
+						if (rc.getBuildCooldownTurns() == 0 && rc.getRoundNum() > 150) {
 							tryToBuildUnit(determineUnitToSpawn(Utils.randomDirection()));
 						}
 						settled = moveTowardsGoodSpot();
 					}
 				} else {
 					settled = true;
-					createTreeRingAndSpawnUnits();
+					if (inDanger()) {
+						tryToBuildUnit(RobotType.SOLDIER);
+					} else {
+						createTreeRingAndSpawnUnits();
+					}
 					detectTreesAndAskLumberjacksForHelp();
 				}
 
@@ -161,7 +165,8 @@ public class GardenerLogic extends RobotLogic {
 	private void tryToBuildUnit(RobotType toBuild) throws GameActionException {
 		System.out.println("trying to build unit");
 		Direction test = Direction.getNorth();
-		for (int deltaDegree = (int) (Math.random() * 360), count = 0; count < 36; deltaDegree+=10, deltaDegree %= 360, count++) {
+		for (int deltaDegree = (int) (Math.random()
+				* 360), count = 0; count < 36; deltaDegree += 10, deltaDegree %= 360, count++) {
 			if (rc.canBuildRobot(toBuild, test.rotateLeftDegrees(deltaDegree))) {
 				rc.buildRobot(toBuild, test.rotateLeftDegrees(deltaDegree));
 				return;
@@ -218,7 +223,6 @@ public class GardenerLogic extends RobotLogic {
 		}
 		return (treeArea / senseArea) + 0.1;
 	}
-
 
 	/*
 	 * Attempts to move to a good location. Returns true if a good location was
