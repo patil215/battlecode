@@ -49,10 +49,10 @@ public class ArchonLogic extends RobotLogic {
 		}
 	}
 
-	private final boolean SPAWN_AWAY_FROM_ENEMY_LOC = false;
+	private final boolean SPAWN_AWAY_FROM_ENEMY_ARCHON_LOC = false;
 
 	private void spawnGardener() throws GameActionException {
-		if (SPAWN_AWAY_FROM_ENEMY_LOC) {
+		if (SPAWN_AWAY_FROM_ENEMY_ARCHON_LOC) {
 			Direction enemyOppositeLocation = rc.getLocation().directionTo(getRandomEnemyInitialArchonLocation())
 					.opposite();
 			// Keep rotating until there is space to spawn a gardener
@@ -68,6 +68,15 @@ public class ArchonLogic extends RobotLogic {
 				}
 			}
 		} else {
+			RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
+			if(enemyRobots.length > 0) {
+				RobotInfo enemyRobot = enemyRobots[0];
+				// Spawn away from enemy
+				Direction oppositeDirection = rc.getLocation().directionTo(enemyRobot.location).opposite();
+				if(rc.canHireGardener(oppositeDirection)) {
+					rc.hireGardener(oppositeDirection);
+				}
+			}
 			for (int i = 0; i < 50; i++) {
 				Direction directionAttempt = Utils.randomDirection();
 				if (rc.canHireGardener(directionAttempt)) {
@@ -98,6 +107,25 @@ public class ArchonLogic extends RobotLogic {
 	private MapLocation pickNextLocation() throws GameActionException {
 
 		// Try to move away from other units first
+		Direction toEnemy = rc.getLocation().directionTo(enemyArchonLocations[0]);
+		MapLocation proposed = rc.getLocation().add(toEnemy, rc.getType().strideRadius - 0.01f);
+		if(isValidNextArchonLocation(proposed)) {
+			return proposed;
+		}
+
+		TreeInfo[] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
+		for (TreeInfo tree : trees) {
+			if (tree.containedBullets > 0
+					&& rc.getLocation().distanceTo(tree.location) < rc.getType().sensorRadius * 0.75) {
+				Direction direction = moveTowards(tree.location);
+				MapLocation newLoc = rc.getLocation().add(direction, rc.getType().strideRadius);
+				if (isValidNextArchonLocation(newLoc)) {
+					return newLoc;
+				}
+			}
+		}
+
+		/*// Try to move away from other units first
 		Direction awayDir = getDirectionAway(rc.senseNearbyRobots());
 		if (awayDir != null) {
 			for (int i = 5; i >= 1; i--) {
@@ -106,7 +134,7 @@ public class ArchonLogic extends RobotLogic {
 					return attemptedNewLocation;
 				}
 			}
-		}
+		}*/
 
 		for (int i = 0; i < 50; i++) {
 			Direction randomDir = Utils.randomDirection();
@@ -130,7 +158,10 @@ public class ArchonLogic extends RobotLogic {
 		}
 		MapLocation avgEnemyLoc = Utils.getAvgArchonLocations(rc, enemyTeam);
 		MapLocation avgAllyLoc = Utils.getAvgArchonLocations(rc, allyTeam);
-		return location.distanceTo(avgAllyLoc) <= ((location.distanceTo(avgEnemyLoc) * 0.7) + 0.01);
+		if (rc.getLocation().distanceTo(avgAllyLoc) <= ((rc.getLocation().distanceTo(avgEnemyLoc) * 0.7) + 0.01)) {
+			return location.distanceTo(avgAllyLoc) <= ((location.distanceTo(avgEnemyLoc) * 0.7) + 0.01);
+		}
+		return true;
 	}
 
 	private void broadcastForHelpIfNeeded() throws GameActionException {
