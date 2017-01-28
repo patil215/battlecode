@@ -100,9 +100,13 @@ public class ArchonLogic extends RobotLogic {
 	}
 
 	private final int ROUNDS_TO_WAIT_BEFORE_SPAWNING_MORE_THAN_INITIAL_GARDENER = 125;
-	private final double GARDENER_SPAWN_CHANCE = 0.75;
+	private final double GARDENER_SPAWN_CHANCE = 0.7;
 
 	private boolean shouldSpawnGardener() {
+		if(rc.getRoundNum() > 100 && rc.getRobotCount() - allyArchonLocations.length == 0) {
+			return true;
+		}
+
 		if (rc.getRoundNum() > ROUNDS_TO_WAIT_BEFORE_SPAWNING_MORE_THAN_INITIAL_GARDENER) {
 			if (Math.random() > GARDENER_SPAWN_CHANCE && (!inDanger() || rc.getTeamBullets() >= 200)) {
 				return true;
@@ -113,14 +117,11 @@ public class ArchonLogic extends RobotLogic {
 
 	private MapLocation pickNextLocation() throws GameActionException {
 
-		/*Direction toEnemy = rc.getLocation().directionTo(enemyArchonLocations[0]);
-		MapLocation proposed = rc.getLocation().add(toEnemy, rc.getType().strideRadius - 0.01f);
-		if(isValidNextArchonLocation(proposed)) {
-			return proposed;
-		}*/
 
-		TreeInfo[] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
-		for (TreeInfo tree : trees) {
+		/*TreeInfo[] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
+		BodyInfo closestTree = getClosestBody(trees);
+		if(closestTree != null) {
+			TreeInfo tree = (TreeInfo) closestTree;
 			if (tree.containedBullets > 0
 					&& rc.getLocation().distanceTo(tree.location) < rc.getType().sensorRadius * 0.75) {
 				Direction direction = moveTowards(tree.location);
@@ -129,13 +130,37 @@ public class ArchonLogic extends RobotLogic {
 					return newLoc;
 				}
 			}
+		}*/
+
+		if(rc.getLocation().distanceTo(enemyArchonLocations[0]) >
+				(allyArchonLocations[0].distanceTo(enemyArchonLocations[0]) * 0.95)) {
+			System.out.println("moving to");
+			Direction toEnemy = rc.getLocation().directionTo(enemyArchonLocations[0]);
+			MapLocation proposed = rc.getLocation().add(toEnemy, rc.getType().strideRadius - 0.01f);
+			if (isValidNextArchonLocation(proposed)) {
+				return proposed;
+			}
 		}
 
-		/*// Try to move away from other units first
-		Direction awayDir = getDirectionAway(rc.senseNearbyRobots());
-		if (awayDir != null) {
+		/*RobotInfo[] otherRobots = rc.senseNearbyRobots(-1, allyTeam);
+		int count = 0;
+		for(RobotInfo robot : otherRobots) {
+			if(robot.getType().equals(RobotType.GARDENER)) {
+				count++;
+			}
+		}
+		RobotInfo[] gardeners = new RobotInfo[count];
+		int index = 0;
+		for(RobotInfo robot : otherRobots) {
+			if(robot.getType().equals(RobotType.GARDENER)) {
+				gardeners[index] = robot;
+				index++;
+			}
+		}
+		Direction dirAway = getDirectionAway(gardeners);
+		if (dirAway != null) {
 			for (int i = 5; i >= 1; i--) {
-				MapLocation attemptedNewLocation = rc.getLocation().add(awayDir, (float) (i * 0.2));
+				MapLocation attemptedNewLocation = rc.getLocation().add(dirAway, (float) (i * 0.2));
 				if (isValidNextArchonLocation(attemptedNewLocation)) {
 					return attemptedNewLocation;
 				}

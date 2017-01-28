@@ -1,7 +1,6 @@
 package revisedstrat;
 
 import battlecode.common.*;
-import revisedstrat.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,7 +14,7 @@ public abstract class RobotLogic {
 
 	public RobotController rc;
 
-	private static int ARCHON_IGNORE_ROUND = 200;
+	private static int ARCHON_IGNORE_ROUND = 150;
 
 	private static final float NO_INTERSECT = Float.NEGATIVE_INFINITY;
 
@@ -653,16 +652,15 @@ public abstract class RobotLogic {
 	}
 
 
-	protected BulletInfo[] getAllIncomingBullets(BulletInfo[] bullets, MapLocation location, float angleTolerance) {
-		ArrayList<BulletInfo> incoming = new ArrayList<>();
+	protected boolean incomingBullet(BulletInfo[] bullets, MapLocation location, float angleTolerance) {
 		for (BulletInfo bullet : bullets) {
 			if (Math.abs(bullet.location.directionTo(location).degreesBetween(bullet.dir)) < angleTolerance
 					&& bullet.location.distanceTo(location) < 5) {
-				incoming.add(bullet);
+				return true;
 			}
 		}
 
-		return incoming.toArray(new BulletInfo[incoming.size()]);
+		return false;
 	}
 
 	protected void moveAndDodge(MapLocation enemy, BulletInfo[] bullets) throws GameActionException {

@@ -191,7 +191,7 @@ public class CombatUnitLogic extends RobotLogic {
 	private void executeCombat(RobotInfo[] enemyRobots) throws GameActionException {
 		BulletInfo[] surroundingBullets = rc.senseNearbyBullets();
 
-		if(surroundingBullets.length > 0) {
+		if (incomingBullet(surroundingBullets, rc.getLocation(), 20)) {
 			// Move
 			MapLocation bulletAvoidingLocation = getBulletAvoidingLocation(rc);
 			// If we are gonna get hit by a bullet
@@ -207,14 +207,15 @@ public class CombatUnitLogic extends RobotLogic {
 			}
 		} else {
 			// Move towards the enemy, especially if it's an econ unit
-			for(RobotInfo robotInfo : enemyRobots) {
-				if(robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON)) {
+			for (RobotInfo robotInfo : enemyRobots) {
+				if (robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON)
+						|| (robotInfo.getType().equals(RobotType.LUMBERJACK)
+								&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
 					moveTowards(robotInfo.getLocation());
 					break;
 				}
 			}
 		}
-
 
 		// Shoot
 		System.out.println("Start bytecode for highestPriorityTarget = " + Clock.getBytecodeNum());
@@ -247,9 +248,8 @@ public class CombatUnitLogic extends RobotLogic {
 	}
 
 	private void tryAndFireASmartShot(RobotInfo target) throws GameActionException {
-		RobotInfo[] enemies = Arrays.stream(rc.senseNearbyRobots())
-				.filter(r -> r.team == rc.getTeam().opponent()).toArray(RobotInfo[]::new);
-
+		RobotInfo[] enemies = Arrays.stream(rc.senseNearbyRobots()).filter(r -> r.team == rc.getTeam().opponent())
+				.toArray(RobotInfo[]::new);
 
 	}
 
@@ -262,13 +262,11 @@ public class CombatUnitLogic extends RobotLogic {
 		Team opponent = rc.getTeam().opponent();
 		float radius = rc.getType().sensorRadius;
 
-		if (getFirstHitTeamAprox(currLoc, toTarget.rotateLeftDegrees(-20),
-				true, radius) == opponent) {
+		if (getFirstHitTeamAprox(currLoc, toTarget.rotateLeftDegrees(-20), true, radius) == opponent) {
 			numHit++;
 		}
 
-		if (getFirstHitTeamAprox(currLoc, toTarget.rotateLeftDegrees(20),
-				true, radius) == rc.getTeam().opponent()) {
+		if (getFirstHitTeamAprox(currLoc, toTarget.rotateLeftDegrees(20), true, radius) == rc.getTeam().opponent()) {
 			numHit++;
 		}
 
@@ -276,7 +274,7 @@ public class CombatUnitLogic extends RobotLogic {
 	}
 
 	private boolean shouldFirePentadShot(RobotInfo target) throws GameActionException {
-		
+
 		MapLocation currLoc = rc.getLocation();
 		MapLocation targetLoc = target.getLocation();
 		Direction toTarget = currLoc.directionTo(targetLoc);
@@ -284,14 +282,14 @@ public class CombatUnitLogic extends RobotLogic {
 		Team opponent = rc.getTeam().opponent();
 		float radius = rc.getType().sensorRadius;
 
-		if (getFirstHitTeamAprox(currLoc, toTarget.rotateRightDegrees(GameConstants.PENTAD_SPREAD_DEGREES*2),
-				true, radius) == opponent) {
+		if (getFirstHitTeamAprox(currLoc, toTarget.rotateRightDegrees(GameConstants.PENTAD_SPREAD_DEGREES * 2), true,
+				radius) == opponent) {
 			System.out.println("Found right target");
 			return true;
 		}
 
-		if (getFirstHitTeamAprox(currLoc, toTarget.rotateLeftDegrees(GameConstants.PENTAD_SPREAD_DEGREES*2),
-				true, radius) == opponent) {
+		if (getFirstHitTeamAprox(currLoc, toTarget.rotateLeftDegrees(GameConstants.PENTAD_SPREAD_DEGREES * 2), true,
+				radius) == opponent) {
 			System.out.println("Found left target");
 			return true;
 		}
@@ -301,27 +299,34 @@ public class CombatUnitLogic extends RobotLogic {
 
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
 		Direction shotDir = rc.getLocation().directionTo(target.location);
+		float randSpread = (float) (Math.random() * 1);
+		if (Math.random() < .5) {
+			shotDir = shotDir.rotateLeftDegrees(randSpread);
+		} else {
+			shotDir = shotDir.rotateRightDegrees(randSpread);
+		}
 		if (rc.canFireSingleShot()) {
 			if (shouldFirePentadShot(target) && rc.canFirePentadShot()) {
 				rc.firePentadShot(shotDir);
-			} else if (rc.canFireTriadShot() && getBulletGenerationSpeed() > 3) {
-					rc.fireTriadShot(shotDir);
+			} else if (shouldFireTriShot(target) && rc.canFireTriadShot() && getBulletGenerationSpeed() > 3) {
+				rc.fireTriadShot(shotDir);
 			} else {
 				rc.fireSingleShot(shotDir);
 			}
 		}
 	}
 
-//	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
-////		tryAndFireASmartShot(target);
-//		if (rc.canFirePentadShot() && rc.getTeamBullets() > 70) {
-//			rc.firePentadShot(rc.getLocation().directionTo(target.location));
-//		} else if (rc.canFireTriadShot() && rc.getTeamBullets() > 30) {
-//			rc.fireTriadShot(rc.getLocation().directionTo(target.location));
-//		} else if (rc.canFireSingleShot()) {
-//			rc.fireSingleShot(rc.getLocation().directionTo(target.location));
-//		}
-//	}
+	// private void tryAndFireAShot(RobotInfo target) throws GameActionException
+	// {
+	//// tryAndFireASmartShot(target);
+	// if (rc.canFirePentadShot() && rc.getTeamBullets() > 70) {
+	// rc.firePentadShot(rc.getLocation().directionTo(target.location));
+	// } else if (rc.canFireTriadShot() && rc.getTeamBullets() > 30) {
+	// rc.fireTriadShot(rc.getLocation().directionTo(target.location));
+	// } else if (rc.canFireSingleShot()) {
+	// rc.fireSingleShot(rc.getLocation().directionTo(target.location));
+	// }
+	// }
 
 	/*
 	 * Returns true if unit was able to move towards the map location.
@@ -398,7 +403,7 @@ public class CombatUnitLogic extends RobotLogic {
 		double maxPentaSum = Double.NEGATIVE_INFINITY;
 		int maxPentaDirection = 0;
 
-		for (int i = 0; i < 360; i += 10) {
+		for (int i = 0; i < 360; i += 5) {
 			int start = Clock.getBytecodeNum();
 			System.out.println("beginning query at " + start);
 			BodyInfo singleShot = aimManager.getTargetSingleShot(new Direction(i));
