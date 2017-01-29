@@ -191,7 +191,7 @@ public class CombatUnitLogic extends RobotLogic {
 	private void executeCombat(RobotInfo[] enemyRobots) throws GameActionException {
 		BulletInfo[] surroundingBullets = rc.senseNearbyBullets();
 
-		if (incomingBullet(surroundingBullets, rc.getLocation(), 20)) {
+		if (incomingBullet(surroundingBullets, rc.getLocation())) {
 			// Move
 			MapLocation bulletAvoidingLocation = getBulletAvoidingLocation(rc);
 			// If we are gonna get hit by a bullet

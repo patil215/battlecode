@@ -34,10 +34,7 @@ public class ArchonLogic extends RobotLogic {
 				}
 
 				// Move
-				MapLocation moveLocation = pickNextLocation();
-				if (moveLocation != null) {
-					move(moveLocation);
-				}
+				moveToGoodLocation();
 
 				broadcastForHelpIfNeeded();
 				detectTreesAndAskLumberjacksForHelp();
@@ -52,7 +49,7 @@ public class ArchonLogic extends RobotLogic {
 		TreeInfo[] treesInWay = rc.senseNearbyTrees(MIN_FREE_SPACE_REQUIREMENT, Team.NEUTRAL);
 		if (treesInWay.length > 0) {
 			TreeInfo closestTree = (TreeInfo) getClosestBody(treesInWay);
-			doob.BroadcastManager.saveLocation(rc, closestTree.location, doob.BroadcastManager.LocationInfoType.LUMBERJACK_GET_HELP);
+			revisedstrat.BroadcastManager.saveLocation(rc, closestTree.location, revisedstrat.BroadcastManager.LocationInfoType.LUMBERJACK_GET_HELP);
 		}
 	}
 
@@ -115,7 +112,7 @@ public class ArchonLogic extends RobotLogic {
 		return false;
 	}
 
-	private MapLocation pickNextLocation() throws GameActionException {
+	private void moveToGoodLocation() throws GameActionException {
 
 
 		/*TreeInfo[] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
@@ -138,7 +135,7 @@ public class ArchonLogic extends RobotLogic {
 			Direction toEnemy = rc.getLocation().directionTo(enemyArchonLocations[0]);
 			MapLocation proposed = rc.getLocation().add(toEnemy, rc.getType().strideRadius - 0.01f);
 			if (isValidNextArchonLocation(proposed)) {
-				return proposed;
+				move(proposed);
 			}
 		}
 
@@ -162,7 +159,11 @@ public class ArchonLogic extends RobotLogic {
 			for (int i = 5; i >= 1; i--) {
 				MapLocation attemptedNewLocation = rc.getLocation().add(dirAway, (float) (i * 0.2));
 				if (isValidNextArchonLocation(attemptedNewLocation)) {
-					return attemptedNewLocation;
+					Direction moveDir = moveTowards(attemptedNewLocation);
+					if(moveDir != null) {
+						move(moveDir);
+						return;
+					}
 				}
 			}
 		}*/
@@ -171,10 +172,9 @@ public class ArchonLogic extends RobotLogic {
 			Direction randomDir = Utils.randomDirection();
 			MapLocation attemptedNewLocation = rc.getLocation().add(randomDir, rc.getType().strideRadius);
 			if (isValidNextArchonLocation(attemptedNewLocation)) {
-				return attemptedNewLocation;
+				move(randomDir);
 			}
 		}
-		return null;
 	}
 
 	private boolean isValidNextArchonLocation(MapLocation location) throws GameActionException {

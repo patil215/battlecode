@@ -183,7 +183,6 @@ public abstract class RobotLogic {
 		return false;
 	}
 
-
 	/*
 	 * This method returns the bullets that will hit the player in some
 	 * location. Returns null if no bullet will hit the target.
@@ -399,7 +398,7 @@ public abstract class RobotLogic {
 
 	public Team getFirstHitTeamAprox(MapLocation location, Direction direction, boolean hitTrees, float maxDistance)
 			throws GameActionException {
-		MapLocation testLocation = location.add(direction, rc.getType().bodyRadius+GameConstants.BULLET_SPAWN_OFFSET);
+		MapLocation testLocation = location.add(direction, rc.getType().bodyRadius + GameConstants.BULLET_SPAWN_OFFSET);
 		while (rc.canSenseLocation(testLocation)) {
 			if (rc.isLocationOccupied(testLocation)) {
 				RobotInfo targetRobot = rc.senseRobotAtLocation(testLocation);
@@ -417,7 +416,7 @@ public abstract class RobotLogic {
 					System.out.println("This should never happen");
 					return Team.NEUTRAL;
 				}
-			} else{
+			} else {
 				testLocation = testLocation.add(direction, DELTA_BULLET_DISTANCE);
 			}
 		}
@@ -504,7 +503,7 @@ public abstract class RobotLogic {
 			return NO_INTERSECT;
 		}
 
-		if(Math.abs(location.directionTo(rc.getLocation()).degreesBetween(direction)) > 90) {
+		if (Math.abs(location.directionTo(rc.getLocation()).degreesBetween(direction)) > 90) {
 			return NO_INTERSECT;
 		}
 
@@ -579,7 +578,7 @@ public abstract class RobotLogic {
 				float spawnOffset = rc.getType().bodyRadius + GameConstants.BULLET_SPAWN_OFFSET;
 
 				MapLocation bulletSpawnPoint = rc.getLocation().add(toEnemy, spawnOffset);
-				
+
 				// Only attack if we will hit an enemy.
 				if (getFirstHitTeamAprox(bulletSpawnPoint, toEnemy, hitTrees,
 						rc.getLocation().distanceTo(enemies[index].getLocation())) == enemyTeam) {
@@ -651,11 +650,13 @@ public abstract class RobotLogic {
 		return new Direction(avgX, avgY);
 	}
 
+	private final float ANGLE_EPSILON = 0.01f;
 
-	protected boolean incomingBullet(BulletInfo[] bullets, MapLocation location, float angleTolerance) {
+	protected boolean incomingBullet(BulletInfo[] bullets, MapLocation location) {
 		for (BulletInfo bullet : bullets) {
-			if (Math.abs(bullet.location.directionTo(location).degreesBetween(bullet.dir)) < angleTolerance
-					&& bullet.location.distanceTo(location) < 5) {
+			float angleTolerance = (float) (Math.abs(
+					Math.asin(rc.getType().bodyRadius / bullet.getLocation().distanceTo(rc.getLocation()))) + ANGLE_EPSILON);
+			if (Math.abs(bullet.location.directionTo(location).degreesBetween(bullet.dir)) < angleTolerance) {
 				return true;
 			}
 		}
@@ -734,11 +735,11 @@ public abstract class RobotLogic {
 
 		return danger * totalDamage;
 	}
-	
+
 	protected boolean inDanger() {
 		RobotInfo[] foes = rc.senseNearbyRobots(-1, this.enemyTeam);
-		for(RobotInfo enemy: foes){
-			if(enemy.getType()!=RobotType.ARCHON && enemy.getType()!=RobotType.GARDENER){
+		for (RobotInfo enemy : foes) {
+			if (enemy.getType() != RobotType.ARCHON && enemy.getType() != RobotType.GARDENER) {
 				return true;
 			}
 		}
@@ -907,7 +908,8 @@ public abstract class RobotLogic {
 	}
 
 	/*
-	Returns null if no location found, or the player is not going to be hit by a bullet.
+	 * Returns null if no location found, or the player is not going to be hit
+	 * by a bullet.
 	 */
 	public MapLocation getBulletAvoidingLocation(RobotController rc) {
 
@@ -924,7 +926,7 @@ public abstract class RobotLogic {
 
 		MapLocation[][] segments = getSegments(bullets);
 
-		if(getClosestLineSegmentWithinThreshold(rc.getLocation(), segments, hitRadius) == null) {
+		if (getClosestLineSegmentWithinThreshold(rc.getLocation(), segments, hitRadius) == null) {
 			return null;
 		}
 
@@ -971,25 +973,27 @@ public abstract class RobotLogic {
 				multiplier = 3;
 			}
 
-			float magnitude = (float) ((1 / Math.max(rc.getLocation().distanceTo(robot.getLocation()), 1)) * multiplier);
+			float magnitude = (float) ((1 / Math.max(rc.getLocation().distanceTo(robot.getLocation()), 1))
+					* multiplier);
 			loc = loc.add(rc.getLocation().directionTo(robot.getLocation()), magnitude);
 		}
 
-		float distanceMultiplier = 3;
+		float distanceMultiplier = 300;
+		float distanceCheck = rc.getType().sensorRadius - 0.1f;
 
-		if (!rc.onTheMap(rc.getLocation().add(Direction.WEST, distanceMultiplier))) {
+		if (!rc.onTheMap(rc.getLocation().add(Direction.WEST, distanceCheck))) {
 			loc = loc.add(Direction.WEST, distanceMultiplier);
 		}
 
-		if (!rc.onTheMap(rc.getLocation().add(Direction.NORTH, distanceMultiplier))) {
+		if (!rc.onTheMap(rc.getLocation().add(Direction.NORTH, distanceCheck))) {
 			loc = loc.add(Direction.NORTH, distanceMultiplier);
 		}
 
-		if (!rc.onTheMap(rc.getLocation().add(Direction.SOUTH, distanceMultiplier))) {
+		if (!rc.onTheMap(rc.getLocation().add(Direction.SOUTH, distanceCheck))) {
 			loc = loc.add(Direction.SOUTH, distanceMultiplier);
 		}
 
-		if (!rc.onTheMap(rc.getLocation().add(Direction.EAST, distanceMultiplier))) {
+		if (!rc.onTheMap(rc.getLocation().add(Direction.EAST, distanceCheck))) {
 			loc = loc.add(Direction.EAST, distanceMultiplier);
 		}
 
@@ -1012,8 +1016,8 @@ public abstract class RobotLogic {
 	public float getBulletGenerationSpeed() {
 		float treeHealthMultiplier = 1;
 		float treeHealth = 50;
-		return (rc.getTreeCount() * GameConstants.BULLET_TREE_BULLET_PRODUCTION_RATE
-				* treeHealth * treeHealthMultiplier) + 2;
+		return (rc.getTreeCount() * GameConstants.BULLET_TREE_BULLET_PRODUCTION_RATE * treeHealth
+				* treeHealthMultiplier) + 2;
 	}
 
 }
