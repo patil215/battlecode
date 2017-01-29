@@ -73,7 +73,7 @@ public class CombatUnitLogic extends RobotLogic {
 				// Try to help gardeners
 				MapLocation gardenerHelpLocation = BroadcastManager.getRecentLocation(rc,
 						BroadcastManager.LocationInfoType.GARDENER_HELP);
-				if (gardenerHelpLocation != null && currentDestinationType <= GARDENER_HELP_PRIORITY) {
+				if (gardenerHelpLocation != null && currentDestinationType < GARDENER_HELP_PRIORITY) {
 					// moveTowardsCombat(gardenerHelpLocation,
 					// BroadcastManager.LocationInfoType.GARDENER_HELP);
 					if (currentDestinationType < GARDENER_HELP_PRIORITY || gardenerHelpLocation.x != getDestination().x
@@ -81,7 +81,7 @@ public class CombatUnitLogic extends RobotLogic {
 
 						setDestination(gardenerHelpLocation);
 						currentDestinationType = GARDENER_HELP_PRIORITY;
-						tryToMoveToDestination();
+						tryToMoveToDestinationTwo();
 						endTurn();
 						continue;
 					}
@@ -98,7 +98,7 @@ public class CombatUnitLogic extends RobotLogic {
 							|| archonHelpLocation.y != getDestination().y) {
 						setDestination(archonHelpLocation);
 						currentDestinationType = ARCHON_HELP_PRIORITY;
-						tryToMoveToDestination();
+						tryToMoveToDestinationTwo();
 						endTurn();
 						continue;
 					}
@@ -117,7 +117,7 @@ public class CombatUnitLogic extends RobotLogic {
 								|| enemyLocation.x != getDestination().x || enemyLocation.y != getDestination().y) {
 							setDestination(enemyLocation);
 							currentDestinationType = MOVE_TOWARDS_COMBAT_PRIORITY;
-							boolean success = tryToMoveToDestination();
+							boolean success = tryToMoveToDestinationTwo();
 
 							if (success) {
 								endTurn();
@@ -129,7 +129,7 @@ public class CombatUnitLogic extends RobotLogic {
 
 				// Discovery mode, move randomly
 				if (currentDestinationType > 0) {
-					tryToMoveToDestination();
+					tryToMoveToDestinationTwo();
 					endTurn();
 				} else {
 					moveIntelligentlyRandomly();
@@ -254,7 +254,9 @@ public class CombatUnitLogic extends RobotLogic {
 	}
 
 	private boolean shouldFireTriShot(RobotInfo target) throws GameActionException {
-		MapLocation currLoc = rc.getLocation();
+		
+		return rc.getLocation().distanceTo(target.location)>5 && rc.getLocation().distanceTo(target.location)<6;
+		/*MapLocation currLoc = rc.getLocation();
 		MapLocation targetLoc = target.getLocation();
 		Direction toTarget = currLoc.directionTo(targetLoc);
 
@@ -270,11 +272,13 @@ public class CombatUnitLogic extends RobotLogic {
 			numHit++;
 		}
 
-		return numHit > 0;
+		return numHit > 0;*/
 	}
 
 	private boolean shouldFirePentadShot(RobotInfo target) throws GameActionException {
 
+		return rc.getLocation().distanceTo(target.location)<6;
+		/*
 		MapLocation currLoc = rc.getLocation();
 		MapLocation targetLoc = target.getLocation();
 		Direction toTarget = currLoc.directionTo(targetLoc);
@@ -294,7 +298,7 @@ public class CombatUnitLogic extends RobotLogic {
 			return true;
 		}
 
-		return false;
+		return false;*/
 	}
 
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {

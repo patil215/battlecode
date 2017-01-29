@@ -172,7 +172,7 @@ public abstract class RobotLogic {
 
 	private boolean findBestDirection(MapLocation destination) {
 		Direction toMove = rc.getLocation().directionTo(destination);
-		for (int count = 0; count < 180; count += 10) {
+		for (int count = 0; count < 180; count += 1) {
 			if (rc.canMove(toMove.rotateLeftDegrees(count))) {
 				return true;
 			} else if (rc.canMove(toMove.rotateRightDegrees(count))) {
@@ -981,20 +981,20 @@ public abstract class RobotLogic {
 		float distanceMultiplier = 300;
 		float distanceCheck = rc.getType().sensorRadius - 0.1f;
 
-		if (!rc.onTheMap(rc.getLocation().add(Direction.WEST, distanceCheck))) {
-			loc = loc.add(Direction.WEST, distanceMultiplier);
+		if (!rc.onTheMap(rc.getLocation().add(Direction.getWest(), distanceCheck))) {
+			loc = loc.add(Direction.getWest(), distanceMultiplier);
 		}
 
-		if (!rc.onTheMap(rc.getLocation().add(Direction.NORTH, distanceCheck))) {
-			loc = loc.add(Direction.NORTH, distanceMultiplier);
+		if (!rc.onTheMap(rc.getLocation().add(Direction.getNorth(), distanceCheck))) {
+			loc = loc.add(Direction.getNorth(), distanceMultiplier);
 		}
 
-		if (!rc.onTheMap(rc.getLocation().add(Direction.SOUTH, distanceCheck))) {
-			loc = loc.add(Direction.SOUTH, distanceMultiplier);
+		if (!rc.onTheMap(rc.getLocation().add(Direction.getSouth(), distanceCheck))) {
+			loc = loc.add(Direction.getSouth(), distanceMultiplier);
 		}
 
-		if (!rc.onTheMap(rc.getLocation().add(Direction.EAST, distanceCheck))) {
-			loc = loc.add(Direction.EAST, distanceMultiplier);
+		if (!rc.onTheMap(rc.getLocation().add(Direction.getEast(), distanceCheck))) {
+			loc = loc.add(Direction.getEast(), distanceMultiplier);
 		}
 
 		MapLocation originDir = new MapLocation(0, 0);
@@ -1018,6 +1018,69 @@ public abstract class RobotLogic {
 		float treeHealth = 50;
 		return (rc.getTreeCount() * GameConstants.BULLET_TREE_BULLET_PRODUCTION_RATE * treeHealth
 				* treeHealthMultiplier) + 2;
+	}
+	
+	public boolean tryToMoveToDestinationTwo() throws GameActionException {
+		if (destination == null) {
+			return false;
+		}
+		rc.setIndicatorLine(rc.getLocation(), destination, 0, 0, 40);
+		MapLocation currentLocation = rc.getLocation();
+		Direction toMove = rc.getLocation().directionTo(destination);
+		float currentDistance = currentLocation.distanceTo(destination);
+		System.out.println("Current distance is: " + currentDistance + " closest distance is : " + distanceToDestination
+				+ " canMove returns " + rc.canMove(toMove) + "If the next statement is true, then this unit leans left "
+				+ isLeftUnit);
+		if (currentDistance <= distanceToDestination && rc.canMove(toMove)) {
+			rc.move(toMove);
+			distanceToDestination = currentDistance;
+			needToSetDirection = true;
+			lastDirection = toMove;
+			return true;
+		} else if (rc.canMove(lastDirection)) {
+			toMove = findAngleThatBringsYouClosestToAnObstruction(lastDirection);
+			if (rc.canMove(toMove)) {
+				lastDirection = toMove;
+				rc.move(toMove);
+				distanceToDestination = Math.min(distanceToDestination, currentDistance);
+				return true;
+			} else {
+				toMove = moveTowards(toMove);
+				distanceToDestination = Math.min(distanceToDestination, currentDistance);
+				return false;
+			}
+		} else {
+			if (needToSetDirection) {
+				isLeftUnit = findBestDirection(destination);
+				needToSetDirection = false;
+			}
+			toMove = moveTowards(lastDirection);
+			if (toMove != null) {
+				lastDirection = toMove;
+				rc.move(toMove);
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
+
+	
+	private Direction findAngleThatBringsYouClosestToAnObstruction(Direction lastDirection2) {
+		Direction testAngle = lastDirection2;
+		int directionMultiplyer;
+		if(isLeftUnit){
+			directionMultiplyer = 1;
+		} else{
+			directionMultiplyer = -1;
+		}
+		for(int deltaAngle = 0; deltaAngle < 360 && rc.canMove(testAngle); deltaAngle += 5){
+			testAngle = lastDirection.rotateRightDegrees(deltaAngle * directionMultiplyer);
+		}
+		while(!rc.canMove(testAngle)){
+			testAngle = testAngle.rotateLeftDegrees(5 * directionMultiplyer);
+		}
+		return testAngle;
 	}
 
 }
