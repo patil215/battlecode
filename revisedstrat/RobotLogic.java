@@ -31,6 +31,8 @@ public abstract class RobotLogic {
 
 	private static boolean dodgeLeft = Math.random() < .5;
 
+	public static MapLocation startLocation;
+
 	public Team allyTeam;
 	public Team enemyTeam;
 
@@ -48,6 +50,7 @@ public abstract class RobotLogic {
 		allyArchonLocations = rc.getInitialArchonLocations(allyTeam);
 		enemyArchonLocations = rc.getInitialArchonLocations(enemyTeam);
 		type = rc.getType();
+		startLocation = rc.getLocation();
 		// surpriseCalcs();
 	}
 

@@ -9,10 +9,12 @@ import revisedstrat.BroadcastManager.LocationInfoType;
 public class ArchonLogic extends RobotLogic {
 
 	private final float MIN_FREE_SPACE_REQUIREMENT;
+	private boolean movedTowardsArchon;
 
 	public ArchonLogic(RobotController rc) {
 		super(rc);
 		MIN_FREE_SPACE_REQUIREMENT = type.bodyRadius + 1;
+		movedTowardsArchon = false;
 	}
 
 	@Override
@@ -132,13 +134,16 @@ public class ArchonLogic extends RobotLogic {
 		 * newLoc; } } }
 		 */
 
-		if (rc.getLocation().distanceTo(
-				enemyArchonLocations[0]) > (allyArchonLocations[0].distanceTo(enemyArchonLocations[0]) * 0.95)) {
-			System.out.println("moving to");
-			Direction toEnemy = rc.getLocation().directionTo(enemyArchonLocations[0]);
-			MapLocation proposed = rc.getLocation().add(toEnemy, type.strideRadius - 0.01f);
-			if (isValidNextArchonLocation(proposed)) {
-				move(proposed);
+		if (!movedTowardsArchon) {
+			if(rc.getLocation()
+				.distanceTo(enemyArchonLocations[0]) > (startLocation.distanceTo(enemyArchonLocations[0]) * 0.9)) {
+				Direction toEnemy = rc.getLocation().directionTo(enemyArchonLocations[0]);
+				MapLocation proposed = rc.getLocation().add(toEnemy, type.strideRadius - 0.01f);
+				if (isValidNextArchonLocation(proposed)) {
+					move(proposed);
+				}
+			} else {
+				movedTowardsArchon = true;
 			}
 		}
 
