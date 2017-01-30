@@ -22,7 +22,7 @@ public strictfp class RobotPlayer {
                 logic = new LumberjackLogic(rc);
                 break;
             case SCOUT:
-                logic = new CombatUnitLogic(rc);
+                logic = new BulletCollector(rc);
                 break;
             case TANK:
                 logic = new CombatUnitLogic(rc);
