@@ -306,10 +306,6 @@ public abstract class RobotLogic {
 		MapLocation testLocation = location.add(direction, type.bodyRadius + GameConstants.BULLET_SPAWN_OFFSET);
 		while (rc.canSenseLocation(testLocation)) {
 			if (rc.isLocationOccupied(testLocation)) {
-				RobotInfo targetRobot = rc.senseRobotAtLocation(testLocation);
-				if (targetRobot != null) {
-					return targetRobot.team;
-				}
 				TreeInfo targetTree = rc.senseTreeAtLocation(testLocation);
 				if (targetTree != null) {
 					if (hitTrees) {
@@ -317,7 +313,11 @@ public abstract class RobotLogic {
 					} else {
 						return Team.NEUTRAL;
 					}
-				} else {
+				}
+				RobotInfo targetRobot = rc.senseRobotAtLocation(testLocation);
+				if (targetRobot != null) {
+					return targetRobot.team;
+				} else{
 					System.out.println("This should never happen");
 					return Team.NEUTRAL;
 				}

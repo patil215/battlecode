@@ -84,7 +84,7 @@ public class ArchonLogic extends RobotLogic {
 		int longestFreeSequence = 0;
 		int freeSequence = 0;
 		int sightRangeDivisor = 0;
-		Direction lookDir = Direction.NORTH;
+		Direction lookDir = Direction.getNorth();
 		int firstRed = -1;
 		float considerationRadius = (float) (type.sensorRadius * 0.75);
 		int numChecks = 72; // 5 degree increments
@@ -225,13 +225,13 @@ public class ArchonLogic extends RobotLogic {
 	private final double GARDENER_SPAWN_CHANCE_LATE = 0.15;
 	private final int ROUNDS_WHEN_LATE = 500;
 
-	private boolean shouldSpawnGardener() {
+	private boolean shouldSpawnGardener() throws GameActionException {
 		if (rc.getRoundNum() > 100 && rc.getRobotCount() - allyArchonLocations.length == 0) {
 			return true;
 		}
 
-		double spawnChance = (rc.getRoundNum() > ROUNDS_WHEN_LATE) ? GARDENER_SPAWN_CHANCE_LATE
-				: GARDENER_SPAWN_CHANCE_EARLY;
+		double spawnChance = (rc.getRoundNum() > ROUNDS_WHEN_LATE) ?
+		 GARDENER_SPAWN_CHANCE_LATE : GARDENER_SPAWN_CHANCE_EARLY;
 
 		if (rc.getRoundNum() > ROUNDS_TO_WAIT_BEFORE_SPAWNING_MORE_THAN_INITIAL_GARDENER) {
 			if (Math.random() < spawnChance && (!inDanger() || rc.getTeamBullets() >= 200)) {
