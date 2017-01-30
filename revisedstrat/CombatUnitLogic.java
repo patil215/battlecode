@@ -53,7 +53,7 @@ public class CombatUnitLogic extends RobotLogic {
 						BroadcastManager.invalidateLocation(rc, LocationInfoType.ENEMY);
 						break;
 					}
-					//System.out.println("reached");
+					// System.out.println("reached");
 					currentDestinationType = 0;
 					setDestination(null);
 				}
@@ -78,11 +78,14 @@ public class CombatUnitLogic extends RobotLogic {
 					if (currentDestinationType < GARDENER_HELP_PRIORITY || gardenerHelpLocation.x != getDestination().x
 							|| gardenerHelpLocation.y != getDestination().y) {
 
-						setDestination(gardenerHelpLocation);
-						currentDestinationType = GARDENER_HELP_PRIORITY;
-						tryToMoveToDestinationTwo();
-						endTurn();
-						continue;
+						if (getDestination() == null ||
+								(rc.getLocation().distanceTo(gardenerHelpLocation) * 1.5 < rc.getLocation().distanceTo(getDestination()))) {
+							setDestination(gardenerHelpLocation);
+							currentDestinationType = GARDENER_HELP_PRIORITY;
+							tryToMoveToDestinationTwo();
+							endTurn();
+							continue;
+						}
 					}
 				}
 
@@ -95,17 +98,18 @@ public class CombatUnitLogic extends RobotLogic {
 
 					if (currentDestinationType < ARCHON_HELP_PRIORITY || archonHelpLocation.x != getDestination().x
 							|| archonHelpLocation.y != getDestination().y) {
-						setDestination(archonHelpLocation);
-						currentDestinationType = ARCHON_HELP_PRIORITY;
-						tryToMoveToDestinationTwo();
-						endTurn();
-						continue;
+						if (getDestination() == null ||
+								(rc.getLocation().distanceTo(archonHelpLocation) * 1.5 < rc.getLocation().distanceTo(getDestination()))) {
+							setDestination(archonHelpLocation);
+							currentDestinationType = ARCHON_HELP_PRIORITY;
+							tryToMoveToDestinationTwo();
+							endTurn();
+							continue;
+						}
 					}
 				}
 
 				// Attack mode
-				// If unit is a soldier, wait until we have more than 50 units
-				// to attack. If tank, go for it.
 				if (currentDestinationType < MOVE_TOWARDS_COMBAT_PRIORITY) {
 					MapLocation enemyLocation = getEnemyLocation();
 					if (enemyLocation != null) {
@@ -114,13 +118,16 @@ public class CombatUnitLogic extends RobotLogic {
 
 						if (currentDestinationType < MOVE_TOWARDS_COMBAT_PRIORITY
 								|| enemyLocation.x != getDestination().x || enemyLocation.y != getDestination().y) {
-							setDestination(enemyLocation);
-							currentDestinationType = MOVE_TOWARDS_COMBAT_PRIORITY;
-							boolean success = tryToMoveToDestinationTwo();
+							if (getDestination() == null ||
+									(rc.getLocation().distanceTo(enemyLocation) * 1.5 < rc.getLocation().distanceTo(getDestination()))) {
+								setDestination(enemyLocation);
+								currentDestinationType = MOVE_TOWARDS_COMBAT_PRIORITY;
+								boolean success = tryToMoveToDestinationTwo();
 
-							if (success) {
-								endTurn();
-								continue;
+								if (success) {
+									endTurn();
+									continue;
+								}
 							}
 						}
 					}
@@ -144,7 +151,7 @@ public class CombatUnitLogic extends RobotLogic {
 	private boolean shouldClearLocation(MapLocation destination) throws GameActionException {
 		Direction toMove = rc.getLocation().directionTo(destination);
 		RobotInfo frontRobot = rc.senseRobotAtLocation(rc.getLocation().add(toMove));
-		//System.out.println("run");
+		// System.out.println("run");
 		return this.getClosestDistance() <= DISTANCE_TO_CLEAR_DESTINATION
 				|| rc.getLocation().distanceTo(destination) <= DISTANCE_TO_CLEAR_DESTINATION
 				|| (rc.canSenseLocation(destination) && frontRobot != null && frontRobot.team == allyTeam);
@@ -195,17 +202,17 @@ public class CombatUnitLogic extends RobotLogic {
 			RobotInfo robotInfo = (RobotInfo) getClosestBody(rc.senseNearbyRobots(-1, enemyTeam));
 			if (robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON)
 					|| (robotInfo.getType().equals(RobotType.LUMBERJACK)
-					&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
+							&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
 				move(getDirectionTowards(robotInfo.getLocation()));
 			}
-			/*for (RobotInfo robotInfo : enemyRobots) {
-				if (robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON)
-						|| (robotInfo.getType().equals(RobotType.LUMBERJACK)
-								&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
-					move(getDirectionTowards(robotInfo.getLocation()));
-					break;
-				}
-			}*/
+			/*
+			 * for (RobotInfo robotInfo : enemyRobots) { if
+			 * (robotInfo.getType().equals(RobotType.GARDENER) ||
+			 * robotInfo.getType().equals(RobotType.ARCHON) ||
+			 * (robotInfo.getType().equals(RobotType.LUMBERJACK) &&
+			 * robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
+			 * move(getDirectionTowards(robotInfo.getLocation())); break; } }
+			 */
 		}
 
 		// Shoot
@@ -241,7 +248,7 @@ public class CombatUnitLogic extends RobotLogic {
 	}
 
 	private boolean shouldFireTriShot(RobotInfo target) throws GameActionException {
-		return rc.getLocation().distanceTo(target.location) >= 5 && rc.getLocation().distanceTo(target.location) < 6;
+		return rc.getLocation().distanceTo(target.location) >= 5 && rc.getLocation().distanceTo(target.location) < 10;
 	}
 
 	private boolean shouldFirePentadShot(RobotInfo target) throws GameActionException {
@@ -250,16 +257,16 @@ public class CombatUnitLogic extends RobotLogic {
 
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
 		Direction shotDir = rc.getLocation().directionTo(target.location);
-		/*float randSpread = (float) (Math.random() * 1);
-		if (Math.random() < .5) {
-			shotDir = shotDir.rotateLeftDegrees(randSpread);
-		} else {
-			shotDir = shotDir.rotateRightDegrees(randSpread);
-		}*/
+		/*
+		 * float randSpread = (float) (Math.random() * 1); if (Math.random() <
+		 * .5) { shotDir = shotDir.rotateLeftDegrees(randSpread); } else {
+		 * shotDir = shotDir.rotateRightDegrees(randSpread); }
+		 */
 		if (rc.canFireSingleShot()) {
 			if (shouldFirePentadShot(target) && rc.canFirePentadShot()) {
 				rc.firePentadShot(shotDir);
-			} else if (shouldFireTriShot(target) && rc.canFireTriadShot()/* && getBulletGenerationSpeed() > 3*/) {
+			} else if (shouldFireTriShot(target) && rc
+					.canFireTriadShot()/* && getBulletGenerationSpeed() > 3 */) {
 				rc.fireTriadShot(shotDir);
 			} else {
 				rc.fireSingleShot(shotDir);
