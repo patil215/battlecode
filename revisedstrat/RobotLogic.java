@@ -478,7 +478,7 @@ public abstract class RobotLogic {
 	}
 
 	protected void econWinIfPossible() throws GameActionException {
-		if (rc.getTeamBullets() >= GameConstants.VICTORY_POINTS_TO_WIN * (7.5 + (rc.getRoundNum()) * 12.5 / 3000)) {
+		if (rc.getTeamBullets() >= (GameConstants.VICTORY_POINTS_TO_WIN - rc.getTeamVictoryPoints()) * rc.getVictoryPointCost()) {
 			rc.donate(rc.getTeamBullets());
 		}
 	}
