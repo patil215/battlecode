@@ -241,11 +241,11 @@ public class CombatUnitLogic extends RobotLogic {
 	}
 
 	private boolean shouldFireTriShot(RobotInfo target) throws GameActionException {
-		return rc.getLocation().distanceTo(target.location) >= 5.5 && rc.getLocation().distanceTo(target.location) < 7;
+		return rc.getLocation().distanceTo(target.location) >= 5 && rc.getLocation().distanceTo(target.location) < 6;
 	}
 
 	private boolean shouldFirePentadShot(RobotInfo target) throws GameActionException {
-		return rc.getLocation().distanceTo(target.location) < 5.5;
+		return rc.getLocation().distanceTo(target.location) < 5;
 	}
 
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
