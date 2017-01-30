@@ -1,11 +1,8 @@
 package revisedstrat;
 
 import battlecode.common.*;
-import revisedstrat.BroadcastManager;
 import revisedstrat.BroadcastManager.LocationInfoType;
 import revisedstrat.BroadcastManager.UnitCountInfoType;
-import revisedstrat.RobotLogic;
-import revisedstrat.Utils;
 
 /**
  * Created by patil215 on 1/12/17.
@@ -96,7 +93,7 @@ public class ScoutLogic extends RobotLogic {
 				}
 			}*/
 		} else {
-			Direction toMove = moveTowards(destination);
+			Direction toMove = getDirectionTowards(destination);
 			if (toMove != null) {
 				move(toMove);
 			}
@@ -120,21 +117,16 @@ public class ScoutLogic extends RobotLogic {
 			}
 
 			/*
-			 * Direction toMove = moveTowards(target.location); if (toMove !=
+			 * Direction toMove = getDirectionTowards(target.location); if (toMove !=
 			 * null) { move(toMove); }
 			 */
 
 			BulletInfo[] bullets = rc.senseNearbyBullets();
-			Direction moveDir = moveTowards(target.getLocation());
+			Direction moveDir = getDirectionTowards(target.getLocation());
 			if(moveDir != null) {
 				move(moveDir);
 			} else {
-				if(willGetHitByABullet(rc.getLocation(), bullets)) {
-					MapLocation safeLocation = getBulletAvoidingLocation(rc);
-					if(safeLocation != null) {
-						move(safeLocation);
-					}
-				}
+				dodgeBullets();
 			}
 
 			if (rc.canFireSingleShot()) {
@@ -180,18 +172,13 @@ public class ScoutLogic extends RobotLogic {
 		}
 		// RobotInfo target = getHighestPriorityTarget(foes, false);
 		boolean willBeHit = willGetHitByABullet(rc.getLocation(), bullets);
-		MapLocation safeLocation = null;
 		if(willBeHit) {
 			System.out.println("WE GONNA GET HIT");
-			safeLocation = getBulletAvoidingLocation(rc);
+			dodgeBullets();
 		}
-		if (willBeHit && safeLocation != null) {
-			System.out.println("DEPLOYING EVASIVE MANEUVERS");
-			move(safeLocation);
-		} else {
 			if (rc.getLocation().distanceTo(threat.location) <= 7) {
 				// We are too close to the enemy. They can see us.
-				Direction toMove = moveTowards(rc.getLocation().directionTo(threat.location).opposite());
+				Direction toMove = getDirectionTowards(rc.getLocation().directionTo(threat.location).opposite());
 				if (toMove != null) {
 					move(toMove);
 				}
@@ -199,23 +186,22 @@ public class ScoutLogic extends RobotLogic {
 		}
 		/*if (!rc.hasAttacked() && !rc.hasMoved()) {
 			Direction towardsThreat = rc.getLocation().directionTo(threat.location);
-			Direction toMove = moveTowards(towardsThreat.rotateLeftDegrees(90));
+			Direction toMove = getDirectionTowards(towardsThreat.rotateLeftDegrees(90));
 			if (toMove != null && rc.canMove(toMove)) {
 				move(toMove);
 			} else {
-				toMove = moveTowards(towardsThreat.rotateRightDegrees(90));
+				toMove = getDirectionTowards(towardsThreat.rotateRightDegrees(90));
 				if (toMove != null && rc.canMove(toMove)) {
 					move(toMove);
 				}
 			}
 		}*/
-	}
 
 	private RobotInfo getPriorityEconTarget(RobotInfo[] foes) {
 		RobotInfo target = null;
 		float leastDistance = Float.MAX_VALUE;
 		for (RobotInfo info : foes) {
-			if (info.type == RobotType.GARDENER || (rc.getType() == RobotType.ARCHON && rc.getRoundNum() > 200)) {
+			if (info.type == RobotType.GARDENER || (type == RobotType.ARCHON && rc.getRoundNum() > 200)) {
 				float distance = rc.getLocation().distanceTo(info.location);
 				if (distance < leastDistance) {
 					leastDistance = distance;

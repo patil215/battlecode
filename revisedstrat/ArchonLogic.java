@@ -12,7 +12,7 @@ public class ArchonLogic extends RobotLogic {
 
 	public ArchonLogic(RobotController rc) {
 		super(rc);
-		MIN_FREE_SPACE_REQUIREMENT = rc.getType().bodyRadius + 1;
+		MIN_FREE_SPACE_REQUIREMENT = type.bodyRadius + 1;
 	}
 
 	@Override
@@ -120,9 +120,9 @@ public class ArchonLogic extends RobotLogic {
 		if(closestTree != null) {
 			TreeInfo tree = (TreeInfo) closestTree;
 			if (tree.containedBullets > 0
-					&& rc.getLocation().distanceTo(tree.location) < rc.getType().sensorRadius * 0.75) {
-				Direction direction = moveTowards(tree.location);
-				MapLocation newLoc = rc.getLocation().add(direction, rc.getType().strideRadius);
+					&& rc.getLocation().distanceTo(tree.location) < type.sensorRadius * 0.75) {
+				Direction direction = getDirectionTowards(tree.location);
+				MapLocation newLoc = rc.getLocation().add(direction, type.strideRadius);
 				if (isValidNextArchonLocation(newLoc)) {
 					return newLoc;
 				}
@@ -133,7 +133,7 @@ public class ArchonLogic extends RobotLogic {
 				(allyArchonLocations[0].distanceTo(enemyArchonLocations[0]) * 0.95)) {
 			System.out.println("moving to");
 			Direction toEnemy = rc.getLocation().directionTo(enemyArchonLocations[0]);
-			MapLocation proposed = rc.getLocation().add(toEnemy, rc.getType().strideRadius - 0.01f);
+			MapLocation proposed = rc.getLocation().add(toEnemy, type.strideRadius - 0.01f);
 			if (isValidNextArchonLocation(proposed)) {
 				move(proposed);
 			}
@@ -159,7 +159,7 @@ public class ArchonLogic extends RobotLogic {
 			for (int i = 5; i >= 1; i--) {
 				MapLocation attemptedNewLocation = rc.getLocation().add(dirAway, (float) (i * 0.2));
 				if (isValidNextArchonLocation(attemptedNewLocation)) {
-					Direction moveDir = moveTowards(attemptedNewLocation);
+					Direction moveDir = getDirectionTowards(attemptedNewLocation);
 					if(moveDir != null) {
 						move(moveDir);
 						return;
@@ -170,7 +170,7 @@ public class ArchonLogic extends RobotLogic {
 
 		for (int i = 0; i < 50; i++) {
 			Direction randomDir = Utils.randomDirection();
-			MapLocation attemptedNewLocation = rc.getLocation().add(randomDir, rc.getType().strideRadius);
+			MapLocation attemptedNewLocation = rc.getLocation().add(randomDir, type.strideRadius);
 			if (isValidNextArchonLocation(attemptedNewLocation)) {
 				move(randomDir);
 			}

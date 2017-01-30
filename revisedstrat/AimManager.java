@@ -155,7 +155,6 @@ class IntervalStorer {
 			int index = 0;
 			ListIterator<Interval> iter = intervals.listIterator();
 			while(iter.hasNext()) {
-			RobotLogic.startTrackingBytecode("iteration");
 				Interval currentInterval = iter.next();
 				if (!addingInterval && currentInterval.contains(toAdd.start)) {
 					if (toAdd.distance < currentInterval.distance) {
@@ -199,7 +198,6 @@ class IntervalStorer {
 				}
 
 				index++;
-			RobotLogic.printBytecodeUsed();
 			}
 		}
 	}
@@ -222,9 +220,7 @@ class IntervalStorer {
 	 */
 	public int getIndex(float angle) {
 		for (int index = 0; index < actualIntervals.length; index++) {
-		RobotLogic.startTrackingBytecode("Query");
 		Interval interval = actualIntervals[index];
-		RobotLogic.printBytecodeUsed();
 			if (interval.contains(angle)) {
 				return interval.bodyIndex;
 			}

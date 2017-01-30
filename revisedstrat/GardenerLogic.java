@@ -208,7 +208,7 @@ public class GardenerLogic extends RobotLogic {
 	private double getLumberjackSpawnChance() {
 		// TODO: Fix logical error with trees that are only partially in the
 		// sense radius.
-		double senseArea = Math.pow(rc.getType().sensorRadius, 2);
+		double senseArea = Math.pow(type.sensorRadius, 2);
 		double treeArea = 0;
 		TreeInfo[] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
 		for (TreeInfo t : trees) {

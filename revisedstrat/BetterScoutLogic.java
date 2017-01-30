@@ -1,9 +1,6 @@
 package revisedstrat;
 
 import battlecode.common.*;
-import revisedstrat.BroadcastManager;
-import revisedstrat.RobotLogic;
-import revisedstrat.Utils;
 
 /**
  * Created by patil215 on 1/18/17.
@@ -77,7 +74,7 @@ public class BetterScoutLogic extends RobotLogic {
 		}
 
 		// Move with intelligent pathfinding
-		Direction directionToMove = moveTowards(combatLocation);
+		Direction directionToMove = getDirectionTowards(combatLocation);
 		if (directionToMove != null) {
 			move(directionToMove);
 			return true;
@@ -104,12 +101,12 @@ public class BetterScoutLogic extends RobotLogic {
 
 		BulletInfo[] surroundingBullets = rc.senseNearbyBullets();
 
-        move(moveTowards(econUnit.getLocation()));
+        move(getDirectionTowards(econUnit.getLocation()));
 
         if(rc.canFireSingleShot()) {
             rc.fireSingleShot(rc.getLocation().directionTo(econUnit.location));
         }
-		/*if (rc.getLocation().distanceTo(econUnit.location) <= rc.getType().bodyRadius + econUnit.getType().bodyRadius
+		/*if (rc.getLocation().distanceTo(econUnit.location) <= type.bodyRadius + econUnit.getType().bodyRadius
 				+ GameConstants.BULLET_SPAWN_OFFSET && rc.canFireSingleShot()) {
 			rc.fireSingleShot(rc.getLocation().directionTo(econUnit.location));
 			if (willGetHitByABullet(rc.getLocation(), surroundingBullets)) {

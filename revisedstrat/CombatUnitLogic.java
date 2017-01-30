@@ -3,13 +3,10 @@ package revisedstrat;
 import battlecode.common.*;
 import revisedstrat.BroadcastManager.LocationInfoType;
 
-import java.util.Arrays;
-
 /**
  * Created by patil215 on 1/17/17.
  */
 public class CombatUnitLogic extends RobotLogic {
-
 
 	private final int SOLDIER_UNIT_COUNT_ATTACK_THRESHOLD = 15;
 
@@ -29,8 +26,6 @@ public class CombatUnitLogic extends RobotLogic {
 		birthLocation = rc.getLocation();
 		birthRound = rc.getRoundNum();
 	}
-
-
 
 	@Override
 	public void run() {
@@ -160,7 +155,7 @@ public class CombatUnitLogic extends RobotLogic {
 		if (archonVisitedIndex >= enemyArchonLocations.length) {
 			return;
 		}
-		if (rc.getLocation().distanceTo(enemyArchonLocations[archonVisitedIndex]) < rc.getType().sensorRadius * 0.8
+		if (rc.getLocation().distanceTo(enemyArchonLocations[archonVisitedIndex]) < type.sensorRadius * 0.8
 				&& rc.senseNearbyRobots(-1, enemyTeam).length == 0) {
 			// This archon has been visited and there's no one here, move onto
 			// the next one
@@ -193,51 +188,39 @@ public class CombatUnitLogic extends RobotLogic {
 	}
 
 	private void executeCombat(RobotInfo[] enemyRobots) throws GameActionException {
-		BulletInfo[] surroundingBullets = rc.senseNearbyBullets();
 
-		if (incomingBullet(surroundingBullets, rc.getLocation())) {
-			// Move
-			MapLocation bulletAvoidingLocation = getBulletAvoidingLocation(rc);
-			// If we are gonna get hit by a bullet
-			if (bulletAvoidingLocation != null) {
-				// Try random locations and move to that loc
-				move(bulletAvoidingLocation);
-			} else {
-				// If we're gonna get hit long term, move perpendicularly
-				BulletInfo hittingBullet = getTargetingBullet(surroundingBullets);
-				if (hittingBullet != null) {
-					dodge(hittingBullet);
-				}
-			}
-		} else {
+		boolean result = dodgeBullets();
+		if (!result) {
 			// Move towards the enemy, especially if it's an econ unit
 			for (RobotInfo robotInfo : enemyRobots) {
 				if (robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON)
 						|| (robotInfo.getType().equals(RobotType.LUMBERJACK)
 								&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
-					moveTowards(robotInfo.getLocation());
+					getDirectionTowards(robotInfo.getLocation());
 					break;
 				}
 			}
 		}
 
 		// Shoot
-		System.out.println("Start bytecode for highestPriorityTarget = " + Clock.getBytecodeNum());
+		// System.out.println("Start bytecode for highestPriorityTarget = " +
+		// Clock.getBytecodeNum());
 		boolean hitTrees = rc.getTeamBullets() > 60;
 		RobotInfo target = getHighestPriorityTarget(enemyRobots, hitTrees);
-		System.out.println("End bytecode for highestPriorityTarget = " + Clock.getBytecodeNum());
+		// System.out.println("End bytecode for highestPriorityTarget = " +
+		// Clock.getBytecodeNum());
 		if (target != null) {
-			System.out.println("Found a target");
+			// System.out.println("Found a target");
 			// Broadcast the location of the target
 			BroadcastManager.saveLocation(rc, target.location, BroadcastManager.LocationInfoType.ENEMY);
 			tryAndFireAShot(target);
 		} else {
 			// Try to get closer to the enemy
-			System.out.println("Found no target");
+			// System.out.println("Found no target");
 			target = (RobotInfo) getClosestBody(enemyRobots);
 			if (target != null) {
 				BroadcastManager.saveLocation(rc, target.location, LocationInfoType.ENEMY);
-				Direction toMove = moveTowards(target.location);
+				Direction toMove = getDirectionTowards(target.location);
 				if (toMove != null) {
 					if (rc.canMove(toMove)) {
 						move(toMove);
@@ -251,212 +234,31 @@ public class CombatUnitLogic extends RobotLogic {
 		}
 	}
 
-	private void tryAndFireASmartShot(RobotInfo target) throws GameActionException {
-		RobotInfo[] enemies = Arrays.stream(rc.senseNearbyRobots()).filter(r -> r.team == rc.getTeam().opponent())
-				.toArray(RobotInfo[]::new);
-
-	}
-
 	private boolean shouldFireTriShot(RobotInfo target) throws GameActionException {
-		
-		return rc.getLocation().distanceTo(target.location)>5 && rc.getLocation().distanceTo(target.location)<6;
-		/*MapLocation currLoc = rc.getLocation();
-		MapLocation targetLoc = target.getLocation();
-		Direction toTarget = currLoc.directionTo(targetLoc);
-
-		int numHit = 0;
-		Team opponent = rc.getTeam().opponent();
-		float radius = rc.getType().sensorRadius;
-
-		if (getFirstHitTeamAprox(currLoc, toTarget.rotateLeftDegrees(-20), true, radius) == opponent) {
-			numHit++;
-		}
-
-		if (getFirstHitTeamAprox(currLoc, toTarget.rotateLeftDegrees(20), true, radius) == rc.getTeam().opponent()) {
-			numHit++;
-		}
-
-		return numHit > 0;*/
+		return rc.getLocation().distanceTo(target.location) >= 4 && rc.getLocation().distanceTo(target.location) < 5;
 	}
 
 	private boolean shouldFirePentadShot(RobotInfo target) throws GameActionException {
-
-		return rc.getLocation().distanceTo(target.location)<6;
-		/*
-		MapLocation currLoc = rc.getLocation();
-		MapLocation targetLoc = target.getLocation();
-		Direction toTarget = currLoc.directionTo(targetLoc);
-
-		Team opponent = rc.getTeam().opponent();
-		float radius = rc.getType().sensorRadius;
-
-		if (getFirstHitTeamAprox(currLoc, toTarget.rotateRightDegrees(GameConstants.PENTAD_SPREAD_DEGREES * 2), true,
-				radius) == opponent) {
-			System.out.println("Found right target");
-			return true;
-		}
-
-		if (getFirstHitTeamAprox(currLoc, toTarget.rotateLeftDegrees(GameConstants.PENTAD_SPREAD_DEGREES * 2), true,
-				radius) == opponent) {
-			System.out.println("Found left target");
-			return true;
-		}
-
-		return false;*/
+		return rc.getLocation().distanceTo(target.location) < 4;
 	}
 
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
 		Direction shotDir = rc.getLocation().directionTo(target.location);
-		float randSpread = (float) (Math.random() * 1);
+		/*float randSpread = (float) (Math.random() * 1);
 		if (Math.random() < .5) {
 			shotDir = shotDir.rotateLeftDegrees(randSpread);
 		} else {
 			shotDir = shotDir.rotateRightDegrees(randSpread);
-		}
+		}*/
 		if (rc.canFireSingleShot()) {
 			if (shouldFirePentadShot(target) && rc.canFirePentadShot()) {
 				rc.firePentadShot(shotDir);
-			} else if (shouldFireTriShot(target) && rc.canFireTriadShot() && getBulletGenerationSpeed() > 3) {
+			} else if (shouldFireTriShot(target) && rc.canFireTriadShot()/* && getBulletGenerationSpeed() > 3*/) {
 				rc.fireTriadShot(shotDir);
 			} else {
 				rc.fireSingleShot(shotDir);
 			}
 		}
-	}
-
-	// private void tryAndFireAShot(RobotInfo target) throws GameActionException
-	// {
-	//// tryAndFireASmartShot(target);
-	// if (rc.canFirePentadShot() && rc.getTeamBullets() > 70) {
-	// rc.firePentadShot(rc.getLocation().directionTo(target.location));
-	// } else if (rc.canFireTriadShot() && rc.getTeamBullets() > 30) {
-	// rc.fireTriadShot(rc.getLocation().directionTo(target.location));
-	// } else if (rc.canFireSingleShot()) {
-	// rc.fireSingleShot(rc.getLocation().directionTo(target.location));
-	// }
-	// }
-
-	/*
-	 * Returns true if unit was able to move towards the map location.
-	 */
-	private boolean moveTowardsCombat(MapLocation combatLocation, BroadcastManager.LocationInfoType type)
-			throws GameActionException {
-
-		// Invalidate broadcast location if no enemies
-		if (combatLocation != null && closeToLocationAndNoEnemies(rc, combatLocation)) {
-			BroadcastManager.invalidateLocation(rc, type);
-			return false;
-		}
-
-		// Move with intelligent pathfinding
-		Direction directionToMove = moveTowards(combatLocation);
-		if (directionToMove != null) {
-			move(directionToMove);
-			return true;
-		}
-		return false;
-	}
-
-	private static class Shot {
-		public enum Type {
-			SINGLE, TRI, PENTA;
-		}
-
-		Direction direction;
-		Type type;
-
-		public Shot(Direction direction, Type type) {
-			this.direction = direction;
-			this.type = type;
-		}
-	}
-
-	private double getPrioritySum(BodyInfo... bodies) {
-		double sum = 0;
-
-		for (BodyInfo body : bodies) {
-			// Friendly trees have negative multiplier of 1
-			// Friendly allies have negative multiplier of 1.5
-			// Enemies have multiplier of 1
-			// Enemy trees have multiplier of 0.75
-
-			if (body == null) {
-				continue;
-			}
-
-			if (body.isRobot()) {
-				RobotInfo robot = (RobotInfo) body;
-				if (robot.getTeam().equals(allyTeam)) {
-					sum += -1.5 * Math.abs(robot.getType().attackPower)
-							/ (Math.max(robot.health, 1) * rc.getLocation().distanceTo(robot.getLocation()));
-				} else {
-					sum += Math.abs(robot.getType().attackPower)
-							/ (Math.max(robot.health, 1) * rc.getLocation().distanceTo(robot.getLocation()));
-				}
-			}
-		}
-		return sum;
-	}
-
-	private Shot getOptimalShot() {
-		int startBytecode = Clock.getBytecodeNum();
-		AimManager aimManager = new AimManager(rc);
-
-		double maxSingleSum = Double.NEGATIVE_INFINITY;
-		int maxSingleDirection = 0;
-
-		double maxTripleSum = Double.NEGATIVE_INFINITY;
-		int maxTripleDirection = 0;
-
-		double maxPentaSum = Double.NEGATIVE_INFINITY;
-		int maxPentaDirection = 0;
-
-		for (int i = 0; i < 360; i += 5) {
-			int start = Clock.getBytecodeNum();
-			System.out.println("beginning query at " + start);
-			BodyInfo singleShot = aimManager.getTargetSingleShot(new Direction(i));
-			BodyInfo[] tripleShot = aimManager.getTargetTripleShot(new Direction(i));
-			BodyInfo[] pentaShot = aimManager.getTargetPentadShot(new Direction(i));
-
-			double singleSum = getPrioritySum(singleShot);
-			if (singleSum > maxSingleSum) {
-				maxSingleDirection = i;
-				maxSingleSum = singleSum;
-			}
-
-			double tripleSum = getPrioritySum(tripleShot);
-			if (tripleSum > maxTripleSum) {
-				maxTripleDirection = i;
-				maxTripleSum = tripleSum;
-			}
-
-			double pentaSum = getPrioritySum(pentaShot);
-			if (pentaSum > maxPentaSum) {
-				maxPentaDirection = i;
-				maxPentaSum = pentaSum;
-			}
-		}
-
-		double bestShotSum = maxSingleSum;
-		Shot shot = new Shot(new Direction(maxSingleDirection), Shot.Type.SINGLE);
-
-		if (maxTripleSum - 0.01 > bestShotSum) {
-			bestShotSum = maxTripleSum;
-			shot.direction = new Direction(maxTripleDirection);
-			shot.type = Shot.Type.TRI;
-		}
-
-		if (maxPentaSum - 0.01 > bestShotSum) {
-			shot.direction = new Direction(maxPentaDirection);
-			shot.type = Shot.Type.PENTA;
-		}
-
-		if (bestShotSum <= 0) {
-			return null;
-		}
-
-		return shot;
-
 	}
 
 }

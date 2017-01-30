@@ -86,7 +86,7 @@ public class LumberjackLogic extends RobotLogic {
 				// Move randomly
 				MapLocation archonLocation = getRandomEnemyInitialArchonLocation();
 				Direction towardsEnemy = rc.getLocation().directionTo(archonLocation);
-				towardsEnemy = moveTowards(towardsEnemy);
+				towardsEnemy = getDirectionTowards(towardsEnemy);
 				if (towardsEnemy != null) {
 					rc.move(towardsEnemy);
 					if (rc.canSenseLocation(archonLocation)) {
@@ -115,7 +115,7 @@ public class LumberjackLogic extends RobotLogic {
 				System.out.println("read");
 				rc.chop(treeInFront.ID);
 			} else {
-				Direction toMove = moveTowards(toChop.getLocation());
+				Direction toMove = getDirectionTowards(toChop.getLocation());
 				if (toMove != null) {
 					move(toMove);
 				}
@@ -183,7 +183,7 @@ public class LumberjackLogic extends RobotLogic {
 
 	private void attackEnemy(RobotInfo[] enemyRobots) throws GameActionException {
 		RobotInfo target = getTarget(enemyRobots);
-		Direction toMove = moveTowards(target.location);
+		Direction toMove = getDirectionTowards(target.location);
 		if (toMove != null) {
 			move(toMove);
 		}
@@ -204,7 +204,7 @@ public class LumberjackLogic extends RobotLogic {
 		float closestDistance = Float.MAX_VALUE;
 		for (RobotInfo enemy : enemyRobots) {
 			float distance = rc.getLocation().distanceTo(enemy.location);
-			if (distance < closestDistance && rc.getType() != RobotType.SOLDIER && rc.getType() != RobotType.TANK) {
+			if (distance < closestDistance && type != RobotType.SOLDIER && type != RobotType.TANK) {
 				closestDistance = distance;
 				closestEnemy = enemy;
 			}
