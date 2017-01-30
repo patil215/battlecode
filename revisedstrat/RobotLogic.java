@@ -942,7 +942,7 @@ public abstract class RobotLogic {
 			toMove = getDirectionTowards(lastDirection);
 			if (toMove != null) {
 				lastDirection = toMove;
-				rc.move(toMove);
+				move(toMove);
 				return true;
 			} else {
 				return false;

@@ -1,7 +1,6 @@
 package revisedstrat;
 
 import battlecode.common.RobotController;
-import revisedstrat.*;
 
 /**
  * Created by patil215 on 1/12/17.
@@ -23,7 +22,7 @@ public strictfp class RobotPlayer {
                 logic = new LumberjackLogic(rc);
                 break;
             case SCOUT:
-                logic = new ScoutLogic(rc);
+                logic = new CombatUnitLogic(rc);
                 break;
             case TANK:
                 logic = new CombatUnitLogic(rc);
