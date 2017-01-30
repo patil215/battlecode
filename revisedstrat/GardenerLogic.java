@@ -86,8 +86,9 @@ public class GardenerLogic extends RobotLogic {
 		if (unitSpawnDir == null) {
 			unitSpawnDir = rc.getLocation().directionTo(allyArchonLocations[0]).opposite();
 			for (int i = 0; i < 6; i++) {
-				if (!rc.isCircleOccupied(rc.getLocation().add(unitSpawnDir, (float) (2 * type.bodyRadius + 0.1)),
-						rc.getType().bodyRadius)) {
+				MapLocation proposedLoc = rc.getLocation().add(unitSpawnDir, (float) (2 * type.bodyRadius + 0.1));
+				if (!rc.isCircleOccupied(proposedLoc,
+						rc.getType().bodyRadius) && rc.onTheMap(proposedLoc)) {
 					break;
 				}
 				unitSpawnDir = unitSpawnDir.rotateLeftDegrees(60);
