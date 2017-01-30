@@ -226,7 +226,8 @@ public class ArchonLogic extends RobotLogic {
 	private final int ROUNDS_WHEN_LATE = 500;
 
 	private boolean shouldSpawnGardener() throws GameActionException {
-		if (rc.getRoundNum() > 100 && rc.getRobotCount() - allyArchonLocations.length == 0) {
+		if (rc.getRoundNum() > 100 && rc.getRobotCount() - allyArchonLocations.length == 0
+				&& (!inDanger() || rc.getTeamBullets() >= 200)) {
 			return true;
 		}
 
@@ -310,11 +311,11 @@ public class ArchonLogic extends RobotLogic {
 	}
 
 	private void broadcastForHelpIfNeeded() throws GameActionException {
-		RobotInfo[] foes = rc.senseNearbyRobots(-1, enemyTeam);
-
-		if (foes.length > 0) {
+		if(inDanger()) {
+			RobotInfo[] foes = rc.senseNearbyRobots(-1, enemyTeam);
 			BroadcastManager.saveLocation(rc, foes[0].location, LocationInfoType.ARCHON_HELP);
 		}
+
 	}
 
 }

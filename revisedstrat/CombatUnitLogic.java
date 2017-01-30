@@ -196,7 +196,7 @@ public class CombatUnitLogic extends RobotLogic {
 				if (robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON)
 						|| (robotInfo.getType().equals(RobotType.LUMBERJACK)
 								&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
-					getDirectionTowards(robotInfo.getLocation());
+					move(getDirectionTowards(robotInfo.getLocation()));
 					break;
 				}
 			}

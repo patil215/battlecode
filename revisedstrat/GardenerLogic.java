@@ -158,10 +158,10 @@ public class GardenerLogic extends RobotLogic {
 		 * (Math.abs(treeSpread) < 20) { tryToBuildUnit(RobotType.LUMBERJACK); }
 		 * else { tryToBuildUnit(RobotType.SOLDIER); } } else {
 		 * tryToBuildUnit(RobotType.SOLDIER); }
-		 * 
+		 *
 		 * // Wait until we can build second unit while
 		 * (rc.getBuildCooldownTurns() != 0) { endTurn(); }
-		 * 
+		 *
 		 * // Build second unit depending on how far archons are from each //
 		 * other float closestEnemyArchonDistance = Float.MAX_VALUE;
 		 * MapLocation[] enemyArchons = enemyArchonLocations; for (MapLocation
