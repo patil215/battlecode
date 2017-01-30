@@ -9,7 +9,7 @@ import revisedstrat.BroadcastManager.LocationInfoType;
 public class GardenerLogic extends RobotLogic {
 
 	private final int NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE = 0;
-	private final int NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE = 500;
+	private final int NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE = 300;
 	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER = 50;
 	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = 100;
 	private final float MIN_FREE_SPACE_REQUIREMENT = 5;

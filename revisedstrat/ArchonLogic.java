@@ -45,11 +45,13 @@ public class ArchonLogic extends RobotLogic {
 			e.printStackTrace();
 		}
 	}
+
 	private void detectTreesAndAskLumberjacksForHelp() throws GameActionException {
 		TreeInfo[] treesInWay = rc.senseNearbyTrees(MIN_FREE_SPACE_REQUIREMENT, Team.NEUTRAL);
 		if (treesInWay.length > 0) {
 			TreeInfo closestTree = (TreeInfo) getClosestBody(treesInWay);
-			revisedstrat.BroadcastManager.saveLocation(rc, closestTree.location, revisedstrat.BroadcastManager.LocationInfoType.LUMBERJACK_GET_HELP);
+			revisedstrat.BroadcastManager.saveLocation(rc, closestTree.location,
+					revisedstrat.BroadcastManager.LocationInfoType.LUMBERJACK_GET_HELP);
 		}
 	}
 
@@ -73,11 +75,11 @@ public class ArchonLogic extends RobotLogic {
 			}
 		} else {
 			RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
-			if(enemyRobots.length > 0) {
+			if (enemyRobots.length > 0) {
 				RobotInfo enemyRobot = enemyRobots[0];
 				// Spawn away from enemy
 				Direction oppositeDirection = rc.getLocation().directionTo(enemyRobot.location).opposite();
-				if(rc.canHireGardener(oppositeDirection)) {
+				if (rc.canHireGardener(oppositeDirection)) {
 					rc.hireGardener(oppositeDirection);
 				}
 			}
@@ -97,15 +99,20 @@ public class ArchonLogic extends RobotLogic {
 	}
 
 	private final int ROUNDS_TO_WAIT_BEFORE_SPAWNING_MORE_THAN_INITIAL_GARDENER = 125;
-	private final double GARDENER_SPAWN_CHANCE = 0.7;
+	private final double GARDENER_SPAWN_CHANCE_EARLY = 0.3;
+	private final double GARDENER_SPAWN_CHANCE_LATE = 0.15;
+	private final int ROUNDS_WHEN_LATE = 500;
 
 	private boolean shouldSpawnGardener() {
-		if(rc.getRoundNum() > 100 && rc.getRobotCount() - allyArchonLocations.length == 0) {
+		if (rc.getRoundNum() > 100 && rc.getRobotCount() - allyArchonLocations.length == 0) {
 			return true;
 		}
 
+		double spawnChance = (rc.getRoundNum() > ROUNDS_WHEN_LATE) ? GARDENER_SPAWN_CHANCE_LATE
+				: GARDENER_SPAWN_CHANCE_EARLY;
+
 		if (rc.getRoundNum() > ROUNDS_TO_WAIT_BEFORE_SPAWNING_MORE_THAN_INITIAL_GARDENER) {
-			if (Math.random() > GARDENER_SPAWN_CHANCE && (!inDanger() || rc.getTeamBullets() >= 200)) {
+			if (Math.random() < spawnChance && (!inDanger() || rc.getTeamBullets() >= 200)) {
 				return true;
 			}
 		}
@@ -114,23 +121,19 @@ public class ArchonLogic extends RobotLogic {
 
 	private void moveToGoodLocation() throws GameActionException {
 
+		/*
+		 * TreeInfo[] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL); BodyInfo
+		 * closestTree = getClosestBody(trees); if(closestTree != null) {
+		 * TreeInfo tree = (TreeInfo) closestTree; if (tree.containedBullets > 0
+		 * && rc.getLocation().distanceTo(tree.location) < type.sensorRadius *
+		 * 0.75) { Direction direction = getDirectionTowards(tree.location);
+		 * MapLocation newLoc = rc.getLocation().add(direction,
+		 * type.strideRadius); if (isValidNextArchonLocation(newLoc)) { return
+		 * newLoc; } } }
+		 */
 
-		/*TreeInfo[] trees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
-		BodyInfo closestTree = getClosestBody(trees);
-		if(closestTree != null) {
-			TreeInfo tree = (TreeInfo) closestTree;
-			if (tree.containedBullets > 0
-					&& rc.getLocation().distanceTo(tree.location) < type.sensorRadius * 0.75) {
-				Direction direction = getDirectionTowards(tree.location);
-				MapLocation newLoc = rc.getLocation().add(direction, type.strideRadius);
-				if (isValidNextArchonLocation(newLoc)) {
-					return newLoc;
-				}
-			}
-		}*/
-
-		if(rc.getLocation().distanceTo(enemyArchonLocations[0]) >
-				(allyArchonLocations[0].distanceTo(enemyArchonLocations[0]) * 0.95)) {
+		if (rc.getLocation().distanceTo(
+				enemyArchonLocations[0]) > (allyArchonLocations[0].distanceTo(enemyArchonLocations[0]) * 0.95)) {
 			System.out.println("moving to");
 			Direction toEnemy = rc.getLocation().directionTo(enemyArchonLocations[0]);
 			MapLocation proposed = rc.getLocation().add(toEnemy, type.strideRadius - 0.01f);
@@ -139,34 +142,20 @@ public class ArchonLogic extends RobotLogic {
 			}
 		}
 
-		/*RobotInfo[] otherRobots = rc.senseNearbyRobots(-1, allyTeam);
-		int count = 0;
-		for(RobotInfo robot : otherRobots) {
-			if(robot.getType().equals(RobotType.GARDENER)) {
-				count++;
-			}
-		}
-		RobotInfo[] gardeners = new RobotInfo[count];
-		int index = 0;
-		for(RobotInfo robot : otherRobots) {
-			if(robot.getType().equals(RobotType.GARDENER)) {
-				gardeners[index] = robot;
-				index++;
-			}
-		}
-		Direction dirAway = getDirectionAway(gardeners);
-		if (dirAway != null) {
-			for (int i = 5; i >= 1; i--) {
-				MapLocation attemptedNewLocation = rc.getLocation().add(dirAway, (float) (i * 0.2));
-				if (isValidNextArchonLocation(attemptedNewLocation)) {
-					Direction moveDir = getDirectionTowards(attemptedNewLocation);
-					if(moveDir != null) {
-						move(moveDir);
-						return;
-					}
-				}
-			}
-		}*/
+		/*
+		 * RobotInfo[] otherRobots = rc.senseNearbyRobots(-1, allyTeam); int
+		 * count = 0; for(RobotInfo robot : otherRobots) {
+		 * if(robot.getType().equals(RobotType.GARDENER)) { count++; } }
+		 * RobotInfo[] gardeners = new RobotInfo[count]; int index = 0;
+		 * for(RobotInfo robot : otherRobots) {
+		 * if(robot.getType().equals(RobotType.GARDENER)) { gardeners[index] =
+		 * robot; index++; } } Direction dirAway = getDirectionAway(gardeners);
+		 * if (dirAway != null) { for (int i = 5; i >= 1; i--) { MapLocation
+		 * attemptedNewLocation = rc.getLocation().add(dirAway, (float) (i *
+		 * 0.2)); if (isValidNextArchonLocation(attemptedNewLocation)) {
+		 * Direction moveDir = getDirectionTowards(attemptedNewLocation);
+		 * if(moveDir != null) { move(moveDir); return; } } } }
+		 */
 
 		for (int i = 0; i < 50; i++) {
 			Direction randomDir = Utils.randomDirection();
