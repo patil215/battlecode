@@ -53,7 +53,7 @@ public class CombatUnitLogic extends RobotLogic {
 						BroadcastManager.invalidateLocation(rc, LocationInfoType.ENEMY);
 						break;
 					}
-					System.out.println("reached");
+					//System.out.println("reached");
 					currentDestinationType = 0;
 					setDestination(null);
 				}
@@ -144,7 +144,7 @@ public class CombatUnitLogic extends RobotLogic {
 	private boolean shouldClearLocation(MapLocation destination) throws GameActionException {
 		Direction toMove = rc.getLocation().directionTo(destination);
 		RobotInfo frontRobot = rc.senseRobotAtLocation(rc.getLocation().add(toMove));
-		System.out.println("run");
+		//System.out.println("run");
 		return this.getClosestDistance() <= DISTANCE_TO_CLEAR_DESTINATION
 				|| rc.getLocation().distanceTo(destination) <= DISTANCE_TO_CLEAR_DESTINATION
 				|| (rc.canSenseLocation(destination) && frontRobot != null && frontRobot.team == allyTeam);
@@ -192,14 +192,20 @@ public class CombatUnitLogic extends RobotLogic {
 		boolean result = dodgeBullets();
 		if (!result) {
 			// Move towards the enemy, especially if it's an econ unit
-			for (RobotInfo robotInfo : enemyRobots) {
+			RobotInfo robotInfo = (RobotInfo) getClosestBody(rc.senseNearbyRobots(-1, enemyTeam));
+			if (robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON)
+					|| (robotInfo.getType().equals(RobotType.LUMBERJACK)
+					&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
+				move(getDirectionTowards(robotInfo.getLocation()));
+			}
+			/*for (RobotInfo robotInfo : enemyRobots) {
 				if (robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON)
 						|| (robotInfo.getType().equals(RobotType.LUMBERJACK)
 								&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
 					move(getDirectionTowards(robotInfo.getLocation()));
 					break;
 				}
-			}
+			}*/
 		}
 
 		// Shoot
@@ -235,11 +241,11 @@ public class CombatUnitLogic extends RobotLogic {
 	}
 
 	private boolean shouldFireTriShot(RobotInfo target) throws GameActionException {
-		return rc.getLocation().distanceTo(target.location) >= 5 && rc.getLocation().distanceTo(target.location) < 6;
+		return rc.getLocation().distanceTo(target.location) >= 5.5 && rc.getLocation().distanceTo(target.location) < 7;
 	}
 
 	private boolean shouldFirePentadShot(RobotInfo target) throws GameActionException {
-		return rc.getLocation().distanceTo(target.location) < 5;
+		return rc.getLocation().distanceTo(target.location) < 5.5;
 	}
 
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
