@@ -222,7 +222,7 @@ public class CombatUnitLogic extends RobotLogic {
 				BroadcastManager.saveLocation(rc, target.location, LocationInfoType.ENEMY);
 				Direction toMove = getDirectionTowards(target.location);
 				if (toMove != null) {
-					if (rc.canMove(toMove)) {
+					if (smartCanMove(toMove)) {
 						move(toMove);
 					}
 				} else {

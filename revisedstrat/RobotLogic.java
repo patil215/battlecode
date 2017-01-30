@@ -67,13 +67,13 @@ public abstract class RobotLogic {
 	 * found.
 	 */
 	public Direction moveWithRandomBounce(Direction move) throws GameActionException {
-		if (rc.canMove(move)) {
+		if (smartCanMove(move)) {
 			move(move);
 		} else {
-			for (int count = 0; count < 20 && !rc.canMove(move); count++) {
+			for (int count = 0; count < 20 && !smartCanMove(move); count++) {
 				move = randomDirection();
 			}
-			if (rc.canMove(move)) {
+			if (smartCanMove(move)) {
 				move(move);
 			}
 		}
@@ -81,20 +81,43 @@ public abstract class RobotLogic {
 	}
 
 	public Direction moveWithDiagonalBounce(Direction move) throws GameActionException {
-		if (rc.canMove(move)) {
+		if (smartCanMove(move)) {
 			move(move);
 		} else {
-			for (int count = 0; count < 8 && !rc.canMove(move); count++) {
+			for (int count = 0; count < 8 && !smartCanMove(move); count++) {
 				move = Utils.diagonalDirection();
 			}
-			for (int count = 0; count < 12 && !rc.canMove(move); count++) {
+			for (int count = 0; count < 12 && !smartCanMove(move); count++) {
 				move = Utils.randomDirection();
 			}
-			if (rc.canMove(move)) {
+			if (smartCanMove(move)) {
 				move(move);
 			}
 		}
 		return move;
+	}
+
+	public boolean smartCanMove(Direction toMove) throws GameActionException {
+		if (rc.getType() != RobotType.TANK) {
+			return rc.canMove(toMove);
+		} else if (rc.canMove(toMove)) {
+			System.out.println("We can move, but we are a tank.");
+			if (rc.isCircleOccupiedExceptByThisRobot(rc.getLocation().add(toMove, rc.getType().strideRadius),
+					rc.getType().bodyRadius)) {
+				System.out.println("The circle is occupied");
+				TreeInfo[] possibleHitAllyTrees = rc
+						.senseNearbyTrees(rc.getType().strideRadius + rc.getType().bodyRadius, rc.getTeam());
+				for (TreeInfo t : possibleHitAllyTrees) {
+					if (Math.abs(toMove.degreesBetween(rc.getLocation().directionTo(t.location))) < 90) {
+						return false;
+					}
+				}
+				return true;
+			} else{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/*
@@ -124,12 +147,12 @@ public abstract class RobotLogic {
 		return distanceToDestination;
 	}
 
-	private boolean findBestDirection(MapLocation destination) {
+	private boolean findBestDirection(MapLocation destination) throws GameActionException {
 		Direction toMove = rc.getLocation().directionTo(destination);
 		for (int count = 0; count < 180; count += 1) {
-			if (rc.canMove(toMove.rotateLeftDegrees(count))) {
+			if (smartCanMove(toMove.rotateLeftDegrees(count))) {
 				return true;
-			} else if (rc.canMove(toMove.rotateRightDegrees(count))) {
+			} else if (smartCanMove(toMove.rotateRightDegrees(count))) {
 				return false;
 			}
 		}
@@ -146,7 +169,7 @@ public abstract class RobotLogic {
 	}
 
 	public boolean move(Direction direction) throws GameActionException {
-		if (!rc.hasMoved() && rc.canMove(direction)) {
+		if (!rc.hasMoved() && smartCanMove(direction)) {
 			rc.move(direction);
 			return true;
 		}
@@ -154,9 +177,30 @@ public abstract class RobotLogic {
 	}
 
 	public boolean move(Direction direction, float distance) throws GameActionException {
-		if (!rc.hasMoved() && rc.canMove(direction, distance)) {
+		if (!rc.hasMoved() && smartCanMove(direction, distance)) {
 			rc.move(direction, distance);
 			return true;
+		}
+		return false;
+	}
+
+	private boolean smartCanMove(Direction direction, float distance) throws GameActionException {
+		if (rc.getType() != RobotType.TANK) {
+			return rc.canMove(direction, distance);
+		} else if (rc.canMove(direction, distance)) {
+			if (rc.isCircleOccupiedExceptByThisRobot(rc.getLocation().add(direction, distance),
+					rc.getType().bodyRadius)) {
+				TreeInfo[] possibleHitAllyTrees = rc
+						.senseNearbyTrees(rc.getType().strideRadius + rc.getType().bodyRadius, rc.getTeam());
+				for (TreeInfo t : possibleHitAllyTrees) {
+					if (Math.abs(direction.degreesBetween(rc.getLocation().directionTo(t.location))) < 90) {
+						return false;
+					}
+				}
+				return true;
+			}else{
+				return true;
+			}
 		}
 		return false;
 	}
@@ -190,7 +234,7 @@ public abstract class RobotLogic {
 	 * will also disallow angles that will result in the robot getting hit by a
 	 * bullet.
 	 */
-	public Direction getDirectionTowards(MapLocation destination) {
+	public Direction getDirectionTowards(MapLocation destination) throws GameActionException {
 		if (!rc.getLocation().equals(destination)) {
 			Direction toMove = rc.getLocation().directionTo(destination);
 			return getDirectionTowards(toMove);
@@ -204,21 +248,21 @@ public abstract class RobotLogic {
 	 * The method will also disallow angles that will result in the robot
 	 * getting hit by a bullet.
 	 */
-	public Direction getDirectionTowards(Direction toMove) {
-		if (rc.canMove(toMove)) {
+	public Direction getDirectionTowards(Direction toMove) throws GameActionException {
+		if (smartCanMove(toMove)) {
 			return toMove;
 		} else {
 			BulletInfo[] bullets = rc.senseNearbyBullets();
 			for (int deltaAngle = 0; deltaAngle < 360; deltaAngle += 10) {
 				if (isLeftUnit) {
 					Direction leftDir = toMove.rotateLeftDegrees(deltaAngle);
-					if (rc.canMove(leftDir)
+					if (smartCanMove(leftDir)
 							&& !willGetHitByABullet(rc.getLocation().add(leftDir, type.strideRadius), bullets)) {
 						return leftDir;
 					}
 				} else {
 					Direction rightDir = toMove.rotateRightDegrees(deltaAngle);
-					if (rc.canMove(rightDir)
+					if (smartCanMove(rightDir)
 							&& !willGetHitByABullet(rc.getLocation().add(rightDir, type.strideRadius), bullets)) {
 						return rightDir;
 					}
@@ -478,7 +522,8 @@ public abstract class RobotLogic {
 	}
 
 	protected void econWinIfPossible() throws GameActionException {
-		if (rc.getTeamBullets() >= (GameConstants.VICTORY_POINTS_TO_WIN - rc.getTeamVictoryPoints()) * rc.getVictoryPointCost()) {
+		if (rc.getTeamBullets() >= (GameConstants.VICTORY_POINTS_TO_WIN - rc.getTeamVictoryPoints())
+				* rc.getVictoryPointCost()) {
 			rc.donate(rc.getTeamBullets());
 		}
 	}
@@ -550,7 +595,7 @@ public abstract class RobotLogic {
 			float expectedDanger = getImminentDanger(predictNext,
 					currentLocation.add(densestDirection.rotateLeftDegrees(angle)));
 
-			if (expectedDanger < leastDanger && rc.canMove(densestDirection.rotateLeftDegrees(angle))) {
+			if (expectedDanger < leastDanger && smartCanMove(densestDirection.rotateLeftDegrees(angle))) {
 				leastDanger = expectedDanger;
 				safestAngle = angle;
 			}
@@ -558,7 +603,7 @@ public abstract class RobotLogic {
 
 		Direction toMove = densestDirection.rotateLeftDegrees(safestAngle);
 
-		if (rc.canMove(toMove)) {
+		if (smartCanMove(toMove)) {
 			move(toMove);
 		}
 	}
@@ -609,22 +654,22 @@ public abstract class RobotLogic {
 	private boolean dodgeTangent(BulletInfo toDodge, MapLocation[][] bulletSegments) throws GameActionException {
 		Direction toBullet = rc.getLocation().directionTo(toDodge.location);
 		Direction toTry;
-		for(int rotate = 85; rotate <= 130; rotate += 10) {
-			if(dodgeLeft) {
+		for (int rotate = 85; rotate <= 130; rotate += 10) {
+			if (dodgeLeft) {
 				toTry = toBullet.rotateLeftDegrees(rotate);
 			} else {
 				toTry = toBullet.rotateRightDegrees(rotate);
 			}
-			if (rc.canMove(toTry, type.strideRadius)) {
+			if (smartCanMove(toTry, type.strideRadius)) {
 				move(toTry, type.strideRadius);
 				return true;
 			}
-			if(dodgeLeft) {
+			if (dodgeLeft) {
 				toTry = toBullet.rotateRightDegrees(rotate);
 			} else {
 				toTry = toBullet.rotateLeftDegrees(rotate);
 			}
-			if (rc.canMove(toTry, type.strideRadius)) {
+			if (smartCanMove(toTry, type.strideRadius)) {
 				move(toTry, type.strideRadius);
 				return true;
 			}
@@ -744,19 +789,44 @@ public abstract class RobotLogic {
 	 * Returns null if no location found, or the player is not going to be hit
 	 * by a bullet.
 	 */
-	public MapLocation getBulletAvoidingLocation(MapLocation[][] bulletSegments, int bytecodeToSpend) {
+	public MapLocation getBulletAvoidingLocation(MapLocation[][] bulletSegments, int bytecodeToSpend) throws GameActionException {
 		int byteCodeStart = Clock.getBytecodeNum();
 		while (Clock.getBytecodeNum() - byteCodeStart < bytecodeToSpend) {
 			if (Clock.getBytecodeNum() < byteCodeStart) {
 				break;
 			}
 			MapLocation startLoc = getRandomLocation();
-			if (!bulletIntersecting(bulletSegments) && rc.canMove(startLoc)) {
+			if (!bulletIntersecting(bulletSegments) && smartCanMove(startLoc)) {
 				return startLoc;
 			}
 		}
 
 		return null;
+	}
+
+	private boolean smartCanMove(MapLocation startLoc) throws GameActionException {
+		if (rc.getType() != RobotType.TANK) {
+			return rc.canMove(startLoc);
+		} else if (rc.canMove(startLoc)) {
+			System.out.println("We can move, but we are a tank");
+			if (rc.isCircleOccupiedExceptByThisRobot(startLoc, rc.getType().bodyRadius)) {
+				TreeInfo[] possibleHitAllyTrees = rc
+						.senseNearbyTrees(rc.getType().strideRadius + rc.getType().bodyRadius, rc.getTeam());
+				for (TreeInfo t : possibleHitAllyTrees) {
+					if (Math.abs((rc.getLocation().directionTo(startLoc)).degreesBetween(rc.getLocation().directionTo(t.location))) < 90) {
+						System.out.println("There is an ally tree that we can hit.");
+						return false;
+					}
+				}
+				System.out.println("We will hit no ally trees");
+				return true;
+			} else{
+				return true;
+			}
+		}
+		System.out.println("We can't move to the desired location.");
+		return false;
+
 	}
 
 	public void printBytecodeLeft(String id) {
@@ -834,15 +904,15 @@ public abstract class RobotLogic {
 		 * "If the next statement is true, then this unit leans left " +
 		 * isLeftUnit);
 		 */
-		if (currentDistance <= distanceToDestination && rc.canMove(toMove)) {
+		if (currentDistance <= distanceToDestination && smartCanMove(toMove)) {
 			rc.move(toMove);
 			distanceToDestination = currentDistance;
 			needToSetDirection = true;
 			lastDirection = toMove;
 			return true;
-		} else if (rc.canMove(lastDirection)) {
+		} else if (smartCanMove(lastDirection)) {
 			toMove = findAngleThatBringsYouClosestToAnObstruction(lastDirection);
-			if (rc.canMove(toMove)) {
+			if (smartCanMove(toMove)) {
 				lastDirection = toMove;
 				rc.move(toMove);
 				distanceToDestination = Math.min(distanceToDestination, currentDistance);
@@ -868,7 +938,7 @@ public abstract class RobotLogic {
 		}
 	}
 
-	private Direction findAngleThatBringsYouClosestToAnObstruction(Direction lastDirection2) {
+	private Direction findAngleThatBringsYouClosestToAnObstruction(Direction lastDirection2) throws GameActionException {
 		Direction testAngle = lastDirection2;
 		int directionMultiplyer;
 		if (isLeftUnit) {
@@ -876,10 +946,10 @@ public abstract class RobotLogic {
 		} else {
 			directionMultiplyer = -1;
 		}
-		for (int deltaAngle = 0; deltaAngle < 360 && rc.canMove(testAngle); deltaAngle += 5) {
+		for (int deltaAngle = 0; deltaAngle < 360 && smartCanMove(testAngle); deltaAngle += 5) {
 			testAngle = lastDirection.rotateRightDegrees(deltaAngle * directionMultiplyer);
 		}
-		while (!rc.canMove(testAngle)) {
+		while (!smartCanMove(testAngle)) {
 			testAngle = testAngle.rotateLeftDegrees(5 * directionMultiplyer);
 		}
 		return testAngle;
@@ -948,6 +1018,5 @@ public abstract class RobotLogic {
 			System.out.println("UOSEFIJE " + (Clock.getBytecodeNum() - bytecode));
 		}
 	}
-
 
 }
