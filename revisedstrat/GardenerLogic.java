@@ -17,15 +17,10 @@ public class GardenerLogic extends RobotLogic {
 	private Direction moveDir;
 	private final boolean UNIT_SPAWNER_ELIGIBLE;
 	private final boolean DEGENERATE_ELIGIBLE;
-	private final boolean SHOULD_SPAWN_TANKS;
 
 	public GardenerLogic(RobotController rc) {
 		super(rc);
 		moveDir = Utils.diagonalDirection();
-
-		double TANK_SPAWNER_CHANCE = rc.getRoundNum() * 2.0 / rc.getRoundLimit();
-		SHOULD_SPAWN_TANKS = Math.random() < TANK_SPAWNER_CHANCE
-				&& !(rc.getRobotCount() - 1 == allyArchonLocations.length);
 		UNIT_SPAWNER_ELIGIBLE = rc.getRoundNum() > NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE;
 		DEGENERATE_ELIGIBLE = rc.getRoundNum() < NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE;
 	}
@@ -88,15 +83,10 @@ public class GardenerLogic extends RobotLogic {
 
 		Direction archonOppositeLocation = rc.getLocation().directionTo(allyArchonLocations[0]).opposite();
 		if (rc.getBuildCooldownTurns() == 0) {
-			Direction startAngle;
-			if (SHOULD_SPAWN_TANKS) {
-				startAngle = archonOppositeLocation.rotateLeftDegrees(90);
-			} else {
-				startAngle = archonOppositeLocation.rotateLeftDegrees(60);
-			}
+			Direction startAngle = archonOppositeLocation.rotateLeftDegrees(60);
 
-			while (!rc.canPlantTree(startAngle) && Math.abs(archonOppositeLocation.degreesBetween(startAngle)) >= 50) {
-				startAngle = startAngle.rotateLeftDegrees(10);
+			while (!rc.canPlantTree(startAngle) && Math.abs(archonOppositeLocation.degreesBetween(startAngle)) > 60) {
+				startAngle = startAngle.rotateLeftDegrees(60);
 			}
 			if (rc.canPlantTree(startAngle)) {
 				rc.plantTree(startAngle);
