@@ -98,6 +98,7 @@ public abstract class RobotLogic {
 	}
 
 	public boolean smartCanMove(Direction toMove) throws GameActionException {
+		rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(toMove), 0, 0, 255);
 		if (rc.getType() != RobotType.TANK) {
 			return rc.canMove(toMove);
 		} else if (rc.canMove(toMove)) {
@@ -265,7 +266,7 @@ public abstract class RobotLogic {
 			return toMove;
 		} else {
 			BulletInfo[] bullets = rc.senseNearbyBullets();
-			for (int deltaAngle = 0; deltaAngle < 360; deltaAngle += 10) {
+			for (int deltaAngle = 0; deltaAngle < 360; deltaAngle += 5) {
 				if (isLeftUnit) {
 					Direction leftDir = toMove.rotateLeftDegrees(deltaAngle);
 					if (smartCanMove(leftDir)
@@ -293,12 +294,14 @@ public abstract class RobotLogic {
 		if (rc.canShake()) {
 			TreeInfo[] trees = rc.senseNearbyTrees();
 			for (TreeInfo t : trees) {
-				if (rc.canShake(t.ID)) {
+				if (t.containedBullets>0&&rc.canShake(t.ID)) {
 					rc.shake(t.ID);
-					break;
+					System.out.println("We shook a tree");
+					return;
 				}
 			}
 		}
+		System.out.println("We did not shake a tree");
 	}
 
 	public Team getFirstHitTeamAprox(MapLocation location, Direction direction, boolean hitTrees)
@@ -907,7 +910,7 @@ public abstract class RobotLogic {
 		}
 		rc.setIndicatorLine(rc.getLocation(), destination, 0, 0, 40);
 		MapLocation currentLocation = rc.getLocation();
-		Direction toMove = rc.getLocation().directionTo(destination);
+		Direction toMove = new Direction( (float) (((int)(rc.getLocation().directionTo(destination).getAngleDegrees()/5)*5)*Math.PI/180));
 		float currentDistance = currentLocation.distanceTo(destination);
 		/*
 		 * System.out.println("Current distance is: " + currentDistance +
