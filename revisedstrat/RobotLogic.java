@@ -1,6 +1,7 @@
 package revisedstrat;
 
 import battlecode.common.*;
+import revisedstrat.BroadcastManager.LocationInfoType;
 
 import java.util.Arrays;
 
@@ -233,6 +234,13 @@ public abstract class RobotLogic {
 			 * rc.getVictoryPointCost(); rc.donate(bulletCount); } }
 			 */
 		// drawDots();
+		TreeInfo[] nearbyTrees = rc.senseNearbyTrees(5);
+		if(nearbyTrees.length==0){
+			BroadcastManager.saveLocation(rc, rc.getLocation(), LocationInfoType.GOOD_SPOT);
+		}
+		if(Clock.getBytecodesLeft()>120){
+			BroadcastManager.broadcastSpam(rc);
+		}
 		Clock.yield();
 	}
 
