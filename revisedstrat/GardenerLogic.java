@@ -18,12 +18,14 @@ public class GardenerLogic extends RobotLogic {
 	private final boolean UNIT_SPAWNER_ELIGIBLE;
 	private final boolean DEGENERATE_ELIGIBLE;
 	private Direction unitSpawnDir;
+	private MapLocation birthLocation;
 
 	public GardenerLogic(RobotController rc) {
 		super(rc);
 		moveDir = Utils.diagonalDirection();
 		UNIT_SPAWNER_ELIGIBLE = rc.getRoundNum() > NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE;
 		DEGENERATE_ELIGIBLE = rc.getRoundNum() < NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE;
+		birthLocation = rc.getLocation();
 	}
 
 	// TODO: make gardener only send help broadcast every 50 rounds
@@ -224,11 +226,21 @@ public class GardenerLogic extends RobotLogic {
 	private boolean moveTowardsGoodSpot() throws GameActionException {
 		// Try to find a free space to settle until 20 turns have elapsed
 		if (!isGoodLocation()) {
-			moveDir = moveWithDiagonalBounce(moveDir);
-			return false;
+//			moveDir = moveWithDiagonalBounce(moveDir);
+			return moveWithPathFinding();
+//			return false;
 		} else {
 			return true;
 		}
+	}
+
+	private boolean moveWithPathFinding() throws GameActionException {
+
+		if (this.getDestination() == null || rc.getLocation().distanceTo(this.getDestination()) < 3) {
+			setDestination(rc.getLocation().add(birthLocation.directionTo(rc.getLocation()), rc.getType().sensorRadius));
+		}
+
+		return tryToMoveToDestinationTwo();
 	}
 
 	private void sendHelpBroadcastIfNeeded() throws GameActionException {
