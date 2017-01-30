@@ -90,12 +90,13 @@ public class ArchonLogic extends RobotLogic {
 			if (!willBeOffMap(lookDir, (float) (type.sensorRadius * 0.75))) {
 				numTreesDivisor++;
 			}
-			if (!willHitTree(lookDir, (float) (type.sensorRadius * 0.75))
-			/* && !willBeOffMap(lookDir, (float) (type.sensorRadius * 0.75)) */) {
-				numTreesHit++;
-				freeSequenceLength++;
+			if (!willHitTree(lookDir, (float) (type.sensorRadius * 0.75))) {
+				if(!willBeOffMap(lookDir, (float) (type.sensorRadius * 0.75))) {
+					freeSequenceLength++;
+				}
 				rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(lookDir, 4), 0, 255, 0);
 			} else {
+				numTreesHit++;
 				if (firstRed == -1) {
 					firstRed = i;
 				}
@@ -123,7 +124,7 @@ public class ArchonLogic extends RobotLogic {
 		int monteCarloDivisor = 0;
 		for (int i = 0; i < 50; i++) {
 			MapLocation location = rc.getLocation().add(Utils.randomDirection(), (float) (Math.random() * (type.sensorRadius * 0.75)));
-			if (!rc.onTheMap(location)) {
+			if (rc.onTheMap(location)) {
 				monteCarloDivisor++;
 			}
 			if (rc.senseTreeAtLocation(location) != null) {
@@ -145,9 +146,9 @@ public class ArchonLogic extends RobotLogic {
 
 		BroadcastManager.writeLumberjackInitialCount(rc, numLumberjacks);
 
-		System.out.println("Tree ratio: " + numTreesHit / 72.0);
-		System.out.println("Longest sequence: " + longestFreeSequence);
-		System.out.println("Monte carlo ratio: " + (numTimesTreeOrOffMap / 50.0));
+		System.out.println("Tree ratio: " + numTreesHit / (double) numTreesDivisor);
+		System.out.println("Longest sequence: " + (longestFreeSequence / (double) numTreesDivisor));
+		System.out.println("Monte carlo ratio: " + (numTimesTreeOrOffMap / (double) monteCarloDivisor));
 	}
 
 	private void detectTreesAndAskLumberjacksForHelp() throws GameActionException {
