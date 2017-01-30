@@ -215,7 +215,7 @@ public class GardenerLogic extends RobotLogic {
 			return RobotType.TANK;
 		}
 		double chanceToSpawnLumberjack = getLumberjackSpawnChance();
-		if (Math.random() < chanceToSpawnLumberjack) {
+		if (Math.random() < chanceToSpawnLumberjack || Math.random() < .1) {
 			return RobotType.LUMBERJACK;
 		} else {
 			return RobotType.SOLDIER;

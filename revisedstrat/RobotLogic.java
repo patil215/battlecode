@@ -103,10 +103,10 @@ public abstract class RobotLogic {
 		if (rc.getType() != RobotType.TANK) {
 			return rc.canMove(toMove);
 		} else if (rc.canMove(toMove)) {
-			System.out.println("We can move, but we are a tank.");
+			//System.out.println("We can move, but we are a tank.");
 			if (rc.isCircleOccupiedExceptByThisRobot(rc.getLocation().add(toMove, rc.getType().strideRadius),
 					rc.getType().bodyRadius)) {
-				System.out.println("The circle is occupied");
+				//System.out.println("The circle is occupied");
 				TreeInfo[] possibleHitAllyTrees = rc
 						.senseNearbyTrees(rc.getType().strideRadius + rc.getType().bodyRadius, rc.getTeam());
 				for (TreeInfo t : possibleHitAllyTrees) {
@@ -158,11 +158,14 @@ public abstract class RobotLogic {
 				return false;
 			}
 		}
-		System.out.println("Reached. This should never happen if a unit is not trapped.");
+		//System.out.println("Reached. This should never happen if a unit is not trapped.");
 		return false;
 	}
 
 	public boolean move(MapLocation location) throws GameActionException {
+		if(location == null) {
+			return false;
+		}
 		if (!rc.hasMoved()) {
 			rc.move(location);
 			return true;
@@ -171,6 +174,9 @@ public abstract class RobotLogic {
 	}
 
 	public boolean move(Direction direction) throws GameActionException {
+		if(direction == null) {
+			return false;
+		}
 		if (!rc.hasMoved() && smartCanMove(direction)) {
 			rc.move(direction);
 			return true;
@@ -179,6 +185,9 @@ public abstract class RobotLogic {
 	}
 
 	public boolean move(Direction direction, float distance) throws GameActionException {
+		if(direction == null) {
+			return false;
+		}
 		if (!rc.hasMoved() && smartCanMove(direction, distance)) {
 			rc.move(direction, distance);
 			return true;
@@ -242,7 +251,7 @@ public abstract class RobotLogic {
 		float bullets = rc.getTeamBullets();
 		if (bullets > /*250*/ BULLETS_TO_DONATE) {
 			int bulletCount = (int) ((bullets - BULLETS_TO_DONATE) / rc.getVictoryPointCost());
-			System.out.println(bulletCount);
+			//System.out.println(bulletCount);
 			float donationAmount = ((float) (bulletCount)) * rc.getVictoryPointCost();
 			rc.donate(donationAmount + 0.01f);
 		}
@@ -327,8 +336,8 @@ public abstract class RobotLogic {
 				RobotInfo targetRobot = rc.senseRobotAtLocation(testLocation);
 				if (targetRobot != null) {
 					return targetRobot.team;
-				} else{
-					System.out.println("This should never happen");
+				} else {
+					//System.out.println("This should never happen");
 					return Team.NEUTRAL;
 				}
 			} else {
@@ -499,7 +508,7 @@ public abstract class RobotLogic {
 				if (getFirstHitTeamAprox(bulletSpawnPoint, toEnemy, hitTrees) == enemyTeam) {
 					maxIndex = index;
 					maxPriority = priority;
-					System.out.println("We have found a new target");
+					//System.out.println("We have found a new target");
 				}
 			}
 		}
@@ -673,28 +682,58 @@ public abstract class RobotLogic {
 		return totalDamage;
 	}
 
-	private boolean dodgeTangent(BulletInfo toDodge, MapLocation[][] bulletSegments) throws GameActionException {
+	private boolean dodgeTangent(BulletInfo toDodge, MapLocation[][] segments, int bytecodeToUse)
+			throws GameActionException {
 		Direction toBullet = rc.getLocation().directionTo(toDodge.location);
-		Direction toTry;
-		for (int rotate = 85; rotate <= 130; rotate += 10) {
+		int bytecodeStart = Clock.getBytecodeNum();
+
+		Direction toMoveAvoidBullets = null;
+		Direction toMove = null;
+		for (int rotate = 85; rotate <= 130; rotate += 12) {
+			if (!(Clock.getBytecodeNum() - bytecodeStart < bytecodeToUse)) {
+				break;
+			}
+			Direction toTry;
 			if (dodgeLeft) {
 				toTry = toBullet.rotateLeftDegrees(rotate);
 			} else {
 				toTry = toBullet.rotateRightDegrees(rotate);
 			}
 			if (smartCanMove(toTry, type.strideRadius)) {
-				move(toTry, type.strideRadius);
-				return true;
+				if (toMove == null) {
+					toMove = toTry;
+				}
+				if (!bulletIntersecting(rc.getLocation().add(toTry, type.strideRadius), segments)) {
+					toMoveAvoidBullets = toTry;
+					break;
+				}
 			}
+
 			if (dodgeLeft) {
 				toTry = toBullet.rotateRightDegrees(rotate);
 			} else {
 				toTry = toBullet.rotateLeftDegrees(rotate);
 			}
+
 			if (smartCanMove(toTry, type.strideRadius)) {
-				move(toTry, type.strideRadius);
-				return true;
+				if (toMove == null) {
+					toMove = toTry;
+				}
+				if (!bulletIntersecting(rc.getLocation().add(toTry, type.strideRadius), segments)) {
+					toMoveAvoidBullets = toTry;
+					break;
+				}
 			}
+		}
+
+		if (toMoveAvoidBullets != null) {
+			System.out.println("doing bullet avoiding tangent");
+			move(toMoveAvoidBullets, type.strideRadius);
+			return true;
+		} else if (toMove != null) {
+			System.out.println("doing bullet hitting tangent");
+			move(toMove, type.strideRadius);
+			return true;
 		}
 		return false;
 	}
@@ -706,24 +745,25 @@ public abstract class RobotLogic {
 			MapLocation[][] segments = getSegments(surroundingBullets);
 
 			// Short term dodge
-			if (bulletIntersecting(segments)) {
-				MapLocation safeLocation = getBulletAvoidingLocation(segments, 8000);
+			if (bulletIntersecting(rc.getLocation(), segments)) {
+				MapLocation safeLocation = getBulletAvoidingLocation(segments, 4000);
 				if (safeLocation != null) {
+					System.out.println("dodging by random");
 					move(safeLocation);
 					return true;
 				}
 			}
-
 			// Try to move long term by going perpendicular
 			BulletInfo hittingBullet = getTargetingBullet(surroundingBullets);
 			if (hittingBullet != null) {
-				boolean result = dodgeTangent(hittingBullet, segments);
+				System.out.println("dodging by tangent");
+				boolean result = dodgeTangent(hittingBullet, segments, 5000);
 				if (result) {
 					return true;
 				}
 			}
-
 		}
+		System.out.println("no need to dodge");
 		return false;
 	}
 
@@ -789,11 +829,11 @@ public abstract class RobotLogic {
 	/*
 	 * Returns null if shortest does not exist
 	 */
-	private boolean bulletIntersecting(MapLocation[][] segments) {
+	private boolean bulletIntersecting(MapLocation location, MapLocation[][] segments) {
 		float intersectDistance = type.bodyRadius + OTHER_OFFSET;
 
 		for (MapLocation[] segment : segments) {
-			if (shortestDistance(rc.getLocation(), segment) < intersectDistance) {
+			if (shortestDistance(location, segment) < intersectDistance) {
 				return true;
 			}
 		}
@@ -818,7 +858,7 @@ public abstract class RobotLogic {
 				break;
 			}
 			MapLocation startLoc = getRandomLocation();
-			if (!bulletIntersecting(bulletSegments) && smartCanMove(startLoc)) {
+			if (!bulletIntersecting(startLoc, bulletSegments) && smartCanMove(startLoc)) {
 				return startLoc;
 			}
 		}
@@ -830,23 +870,23 @@ public abstract class RobotLogic {
 		if (rc.getType() != RobotType.TANK) {
 			return rc.canMove(startLoc);
 		} else if (rc.canMove(startLoc)) {
-			System.out.println("We can move, but we are a tank");
+			//System.out.println("We can move, but we are a tank");
 			if (rc.isCircleOccupiedExceptByThisRobot(startLoc, rc.getType().bodyRadius)) {
 				TreeInfo[] possibleHitAllyTrees = rc
 						.senseNearbyTrees(rc.getType().strideRadius + rc.getType().bodyRadius, rc.getTeam());
 				for (TreeInfo t : possibleHitAllyTrees) {
-					if (Math.abs((rc.getLocation().directionTo(startLoc)).degreesBetween(rc.getLocation().directionTo(t.location))) < 90) {
-						System.out.println("There is an ally tree that we can hit.");
+					if (Math.abs((rc.getLocation().directionTo(startLoc))
+							.degreesBetween(rc.getLocation().directionTo(t.location))) < 90) {
 						return false;
 					}
 				}
-				System.out.println("We will hit no ally trees");
+				//System.out.println("We will hit no ally trees");
 				return true;
 			} else{
 				return true;
 			}
 		}
-		System.out.println("We can't move to the desired location.");
+		//System.out.println("We can't move to the desired location.");
 		return false;
 
 	}
@@ -1037,7 +1077,7 @@ public abstract class RobotLogic {
 			if (rc.canSenseLocation(proposedLocation) && rc.onTheMap(proposedLocation)) {
 				rc.setIndicatorDot(proposedLocation, 255, 255, 255);
 			}
-			System.out.println("UOSEFIJE " + (Clock.getBytecodeNum() - bytecode));
+			//System.out.println("UOSEFIJE " + (Clock.getBytecodeNum() - bytecode));
 		}
 	}
 
