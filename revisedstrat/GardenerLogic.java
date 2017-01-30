@@ -17,6 +17,7 @@ public class GardenerLogic extends RobotLogic {
 	private Direction moveDir;
 	private final boolean UNIT_SPAWNER_ELIGIBLE;
 	private final boolean DEGENERATE_ELIGIBLE;
+	private Direction unitSpawnDir;
 
 	public GardenerLogic(RobotController rc) {
 		super(rc);
@@ -80,19 +81,28 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private void createTreeRingAndSpawnUnits() throws GameActionException {
+		rc.setIndicatorDot(rc.getLocation(), 0, 256, 0);
 
-		Direction archonOppositeLocation = rc.getLocation().directionTo(allyArchonLocations[0]).opposite();
+		if (unitSpawnDir == null) {
+			unitSpawnDir = rc.getLocation().directionTo(allyArchonLocations[0]).opposite();
+			for (int i = 0; i < 6; i++) {
+				if (!rc.isCircleOccupied(rc.getLocation().add(unitSpawnDir, (float) (2 * type.bodyRadius + 0.1)),
+						rc.getType().bodyRadius)) {
+					break;
+				}
+				unitSpawnDir = unitSpawnDir.rotateLeftDegrees(60);
+			}
+		}
 		if (rc.getBuildCooldownTurns() == 0) {
-			Direction startAngle = archonOppositeLocation.rotateLeftDegrees(60);
-
-			while (!rc.canPlantTree(startAngle) && Math.abs(archonOppositeLocation.degreesBetween(startAngle)) > 60) {
+			Direction startAngle = unitSpawnDir;
+			for(int i = 0; i < 5; i++) {
 				startAngle = startAngle.rotateLeftDegrees(60);
+				if (rc.canPlantTree(startAngle)) {
+					rc.plantTree(startAngle);
+					return;
+				}
 			}
-			if (rc.canPlantTree(startAngle)) {
-				rc.plantTree(startAngle);
-			} else {
-				spawnUnit(archonOppositeLocation);
-			}
+			spawnUnit(unitSpawnDir);
 		}
 	}
 
@@ -146,7 +156,6 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private void tryToBuildUnit(RobotType toBuild) throws GameActionException {
-		System.out.println("trying to build unit");
 		Direction test = Direction.getNorth();
 		for (int deltaDegree = (int) (Math.random()
 				* 360), count = 0; count < 36; deltaDegree += 10, deltaDegree %= 360, count++) {
