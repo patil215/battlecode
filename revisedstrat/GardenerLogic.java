@@ -25,10 +25,9 @@ public class GardenerLogic extends RobotLogic {
 		moveDir = Utils.diagonalDirection();
 		UNIT_SPAWNER_ELIGIBLE = rc.getRoundNum() > NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE;
 		DEGENERATE_ELIGIBLE = rc.getRoundNum() < NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE;
-		birthLocation = rc.getLocation().add(rc.getLocation().directionTo(rc.getInitialArchonLocations(rc.getTeam())[0]).opposite(), .3f);
+		birthLocation = rc.getLocation()
+				.add(rc.getLocation().directionTo(rc.getInitialArchonLocations(rc.getTeam())[0]).opposite(), .3f);
 	}
-
-
 
 	// TODO: make gardener only send help broadcast every 50 rounds
 
@@ -36,13 +35,16 @@ public class GardenerLogic extends RobotLogic {
 	public void run() {
 
 		try {
-
 			buildInitialRoundsUnits();
+		} catch(GameActionException e) {
+			e.printStackTrace();
+		}
 
-			int numRoundsSettling = 0;
-			boolean settled = false;
+		int numRoundsSettling = 0;
+		boolean settled = false;
 
-			while (true) {
+		while (true) {
+			try {
 
 				beginTurn();
 
@@ -70,10 +72,9 @@ public class GardenerLogic extends RobotLogic {
 				waterLowestHealthTree();
 
 				endTurn();
+			} catch (GameActionException e) {
+				e.printStackTrace();
 			}
-
-		} catch (GameActionException e) {
-			e.printStackTrace();
 		}
 
 	}
@@ -93,8 +94,7 @@ public class GardenerLogic extends RobotLogic {
 			unitSpawnDir = rc.getLocation().directionTo(allyArchonLocations[0]).opposite();
 			for (int i = 0; i < 6; i++) {
 				MapLocation proposedLoc = rc.getLocation().add(unitSpawnDir, (float) (2 * type.bodyRadius + 0.1));
-				if (!rc.isCircleOccupied(proposedLoc,
-						rc.getType().bodyRadius) && rc.onTheMap(proposedLoc)) {
+				if (!rc.isCircleOccupied(proposedLoc, rc.getType().bodyRadius) && rc.onTheMap(proposedLoc)) {
 					break;
 				}
 				unitSpawnDir = unitSpawnDir.rotateLeftDegrees(60);
@@ -102,7 +102,7 @@ public class GardenerLogic extends RobotLogic {
 		}
 		if (rc.getBuildCooldownTurns() == 0) {
 			Direction startAngle = unitSpawnDir;
-			for(int i = 0; i < 5; i++) {
+			for (int i = 0; i < 5; i++) {
 				startAngle = startAngle.rotateLeftDegrees(60);
 				if (rc.canPlantTree(startAngle)) {
 					rc.plantTree(startAngle);
@@ -128,14 +128,14 @@ public class GardenerLogic extends RobotLogic {
 
 		int numLumberjacks = BroadcastManager.getLumberjackInitialCount(rc);
 
-		if(numLumberjacks == 0) {
+		if (numLumberjacks == 0) {
 			tryToBuildUnit(RobotType.SOLDIER);
 			// Wait until we can build second unit
 			while (rc.getBuildCooldownTurns() != 0) {
 				endTurn();
 			}
 			tryToBuildUnit(RobotType.SOLDIER);
-		} else if(numLumberjacks == 1) {
+		} else if (numLumberjacks == 1) {
 			tryToBuildUnit(RobotType.LUMBERJACK);
 			// Wait until we can build second unit
 			while (rc.getBuildCooldownTurns() != 0) {
@@ -151,41 +151,28 @@ public class GardenerLogic extends RobotLogic {
 			tryToBuildUnit(RobotType.LUMBERJACK);
 		}
 
-		/*if (rc.getRobotCount() - 1 == allyArchonLocations.length) {
-			// Build first unit depending on tree density
-			TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
-			if (nearbyTrees.length != 0) {
-				float treeSpread = getNearbyTreeSpread(nearbyTrees);
-				if (Math.abs(treeSpread) < 20) {
-					tryToBuildUnit(RobotType.LUMBERJACK);
-				} else {
-					tryToBuildUnit(RobotType.SOLDIER);
-				}
-			} else {
-				tryToBuildUnit(RobotType.SOLDIER);
-			}
-
-			// Wait until we can build second unit
-			while (rc.getBuildCooldownTurns() != 0) {
-				endTurn();
-			}
-
-			// Build second unit depending on how far archons are from each
-			// other
-			float closestEnemyArchonDistance = Float.MAX_VALUE;
-			MapLocation[] enemyArchons = enemyArchonLocations;
-			for (MapLocation startLocation : enemyArchons) {
-				float distance = rc.getLocation().distanceTo(startLocation);
-				if (distance < closestEnemyArchonDistance) {
-					closestEnemyArchonDistance = distance;
-				}
-			}
-			if (closestEnemyArchonDistance < 50) {
-				tryToBuildUnit(RobotType.SOLDIER);
-			} else {
-				tryToBuildUnit(RobotType.LUMBERJACK);
-			}
-		}*/
+		/*
+		 * if (rc.getRobotCount() - 1 == allyArchonLocations.length) { // Build
+		 * first unit depending on tree density TreeInfo[] nearbyTrees =
+		 * rc.senseNearbyTrees(); if (nearbyTrees.length != 0) { float
+		 * treeSpread = getNearbyTreeSpread(nearbyTrees); if
+		 * (Math.abs(treeSpread) < 20) { tryToBuildUnit(RobotType.LUMBERJACK); }
+		 * else { tryToBuildUnit(RobotType.SOLDIER); } } else {
+		 * tryToBuildUnit(RobotType.SOLDIER); }
+		 *
+		 * // Wait until we can build second unit while
+		 * (rc.getBuildCooldownTurns() != 0) { endTurn(); }
+		 *
+		 * // Build second unit depending on how far archons are from each //
+		 * other float closestEnemyArchonDistance = Float.MAX_VALUE;
+		 * MapLocation[] enemyArchons = enemyArchonLocations; for (MapLocation
+		 * startLocation : enemyArchons) { float distance =
+		 * rc.getLocation().distanceTo(startLocation); if (distance <
+		 * closestEnemyArchonDistance) { closestEnemyArchonDistance = distance;
+		 * } } if (closestEnemyArchonDistance < 50) {
+		 * tryToBuildUnit(RobotType.SOLDIER); } else {
+		 * tryToBuildUnit(RobotType.LUMBERJACK); } }
+		 */
 	}
 
 	private void tryToBuildUnit(RobotType toBuild) throws GameActionException {
@@ -264,8 +251,10 @@ public class GardenerLogic extends RobotLogic {
 		if (!isGoodLocation()) {
 
 			TreeInfo[] trees = rc.senseNearbyTrees(-1, rc.getTeam());
-			if (trees.length > 0) moveWithPathFinding();
-			else moveDir = moveWithDiagonalBounce(moveDir);
+			if (trees.length > 0)
+				moveWithPathFinding();
+			else
+				moveDir = moveWithDiagonalBounce(moveDir);
 			return false;
 		} else {
 			return true;
@@ -275,8 +264,8 @@ public class GardenerLogic extends RobotLogic {
 	private boolean moveWithPathFinding() throws GameActionException {
 
 		if (this.getDestination() == null || rc.getLocation().distanceTo(this.getDestination()) < 3) {
-			MapLocation destination = rc.getLocation().add(birthLocation.directionTo(rc.getLocation()), rc.getType().sensorRadius);
-/*			if (rc.canSenseLocation(destination) && rc.onTheMap(destination))  {
+			/*MapLocation destination = rc.getLocation().add(birthLocation.directionTo(rc.getLocation()), rc.getType().sensorRadius);
+			if (rc.canSenseLocation(destination) && rc.onTheMap(destination))  {
 				setDestination(destination);
 			} else {
 				double rand = Math.random();
