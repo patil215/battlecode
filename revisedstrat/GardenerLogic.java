@@ -242,7 +242,7 @@ public class GardenerLogic extends RobotLogic {
 
 		if (this.getDestination() == null || rc.getLocation().distanceTo(this.getDestination()) < 3 || Math.random() > .1f) {
 			MapLocation destination = rc.getLocation().add(birthLocation.directionTo(rc.getLocation()), rc.getType().sensorRadius);
-			if (rc.onTheMap(destination))  {
+			if (rc.canSenseLocation(destination) && rc.onTheMap(destination))  {
 				setDestination(destination);
 			} else {
 				double rand = Math.random();
