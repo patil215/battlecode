@@ -133,7 +133,7 @@ public class LumberjackLogic extends RobotLogic {
 			System.out.println("Trying to chop");
 			rc.chop(treeInFront.ID);
 		} else {
-			this.tryToMoveToDestination();
+			this.tryToMoveToDestinationTwo();
 		}
 	}
 
