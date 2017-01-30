@@ -51,7 +51,7 @@ public abstract class RobotLogic {
 		enemyArchonLocations = rc.getInitialArchonLocations(enemyTeam);
 		type = rc.getType();
 		startLocation = rc.getLocation();
-		// surpriseCalcs();
+		//surpriseCalcs();
 	}
 
 	public abstract void run();
@@ -216,16 +216,28 @@ public abstract class RobotLogic {
 			int donateCount = (int) bulletCount;
 			donateCount *= rc.getVictoryPointCost();
 			rc.donate(donateCount);
-		} else {
+		}/* else {
 			float bullets = rc.getTeamBullets();
 			if (bullets > 250) {
 				int bulletCount = (int) ((bullets - 250) / rc.getVictoryPointCost());
 				bulletCount *= rc.getVictoryPointCost();
 				rc.donate(bulletCount);
 			}
-		}
-		// drawDots();
+		}*/
+		//drawDots();
 		Clock.yield();
+	}
+
+	private static final int BULLETS_TO_DONATE = 250;
+
+	public void beginTurn() throws GameActionException {
+		float bullets = rc.getTeamBullets();
+		if (bullets > /*250*/ BULLETS_TO_DONATE) {
+			int bulletCount = (int) ((bullets - BULLETS_TO_DONATE) / rc.getVictoryPointCost());
+			System.out.println(bulletCount);
+			float donationAmount = ((float) (bulletCount)) * rc.getVictoryPointCost();
+			rc.donate(donationAmount + 0.01f);
+		}
 	}
 
 	/*
@@ -779,7 +791,7 @@ public abstract class RobotLogic {
 		return false;
 	}
 
-	private MapLocation getRandomLocation() {
+	public MapLocation getRandomLocation() {
 		float bodyRadius = type.strideRadius;
 		return rc.getLocation().add(Utils.randomDirection(),
 				(float) (Math.random() * (type.strideRadius - (bodyRadius / 2))) + bodyRadius / 2);

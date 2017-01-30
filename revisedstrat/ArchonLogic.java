@@ -24,6 +24,8 @@ public class ArchonLogic extends RobotLogic {
 
 			BroadcastManager.initializeLocationPointerIndexValues(rc);
 
+			writeLumberjackToSpawnCount();
+
 			// Spawn a gardener on the first move
 			if (shouldSpawnInitialGardener()) {
 				spawnGardener();
@@ -46,6 +48,106 @@ public class ArchonLogic extends RobotLogic {
 		} catch (GameActionException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private boolean willHitTree(Direction direction, float radius) throws GameActionException {
+		MapLocation testLocation = rc.getLocation().add(direction, type.bodyRadius);
+		while (rc.getLocation().distanceTo(testLocation) < radius) {
+			if (rc.isLocationOccupied(testLocation) && rc.senseTreeAtLocation(testLocation) != null) {
+				return true;
+			} else {
+				float DELTA_DISTANCE = .5f;
+				testLocation = testLocation.add(direction, DELTA_DISTANCE);
+			}
+		}
+		return false;
+	}
+
+	private boolean willBeOffMap(Direction direction, float radius) throws GameActionException {
+		MapLocation testLocation = rc.getLocation().add(direction, type.bodyRadius);
+		while (rc.getLocation().distanceTo(testLocation) < radius) {
+			if (!rc.onTheMap(testLocation)) {
+				return true;
+			} else {
+				float DELTA_DISTANCE = .5f;
+				testLocation = testLocation.add(direction, DELTA_DISTANCE);
+			}
+		}
+		return false;
+	}
+
+	private void writeLumberjackToSpawnCount() throws GameActionException {
+
+		int longestFreeSequence = 0;
+		int freeSequenceLength = 0;
+		int numTreesHit = 0;
+
+		int numTreesDivisor = 0;
+
+		Direction lookDir = Direction.NORTH;
+		int firstRed = -1;
+		for (int i = 0; i < 72; i++) {
+			if (!willBeOffMap(lookDir, (float) (type.sensorRadius * 0.75))) {
+				numTreesDivisor++;
+			}
+			if (!willHitTree(lookDir, (float) (type.sensorRadius * 0.75))
+			/* && !willBeOffMap(lookDir, (float) (type.sensorRadius * 0.75)) */) {
+				numTreesHit++;
+				freeSequenceLength++;
+				rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(lookDir, 4), 0, 255, 0);
+			} else {
+				if (firstRed == -1) {
+					firstRed = i;
+				}
+				if (freeSequenceLength > longestFreeSequence) {
+					longestFreeSequence = freeSequenceLength;
+					freeSequenceLength = 0;
+				}
+				rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(lookDir, 4), 255, 0, 0);
+			}
+			lookDir = lookDir.rotateLeftDegrees(5);
+		}
+
+		for (int i = 0; i < firstRed; i++) {
+			if (!willHitTree(lookDir, (float) (type.sensorRadius * 0.75))
+					&& !willBeOffMap(lookDir, (float) (type.sensorRadius * 0.75))) {
+				freeSequenceLength++;
+			}
+		}
+
+		if (freeSequenceLength > longestFreeSequence) {
+			longestFreeSequence = freeSequenceLength;
+		}
+
+		int numTimesTreeOrOffMap = 0;
+		int monteCarloDivisor = 0;
+		for (int i = 0; i < 50; i++) {
+			MapLocation location = rc.getLocation().add(Utils.randomDirection(), (float) (Math.random() * (type.sensorRadius * 0.75)));
+			if (!rc.onTheMap(location)) {
+				monteCarloDivisor++;
+			}
+			if (rc.senseTreeAtLocation(location) != null) {
+				numTimesTreeOrOffMap++;
+			}
+		}
+
+		int numLumberjacks = 0;
+
+		// Sight lines
+		if (longestFreeSequence / (double) numTreesDivisor < .4) {
+			numLumberjacks++;
+		}
+
+		// Monte Carlo
+		if ((numTimesTreeOrOffMap / (double) monteCarloDivisor) > 0.20) {
+			numLumberjacks++;
+		}
+
+		BroadcastManager.writeLumberjackInitialCount(rc, numLumberjacks);
+
+		System.out.println("Tree ratio: " + numTreesHit / 72.0);
+		System.out.println("Longest sequence: " + longestFreeSequence);
+		System.out.println("Monte carlo ratio: " + (numTimesTreeOrOffMap / 50.0));
 	}
 
 	private void detectTreesAndAskLumberjacksForHelp() throws GameActionException {
@@ -135,8 +237,8 @@ public class ArchonLogic extends RobotLogic {
 		 */
 
 		if (!movedTowardsArchon) {
-			if(rc.getLocation()
-				.distanceTo(enemyArchonLocations[0]) > (startLocation.distanceTo(enemyArchonLocations[0]) * 0.9)) {
+			if (rc.getLocation()
+					.distanceTo(enemyArchonLocations[0]) > (startLocation.distanceTo(enemyArchonLocations[0]) * 0.9)) {
 				Direction toEnemy = rc.getLocation().directionTo(enemyArchonLocations[0]);
 				MapLocation proposed = rc.getLocation().add(toEnemy, type.strideRadius - 0.01f);
 				if (isValidNextArchonLocation(proposed)) {

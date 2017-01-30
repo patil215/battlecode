@@ -9,9 +9,9 @@ import revisedstrat.BroadcastManager.LocationInfoType;
 public class GardenerLogic extends RobotLogic {
 
 	private final int NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE = 0;
-	private final int NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE = 300;
+	private final int NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE = 2000;
 	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER = 50;
-	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = 100;
+	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = 125;
 	private final float MIN_FREE_SPACE_REQUIREMENT = 5;
 
 	private Direction moveDir;
@@ -43,6 +43,8 @@ public class GardenerLogic extends RobotLogic {
 			boolean settled = false;
 
 			while (true) {
+
+				beginTurn();
 
 				if (!settled && !(DEGENERATE_ELIGIBLE
 						&& numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE)) {
@@ -123,7 +125,32 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private void buildInitialRoundsUnits() throws GameActionException {
-		if (rc.getRobotCount() - 1 == allyArchonLocations.length) {
+		int numLumberjacks = BroadcastManager.getLumberjackInitialCount(rc);
+
+		if(numLumberjacks == 0) {
+			tryToBuildUnit(RobotType.SOLDIER);
+			// Wait until we can build second unit
+			while (rc.getBuildCooldownTurns() != 0) {
+				endTurn();
+			}
+			tryToBuildUnit(RobotType.SOLDIER);
+		} else if(numLumberjacks == 1) {
+			tryToBuildUnit(RobotType.LUMBERJACK);
+			// Wait until we can build second unit
+			while (rc.getBuildCooldownTurns() != 0) {
+				endTurn();
+			}
+			tryToBuildUnit(RobotType.SOLDIER);
+		} else {
+			tryToBuildUnit(RobotType.LUMBERJACK);
+			// Wait until we can build second unit
+			while (rc.getBuildCooldownTurns() != 0) {
+				endTurn();
+			}
+			tryToBuildUnit(RobotType.LUMBERJACK);
+		}
+
+		/*if (rc.getRobotCount() - 1 == allyArchonLocations.length) {
 			// Build first unit depending on tree density
 			TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
 			if (nearbyTrees.length != 0) {
@@ -157,7 +184,7 @@ public class GardenerLogic extends RobotLogic {
 			} else {
 				tryToBuildUnit(RobotType.LUMBERJACK);
 			}
-		}
+		}*/
 	}
 
 	private void tryToBuildUnit(RobotType toBuild) throws GameActionException {

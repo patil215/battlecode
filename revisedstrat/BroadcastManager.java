@@ -48,6 +48,8 @@ public class BroadcastManager {
 	// defaults.
 	private static int SETUP_INDEX = 77;
 
+	private static int NUM_LUMBERJACK_INITIAL_INDEX = 100;
+
 	/*
 	 * Represents the count of a specific unit. All unit types can be written
 	 * directly except for ALLY_ROBOT_TOTAL and ALLY_ENEMY_TOTAL - these are
@@ -68,7 +70,7 @@ public class BroadcastManager {
 			this.unitCountIndex = unitCountIndex;
 		}
 	}
-	
+
 	/*
 	 * Sets up the initial values for the locationPointerIndex values
 	 * Returns true if this is the first time this method has been called.
@@ -82,6 +84,14 @@ public class BroadcastManager {
 			return true;
 		}
 		return false;
+	}
+
+	public static void writeLumberjackInitialCount(RobotController rc, int numLumberjacks) throws GameActionException {
+		rc.broadcast(NUM_LUMBERJACK_INITIAL_INDEX, numLumberjacks);
+	}
+
+	public static int getLumberjackInitialCount(RobotController rc) throws GameActionException {
+		return rc.readBroadcast(NUM_LUMBERJACK_INITIAL_INDEX);
 	}
 
 	public static void invalidateLocation(RobotController rc, LocationInfoType type) throws GameActionException {
