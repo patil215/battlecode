@@ -84,14 +84,14 @@ public class ArchonLogic extends RobotLogic {
 
 		int numTreesDivisor = 0;
 
-		Direction lookDir = Direction.NORTH;
+		Direction lookDir = Direction.getNorth();
 		int firstRed = -1;
 		for (int i = 0; i < 72; i++) {
 			if (!willBeOffMap(lookDir, (float) (type.sensorRadius * 0.75))) {
 				numTreesDivisor++;
 			}
 			if (!willHitTree(lookDir, (float) (type.sensorRadius * 0.75))) {
-				if(!willBeOffMap(lookDir, (float) (type.sensorRadius * 0.75))) {
+				if (!willBeOffMap(lookDir, (float) (type.sensorRadius * 0.75))) {
 					freeSequenceLength++;
 				}
 				rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(lookDir, 4), 0, 255, 0);
@@ -123,7 +123,8 @@ public class ArchonLogic extends RobotLogic {
 		int numTimesTreeOrOffMap = 0;
 		int monteCarloDivisor = 0;
 		for (int i = 0; i < 50; i++) {
-			MapLocation location = rc.getLocation().add(Utils.randomDirection(), (float) (Math.random() * (type.sensorRadius * 0.75)));
+			MapLocation location = rc.getLocation().add(Utils.randomDirection(),
+					(float) (Math.random() * (type.sensorRadius * 0.75)));
 			if (rc.onTheMap(location)) {
 				monteCarloDivisor++;
 			}
@@ -208,13 +209,13 @@ public class ArchonLogic extends RobotLogic {
 	private final double GARDENER_SPAWN_CHANCE_LATE = 0.15;
 	private final int ROUNDS_WHEN_LATE = 500;
 
-	private boolean shouldSpawnGardener() {
+	private boolean shouldSpawnGardener() throws GameActionException {
 		if (rc.getRoundNum() > 100 && rc.getRobotCount() - allyArchonLocations.length == 0) {
 			return true;
 		}
 
-		double spawnChance = (rc.getRoundNum() > ROUNDS_WHEN_LATE) ? GARDENER_SPAWN_CHANCE_LATE
-				: GARDENER_SPAWN_CHANCE_EARLY;
+		double spawnChance = (rc.getRoundNum() > ROUNDS_WHEN_LATE) ?
+		 GARDENER_SPAWN_CHANCE_LATE : GARDENER_SPAWN_CHANCE_EARLY;
 
 		if (rc.getRoundNum() > ROUNDS_TO_WAIT_BEFORE_SPAWNING_MORE_THAN_INITIAL_GARDENER) {
 			if (Math.random() < spawnChance && (!inDanger() || rc.getTeamBullets() >= 200)) {
