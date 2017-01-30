@@ -168,10 +168,17 @@ public abstract class RobotLogic {
 		// Dump all bullets if game about to end to get tiebreaker
 		if (rc.getRoundLimit() - rc.getRoundNum() < 2) {
 			float bulletCount = rc.getTeamBullets();
-			bulletCount /= 10;
+			bulletCount /= rc.getVictoryPointCost();
 			int donateCount = (int) bulletCount;
-			donateCount *= 10;
+			donateCount *= rc.getVictoryPointCost();
 			rc.donate(donateCount);
+		} else {
+			float bullets = rc.getTeamBullets();
+			if (bullets > 250) {
+				int bulletCount = (int) ((bullets - 250) / rc.getVictoryPointCost());
+				bulletCount *= rc.getVictoryPointCost();
+				rc.donate(bulletCount);
+			}
 		}
 		// drawDots();
 		Clock.yield();
@@ -941,5 +948,6 @@ public abstract class RobotLogic {
 			System.out.println("UOSEFIJE " + (Clock.getBytecodeNum() - bytecode));
 		}
 	}
+
 
 }
