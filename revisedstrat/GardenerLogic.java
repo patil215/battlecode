@@ -240,8 +240,18 @@ public class GardenerLogic extends RobotLogic {
 
 	private boolean moveWithPathFinding() throws GameActionException {
 
-		if (this.getDestination() == null || rc.getLocation().distanceTo(this.getDestination()) < 3 || Math.random() > .1) {
-			setDestination(rc.getLocation().add(birthLocation.directionTo(rc.getLocation()), rc.getType().sensorRadius));
+		if (this.getDestination() == null || rc.getLocation().distanceTo(this.getDestination()) < 3 || Math.random() > .1f) {
+			MapLocation destination = rc.getLocation().add(birthLocation.directionTo(rc.getLocation()), rc.getType().sensorRadius);
+			if (rc.onTheMap(destination))  {
+				setDestination(destination);
+			} else {
+				double rand = Math.random();
+				if (rand > .5) {
+					setDestination(new MapLocation(rc.getLocation().x, this.getRandomEnemyInitialArchonLocation().y));
+				} else {
+					setDestination(new MapLocation(rc.getLocation().y, this.getRandomEnemyInitialArchonLocation().x));
+				}
+			}
 		}
 
 		return tryToMoveToDestinationTwo();
