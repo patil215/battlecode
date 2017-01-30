@@ -21,7 +21,7 @@ public class BroadcastManager {
 	 * nonzero)
 	 */
 	public enum LocationInfoType {
-		ENEMY(0, 1, 1), ENEMY_NOT_ARCHON(2, 3, 3), ARCHON_HELP(21, 22, 22), GARDENER_HELP(25, 26, 26), LUMBERJACK_GET_HELP(31,32,32), GOOD_SPOT(40,41,41);
+		ENEMY(0, 1, 1), ENEMY_NOT_ARCHON(2, 3, 3), ARCHON_HELP(21, 22, 22), GARDENER_HELP(25, 26, 26), LUMBERJACK_GET_HELP(31,32,32);
 
 		// Represents the index that stores the pointer (i.e. index) of the most
 		// recently added/modified location

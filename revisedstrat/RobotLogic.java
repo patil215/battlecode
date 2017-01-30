@@ -1,7 +1,6 @@
 package revisedstrat;
 
 import battlecode.common.*;
-import revisedstrat.BroadcastManager.LocationInfoType;
 
 import java.util.Arrays;
 
@@ -52,7 +51,7 @@ public abstract class RobotLogic {
 		enemyArchonLocations = rc.getInitialArchonLocations(enemyTeam);
 		type = rc.getType();
 		startLocation = rc.getLocation();
-		//surpriseCalcs();
+		// surpriseCalcs();
 	}
 
 	public abstract void run();
@@ -115,7 +114,7 @@ public abstract class RobotLogic {
 					}
 				}
 				return true;
-			} else{
+			} else {
 				return true;
 			}
 		}
@@ -209,7 +208,7 @@ public abstract class RobotLogic {
 					}
 				}
 				return true;
-			}else{
+			} else {
 				return true;
 			}
 		}
@@ -227,21 +226,13 @@ public abstract class RobotLogic {
 			int donateCount = (int) bulletCount;
 			donateCount *= rc.getVictoryPointCost();
 			rc.donate(donateCount);
-		}/* else {
-			float bullets = rc.getTeamBullets();
-			if (bullets > 250) {
-				int bulletCount = (int) ((bullets - 250) / rc.getVictoryPointCost());
-				bulletCount *= rc.getVictoryPointCost();
-				rc.donate(bulletCount);
-			}
-		}*/
-		//drawDots();
-		
-		TreeInfo[] nearbyTrees = rc.senseNearbyTrees(5);
-		if(nearbyTrees.length==0){
-			BroadcastManager.saveLocation(rc, rc.getLocation(), LocationInfoType.GOOD_SPOT);
-		}
-		
+		} /*
+			 * else { float bullets = rc.getTeamBullets(); if (bullets > 250) {
+			 * int bulletCount = (int) ((bullets - 250) /
+			 * rc.getVictoryPointCost()); bulletCount *=
+			 * rc.getVictoryPointCost(); rc.donate(bulletCount); } }
+			 */
+		// drawDots();
 		Clock.yield();
 	}
 
@@ -249,7 +240,7 @@ public abstract class RobotLogic {
 
 	public void beginTurn() throws GameActionException {
 		float bullets = rc.getTeamBullets();
-		if (bullets > /*250*/ BULLETS_TO_DONATE) {
+		if (bullets > /* 250 */ BULLETS_TO_DONATE) {
 			int bulletCount = (int) ((bullets - BULLETS_TO_DONATE) / rc.getVictoryPointCost());
 			//System.out.println(bulletCount);
 			float donationAmount = ((float) (bulletCount)) * rc.getVictoryPointCost();
@@ -581,7 +572,11 @@ public abstract class RobotLogic {
 		for (BulletInfo bullet : bullets) {
 			float angleTolerance = (float) (Math.abs(
 					Math.asin(type.bodyRadius / bullet.getLocation().distanceTo(rc.getLocation()))) + ANGLE_EPSILON);
+			//System.out.println(angleTolerance);
 			if (Math.abs(bullet.location.directionTo(rc.getLocation()).radiansBetween(bullet.dir)) < angleTolerance) {
+				/*System.out.println("incoming bullet "
+						+ Math.abs(bullet.location.directionTo(rc.getLocation()).radiansBetween(bullet.dir)));*/
+				rc.setIndicatorDot(bullet.location, 0, 255, 0);
 				return true;
 			}
 		}
@@ -596,8 +591,7 @@ public abstract class RobotLogic {
 		float minDamage = rc.getHealth();
 		int bestAngle = -40;
 		for (int angle = -40; angle < 40; angle += 10) {
-			MapLocation expectedLocation = currLocation.add(toEnemy.rotateLeftDegrees(angle),
-					(float) type.strideRadius);
+			MapLocation expectedLocation = currLocation.add(toEnemy.rotateLeftDegrees(angle), type.strideRadius);
 			float damage = expectedDamage(bullets, expectedLocation);
 
 			if (damage < minDamage) {
@@ -851,7 +845,8 @@ public abstract class RobotLogic {
 	 * Returns null if no location found, or the player is not going to be hit
 	 * by a bullet.
 	 */
-	public MapLocation getBulletAvoidingLocation(MapLocation[][] bulletSegments, int bytecodeToSpend) throws GameActionException {
+	public MapLocation getBulletAvoidingLocation(MapLocation[][] bulletSegments, int bytecodeToSpend)
+			throws GameActionException {
 		int byteCodeStart = Clock.getBytecodeNum();
 		while (Clock.getBytecodeNum() - byteCodeStart < bytecodeToSpend) {
 			if (Clock.getBytecodeNum() < byteCodeStart) {
@@ -877,12 +872,13 @@ public abstract class RobotLogic {
 				for (TreeInfo t : possibleHitAllyTrees) {
 					if (Math.abs((rc.getLocation().directionTo(startLoc))
 							.degreesBetween(rc.getLocation().directionTo(t.location))) < 90) {
+						//System.out.println("There is an ally tree that we can hit.");
 						return false;
 					}
 				}
 				//System.out.println("We will hit no ally trees");
 				return true;
-			} else{
+			} else {
 				return true;
 			}
 		}
@@ -992,7 +988,7 @@ public abstract class RobotLogic {
 			toMove = getDirectionTowards(lastDirection);
 			if (toMove != null) {
 				lastDirection = toMove;
-				rc.move(toMove);
+				move(toMove);
 				return true;
 			} else {
 				return false;
@@ -1000,7 +996,8 @@ public abstract class RobotLogic {
 		}
 	}
 
-	private Direction findAngleThatBringsYouClosestToAnObstruction(Direction lastDirection2) throws GameActionException {
+	private Direction findAngleThatBringsYouClosestToAnObstruction(Direction lastDirection2)
+			throws GameActionException {
 		Direction testAngle = lastDirection2;
 		int directionMultiplyer;
 		if (isLeftUnit) {
