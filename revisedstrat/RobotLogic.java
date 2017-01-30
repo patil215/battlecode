@@ -48,6 +48,7 @@ public abstract class RobotLogic {
 		enemyTeam = rc.getTeam().opponent();
 		allyArchonLocations = rc.getInitialArchonLocations(allyTeam);
 		enemyArchonLocations = rc.getInitialArchonLocations(enemyTeam);
+		surpriseCalcs();
 	}
 
 	public abstract void run();
@@ -237,6 +238,7 @@ public abstract class RobotLogic {
 			donateCount *= 10;
 			rc.donate(donateCount);
 		}
+		//drawDots();
 		Clock.yield();
 	}
 
@@ -654,8 +656,9 @@ public abstract class RobotLogic {
 
 	protected boolean incomingBullet(BulletInfo[] bullets, MapLocation location) {
 		for (BulletInfo bullet : bullets) {
-			float angleTolerance = (float) (Math.abs(
-					Math.asin(rc.getType().bodyRadius / bullet.getLocation().distanceTo(rc.getLocation()))) + ANGLE_EPSILON);
+			float angleTolerance = (float) (Math
+					.abs(Math.asin(rc.getType().bodyRadius / bullet.getLocation().distanceTo(rc.getLocation())))
+					+ ANGLE_EPSILON);
 			if (Math.abs(bullet.location.directionTo(location).degreesBetween(bullet.dir)) < angleTolerance) {
 				return true;
 			}
@@ -1018,6 +1021,70 @@ public abstract class RobotLogic {
 		float treeHealth = 50;
 		return (rc.getTreeCount() * GameConstants.BULLET_TREE_BULLET_PRODUCTION_RATE * treeHealth
 				* treeHealthMultiplier) + 2;
+	}
+
+	private final int[][] surprise = { { 1, 3 }, { 1, 4 }, { 1, 5 }, { 1, 7 }, { 1, 8 }, { 1, 9 }, { 1, 11 }, { 1, 14 },
+			{ 1, 16 }, { 1, 17 }, { 2, 3 }, { 2, 7 }, { 2, 11 }, { 2, 12 }, { 2, 14 }, { 2, 16 }, { 2, 18 }, { 3, 3 },
+			{ 3, 4 }, { 3, 5 }, { 3, 7 }, { 3, 8 }, { 3, 9 }, { 3, 11 }, { 3, 13 }, { 3, 14 }, { 3, 16 }, { 3, 18 },
+			{ 4, 5 }, { 4, 7 }, { 4, 11 }, { 4, 14 }, { 4, 16 }, { 4, 18 }, { 5, 3 }, { 5, 4 }, { 5, 5 }, { 5, 7 },
+			{ 5, 8 }, { 5, 9 }, { 5, 11 }, { 5, 14 }, { 5, 16 }, { 5, 17 }, { 7, 1 }, { 7, 4 }, { 7, 6 }, { 7, 9 },
+			{ 7, 11 }, { 7, 12 }, { 7, 15 }, { 7, 16 }, { 7, 17 }, { 7, 19 }, { 7, 20 }, { 7, 21 }, { 8, 1 }, { 8, 2 },
+			{ 8, 4 }, { 8, 6 }, { 8, 9 }, { 8, 11 }, { 8, 13 }, { 8, 15 }, { 8, 19 }, { 9, 1 }, { 9, 3 }, { 9, 4 },
+			{ 9, 6 }, { 9, 9 }, { 9, 11 }, { 9, 13 }, { 9, 15 }, { 9, 16 }, { 9, 17 }, { 9, 19 }, { 9, 20 }, { 9, 21 },
+			{ 10, 1 }, { 10, 4 }, { 10, 6 }, { 10, 9 }, { 10, 11 }, { 10, 13 }, { 10, 15 }, { 10, 21 }, { 11, 1 },
+			{ 11, 4 }, { 11, 7 }, { 11, 8 }, { 11, 11 }, { 11, 12 }, { 11, 15 }, { 11, 16 }, { 11, 17 }, { 11, 19 },
+			{ 11, 20 }, { 11, 21 } };
+	private final double Xmax = 21.0;
+	private final double Ymax = 11.0;
+	private static float width;
+	private static float height;
+
+	private static float startY;
+	private static float startX;
+
+	private static float widthRatio;
+	private static float heightRatio;
+
+	private void surpriseCalcs() {
+		float minX = Float.POSITIVE_INFINITY;
+		float maxX = Float.NEGATIVE_INFINITY;
+		float minY = Float.POSITIVE_INFINITY;
+		float maxY = Float.NEGATIVE_INFINITY;
+
+		for (MapLocation location : allyArchonLocations) {
+			minX = Math.min(minX, location.x);
+			minY = Math.min(minY, location.y);
+			maxX = Math.max(maxX, location.x);
+			maxY = Math.max(maxY, location.y);
+		}
+
+		for (MapLocation location : enemyArchonLocations) {
+			minX = Math.min(minX, location.x);
+			minY = Math.min(minY, location.y);
+			maxX = Math.max(maxX, location.x);
+			maxY = Math.max(maxY, location.y);
+		}
+
+		startY = maxY;
+		startX = minX;
+		width = maxX - minX;
+		height = maxY - minY;
+
+		widthRatio = (float) (width / Xmax);
+		heightRatio = (float) (height / Ymax);
+	}
+
+	private void drawDots() throws GameActionException {
+		while(Clock.getBytecodesLeft() > 1000) {
+			int index = (int) (Math.random() * surprise.length);
+			int[] coordinate = surprise[index];
+			int bytecode = Clock.getBytecodeNum();
+			MapLocation proposedLocation = new MapLocation(coordinate[1] * 2 + startX, startY - coordinate[0]);
+			if (rc.canSenseLocation(proposedLocation) && rc.onTheMap(proposedLocation)) {
+				rc.setIndicatorDot(proposedLocation, 255, 255, 255);
+			}
+			System.out.println("UOSEFIJE " + (Clock.getBytecodeNum() - bytecode));
+		}
 	}
 
 }

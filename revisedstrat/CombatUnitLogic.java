@@ -10,6 +10,7 @@ import java.util.Arrays;
  */
 public class CombatUnitLogic extends RobotLogic {
 
+
 	private final int SOLDIER_UNIT_COUNT_ATTACK_THRESHOLD = 15;
 
 	private int archonVisitedIndex;
@@ -29,11 +30,14 @@ public class CombatUnitLogic extends RobotLogic {
 		birthRound = rc.getRoundNum();
 	}
 
+
+
 	@Override
 	public void run() {
 		while (true) {
 
 			try {
+
 				// Check if visited archon location and invalidate it
 				checkVisitedArchonLocation();
 
