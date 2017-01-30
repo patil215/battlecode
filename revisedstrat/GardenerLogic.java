@@ -228,9 +228,11 @@ public class GardenerLogic extends RobotLogic {
 	private boolean moveTowardsGoodSpot() throws GameActionException {
 		// Try to find a free space to settle until 20 turns have elapsed
 		if (!isGoodLocation()) {
-//			moveDir = moveWithDiagonalBounce(moveDir);
-			return moveWithPathFinding();
-//			return false;
+
+			TreeInfo[] trees = rc.senseNearbyTrees(-1, rc.getTeam());
+			if (trees.length > 0) moveWithPathFinding();
+			else moveDir = moveWithDiagonalBounce(moveDir);
+			return false;
 		} else {
 			return true;
 		}
@@ -238,7 +240,7 @@ public class GardenerLogic extends RobotLogic {
 
 	private boolean moveWithPathFinding() throws GameActionException {
 
-		if (this.getDestination() == null || rc.getLocation().distanceTo(this.getDestination()) < 3) {
+		if (this.getDestination() == null || rc.getLocation().distanceTo(this.getDestination()) < 3 || Math.random() > .1) {
 			setDestination(rc.getLocation().add(birthLocation.directionTo(rc.getLocation()), rc.getType().sensorRadius));
 		}
 
