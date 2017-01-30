@@ -35,16 +35,13 @@ public class GardenerLogic extends RobotLogic {
 	public void run() {
 
 		try {
+
 			buildInitialRoundsUnits();
-		} catch(GameActionException e) {
-			e.printStackTrace();
-		}
 
-		int numRoundsSettling = 0;
-		boolean settled = false;
+			int numRoundsSettling = 0;
+			boolean settled = false;
 
-		while (true) {
-			try {
+			while (true) {
 
 				beginTurn();
 
@@ -72,9 +69,10 @@ public class GardenerLogic extends RobotLogic {
 				waterLowestHealthTree();
 
 				endTurn();
-			} catch (GameActionException e) {
-				e.printStackTrace();
 			}
+
+		} catch (GameActionException e) {
+			e.printStackTrace();
 		}
 
 	}
@@ -159,10 +157,10 @@ public class GardenerLogic extends RobotLogic {
 		 * (Math.abs(treeSpread) < 20) { tryToBuildUnit(RobotType.LUMBERJACK); }
 		 * else { tryToBuildUnit(RobotType.SOLDIER); } } else {
 		 * tryToBuildUnit(RobotType.SOLDIER); }
-		 *
+		 * 
 		 * // Wait until we can build second unit while
 		 * (rc.getBuildCooldownTurns() != 0) { endTurn(); }
-		 *
+		 * 
 		 * // Build second unit depending on how far archons are from each //
 		 * other float closestEnemyArchonDistance = Float.MAX_VALUE;
 		 * MapLocation[] enemyArchons = enemyArchonLocations; for (MapLocation
@@ -227,19 +225,20 @@ public class GardenerLogic extends RobotLogic {
 	private double getLumberjackSpawnChance() throws GameActionException {
 		// TODO: Fix logical error with trees that are only partially in the
 		// sense radius.
-		int locationsFoundOnMap=0;
-		int locationsFoundWithTrees=0;
-		for(int count = 0; count < 50; count++){
-			MapLocation toTest = rc.getLocation().add(Utils.randomDirection(),(float) (rc.getType().sensorRadius*Math.random()));
-			if(rc.onTheMap(toTest)){
+		int locationsFoundOnMap = 0;
+		int locationsFoundWithTrees = 0;
+		for (int count = 0; count < 50; count++) {
+			MapLocation toTest = rc.getLocation().add(Utils.randomDirection(),
+					(float) (rc.getType().sensorRadius * Math.random()));
+			if (rc.onTheMap(toTest)) {
 				locationsFoundOnMap++;
 				TreeInfo foundTree = rc.senseTreeAtLocation(toTest);
-				if(foundTree!=null && foundTree.team!=rc.getTeam()){
+				if (foundTree != null && foundTree.team != rc.getTeam()) {
 					locationsFoundWithTrees++;
 				}
 			}
 		}
-		return ((double)locationsFoundWithTrees)/locationsFoundOnMap;
+		return ((double) locationsFoundWithTrees) / locationsFoundOnMap;
 	}
 
 	/*
@@ -264,22 +263,27 @@ public class GardenerLogic extends RobotLogic {
 	private boolean moveWithPathFinding() throws GameActionException {
 
 		if (this.getDestination() == null || rc.getLocation().distanceTo(this.getDestination()) < 3) {
-			/*MapLocation destination = rc.getLocation().add(birthLocation.directionTo(rc.getLocation()), rc.getType().sensorRadius);
-			if (rc.canSenseLocation(destination) && rc.onTheMap(destination))  {
-				setDestination(destination);
+			MapLocation destination = rc.getLocation().add(birthLocation.directionTo(rc.getLocation()),
+					rc.getType().sensorRadius);
+			/*
+			 * if (rc.canSenseLocation(destination) && rc.onTheMap(destination))
+			 * { setDestination(destination); } else { double rand =
+			 * Math.random(); if (rand > .5) { setDestination(new
+			 * MapLocation(rc.getLocation().x,
+			 * this.getRandomEnemyInitialArchonLocation().y)); } else {
+			 * setDestination(new MapLocation(rc.getLocation().y,
+			 * this.getRandomEnemyInitialArchonLocation().x)); } }
+			 */
+			MapLocation goodLocation = BroadcastManager.getRecentLocation(rc, LocationInfoType.GOOD_SPOT);
+			if (goodLocation != null) {
+				setDestination(goodLocation);
 			} else {
 				double rand = Math.random();
 				if (rand > .5) {
 					setDestination(new MapLocation(rc.getLocation().x, this.getRandomEnemyInitialArchonLocation().y));
 				} else {
-					setDestination(new MapLocation(rc.getLocation().y, this.getRandomEnemyInitialArchonLocation().x));
+					setDestination(new MapLocation(this.getRandomEnemyInitialArchonLocation().x, rc.getLocation().y));
 				}
-			}*/
-			double rand= Math.random();
-			if (rand > .5) {
-				setDestination(new MapLocation(rc.getLocation().x, this.getRandomEnemyInitialArchonLocation().y));
-			} else {
-				setDestination(new MapLocation(this.getRandomEnemyInitialArchonLocation().x, rc.getLocation().y));
 			}
 
 		}

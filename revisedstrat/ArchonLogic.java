@@ -32,21 +32,17 @@ public class ArchonLogic extends RobotLogic {
 			}
 
 			while (true) {
-				try {
-					// Try to spawn gardener if should spawn gardener
-					if (shouldSpawnGardener()) {
-						spawnGardener();
-					}
-
-					// Move
-					moveToGoodLocation();
-
-					broadcastForHelpIfNeeded();
-					detectTreesAndAskLumberjacksForHelp();
-					endTurn();
-				} catch (Exception e) {
-					e.printStackTrace();
+				// Try to spawn gardener if should spawn gardener
+				if (shouldSpawnGardener()) {
+					spawnGardener();
 				}
+
+				// Move
+				moveToGoodLocation();
+
+				broadcastForHelpIfNeeded();
+				detectTreesAndAskLumberjacksForHelp();
+				endTurn();
 			}
 
 		} catch (GameActionException e) {
@@ -80,48 +76,50 @@ public class ArchonLogic extends RobotLogic {
 		return false;
 	}
 
-	private float getLineOfSightFreeRatio() throws GameActionException {
+	private void writeLumberjackToSpawnCount() throws GameActionException {
+
 		int longestFreeSequence = 0;
-		int freeSequence = 0;
-		int sightRangeDivisor = 0;
+		int freeSequenceLength = 0;
+		int numTreesHit = 0;
+
+		int numTreesDivisor = 0;
+
 		Direction lookDir = Direction.getNorth();
 		int firstRed = -1;
-		float considerationRadius = (float) (type.sensorRadius * 0.75);
-		int numChecks = 72; // 5 degree increments
-		for (int i = 0; i < numChecks; i++) {
-			boolean onMap = !willBeOffMap(lookDir, considerationRadius);
-			if (onMap) {
-				sightRangeDivisor++;
+		for (int i = 0; i < 72; i++) {
+			if (!willBeOffMap(lookDir, (float) (type.sensorRadius * 0.75))) {
+				numTreesDivisor++;
 			}
-			if (onMap && !willHitTree(lookDir, considerationRadius)) {
-				freeSequence++;
+			if (!willHitTree(lookDir, (float) (type.sensorRadius * 0.75))) {
+				if (!willBeOffMap(lookDir, (float) (type.sensorRadius * 0.75))) {
+					freeSequenceLength++;
+				}
+				rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(lookDir, 4), 0, 255, 0);
 			} else {
+				numTreesHit++;
 				if (firstRed == -1) {
 					firstRed = i;
 				}
-				if (freeSequence > longestFreeSequence) {
-					longestFreeSequence = freeSequence;
-					freeSequence = 0;
+				if (freeSequenceLength > longestFreeSequence) {
+					longestFreeSequence = freeSequenceLength;
+					freeSequenceLength = 0;
 				}
+				rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(lookDir, 4), 255, 0, 0);
 			}
-			lookDir = lookDir.rotateLeftDegrees(360 / numChecks);
+			lookDir = lookDir.rotateLeftDegrees(5);
 		}
 
 		for (int i = 0; i < firstRed; i++) {
 			if (!willHitTree(lookDir, (float) (type.sensorRadius * 0.75))
 					&& !willBeOffMap(lookDir, (float) (type.sensorRadius * 0.75))) {
-				freeSequence++;
+				freeSequenceLength++;
 			}
 		}
-		if (freeSequence > longestFreeSequence) {
-			longestFreeSequence = freeSequence;
+
+		if (freeSequenceLength > longestFreeSequence) {
+			longestFreeSequence = freeSequenceLength;
 		}
 
-		float sightRangeRatio = ((float) longestFreeSequence / (float) sightRangeDivisor);
-		return sightRangeRatio;
-	}
-
-	private float getMonteCarloRatio() throws GameActionException {
 		int numTimesTreeOrOffMap = 0;
 		int monteCarloDivisor = 0;
 		for (int i = 0; i < 50; i++) {
@@ -129,43 +127,29 @@ public class ArchonLogic extends RobotLogic {
 					(float) (Math.random() * (type.sensorRadius * 0.75)));
 			if (rc.onTheMap(location)) {
 				monteCarloDivisor++;
-				if (rc.senseTreeAtLocation(location) != null) {
-					numTimesTreeOrOffMap++;
-				}
+			}
+			if (rc.senseTreeAtLocation(location) != null) {
+				numTimesTreeOrOffMap++;
 			}
 		}
-		float monteCarloRatio = ((float) numTimesTreeOrOffMap / (float) monteCarloDivisor);
-		return monteCarloRatio;
-	}
-
-	private void writeLumberjackToSpawnCount() throws GameActionException {
-
-		for (MapLocation location : enemyArchonLocations) {
-			if (rc.getLocation().distanceTo(location) < (type.sensorRadius * 0.85f)) {
-				BroadcastManager.writeLumberjackInitialCount(rc, 0);
-				return;
-			}
-		}
-
-		float sightRangeRatio = getLineOfSightFreeRatio();
-		float monteCarloRatio = getMonteCarloRatio();
 
 		int numLumberjacks = 0;
 
 		// Sight lines
-		if (sightRangeRatio < .4) {
+		if (longestFreeSequence / (double) numTreesDivisor < .4) {
 			numLumberjacks++;
 		}
 
 		// Monte Carlo
-		if (monteCarloRatio > 0.2) {
+		if ((numTimesTreeOrOffMap / (double) monteCarloDivisor) > 0.20) {
 			numLumberjacks++;
 		}
 
 		BroadcastManager.writeLumberjackInitialCount(rc, numLumberjacks);
 
-		System.out.println("Sight range ratio: " + sightRangeRatio);
-		System.out.println("Monte carlo ratio: " + monteCarloRatio);
+		System.out.println("Tree ratio: " + numTreesHit / (double) numTreesDivisor);
+		System.out.println("Longest sequence: " + (longestFreeSequence / (double) numTreesDivisor));
+		System.out.println("Monte carlo ratio: " + (numTimesTreeOrOffMap / (double) monteCarloDivisor));
 	}
 
 	private void detectTreesAndAskLumberjacksForHelp() throws GameActionException {
@@ -226,8 +210,7 @@ public class ArchonLogic extends RobotLogic {
 	private final int ROUNDS_WHEN_LATE = 500;
 
 	private boolean shouldSpawnGardener() throws GameActionException {
-		if (rc.getRoundNum() > 100 && rc.getRobotCount() - allyArchonLocations.length == 0
-				&& (!inDanger() || rc.getTeamBullets() >= 200)) {
+		if (rc.getRoundNum() > 100 && rc.getRobotCount() - allyArchonLocations.length == 0) {
 			return true;
 		}
 
@@ -311,11 +294,11 @@ public class ArchonLogic extends RobotLogic {
 	}
 
 	private void broadcastForHelpIfNeeded() throws GameActionException {
-		if(inDanger()) {
-			RobotInfo[] foes = rc.senseNearbyRobots(-1, enemyTeam);
+		RobotInfo[] foes = rc.senseNearbyRobots(-1, enemyTeam);
+
+		if (foes.length > 0) {
 			BroadcastManager.saveLocation(rc, foes[0].location, LocationInfoType.ARCHON_HELP);
 		}
-
 	}
 
 }
