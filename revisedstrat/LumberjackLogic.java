@@ -28,7 +28,7 @@ public class LumberjackLogic extends RobotLogic {
 
 				// First priority: attack enemy
 				boolean foundEnemyToTarget = false;
-				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
+				RobotInfo[] enemyRobots = rc.senseNearbyRobots(3.5f, enemyTeam);
 				for (RobotInfo enemy : enemyRobots) {
 					if (/* enemy.type != RobotType.SOLDIER && */enemy.type != RobotType.TANK) {
 						foundEnemyToTarget = true;

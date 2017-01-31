@@ -368,7 +368,7 @@ public abstract class RobotLogic {
 					return null;
 				}
 			} else {
-				float DELTA_BULLET_DISTANCE = .5f;
+				float DELTA_BULLET_DISTANCE = .49f;
 				testLocation = testLocation.add(direction, DELTA_BULLET_DISTANCE);
 			}
 		}
@@ -710,7 +710,7 @@ public abstract class RobotLogic {
 	/**
 	 * This method returns the expected damage which a specific location will
 	 * get in the next round, based on the current bullet information
-	 * 
+	 *
 	 * @param bullets
 	 * @return
 	 */
@@ -732,7 +732,9 @@ public abstract class RobotLogic {
 		int bytecodeStart = Clock.getBytecodeNum();
 		Direction toMoveAvoidBullets = null;
 		Direction toMove = null;
-		for (int rotate = 85; rotate <= 130; rotate += 12) {
+		int[] rotations = {85, 110, 95, 130, 105, 90, 115};
+		for (int i = 0; i < rotations.length; i++/*int rotate = 85; rotate <= 130; rotate += 12*/) {
+			int rotate = rotations[i];
 			if (!(Clock.getBytecodeNum() - bytecodeStart < bytecodeToUse)) {
 				break;
 			}

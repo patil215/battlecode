@@ -88,14 +88,14 @@ public class CombatUnitLogic extends RobotLogic {
 					if (currentDestinationType < GARDENER_HELP_PRIORITY || gardenerHelpLocation.x != getDestination().x
 							|| gardenerHelpLocation.y != getDestination().y) {
 
-						if (getDestination() == null || (rc.getLocation().distanceTo(gardenerHelpLocation) * 1.5 < rc
-								.getLocation().distanceTo(getDestination()))) {
+						if ((getDestination() == null || (rc.getLocation().distanceTo(gardenerHelpLocation) * 1.5 < rc
+								.getLocation().distanceTo(getDestination()))) && rc.getLocation().distanceTo(gardenerHelpLocation) < 50) {
 							setDestination(gardenerHelpLocation);
 							currentDestinationType = GARDENER_HELP_PRIORITY;
 							dodgeBullets();
 							tryToMoveToDestinationTwo();
 							RobotInfo target = getHighestPriorityTarget(enemyRobots, false);
-							if (target != null) {
+							if (target != null && target.type != RobotType.ARCHON) {
 								// System.out.println("Found a target");
 								// Broadcast the location of the target
 								BroadcastManager.saveLocation(rc, target.location,
@@ -117,14 +117,14 @@ public class CombatUnitLogic extends RobotLogic {
 
 					if (currentDestinationType < ARCHON_HELP_PRIORITY || archonHelpLocation.x != getDestination().x
 							|| archonHelpLocation.y != getDestination().y) {
-						if (getDestination() == null || (rc.getLocation().distanceTo(archonHelpLocation) * 1.5 < rc
-								.getLocation().distanceTo(getDestination()))) {
+						if ((getDestination() == null || (rc.getLocation().distanceTo(archonHelpLocation) * 1.5 < rc
+								.getLocation().distanceTo(getDestination()))) && rc.getLocation().distanceTo(archonHelpLocation) < 50) {
 							setDestination(archonHelpLocation);
 							currentDestinationType = ARCHON_HELP_PRIORITY;
 							dodgeBullets();
 							tryToMoveToDestinationTwo();
 							RobotInfo target = getHighestPriorityTarget(enemyRobots, false);
-							if (target != null) {
+							if (target != null && target.type != RobotType.ARCHON) {
 								// Broadcast the location of the target
 								BroadcastManager.saveLocation(rc, target.location,
 										BroadcastManager.LocationInfoType.ENEMY);
@@ -152,7 +152,7 @@ public class CombatUnitLogic extends RobotLogic {
 								dodgeBullets();
 								boolean success = tryToMoveToDestinationTwo();
 								RobotInfo target = getHighestPriorityTarget(enemyRobots, false);
-								if (target != null) {
+								if (target != null && target.type != RobotType.ARCHON) {
 									// System.out.println("Found a target");
 									// Broadcast the location of the target
 									BroadcastManager.saveLocation(rc, target.location,
@@ -171,7 +171,16 @@ public class CombatUnitLogic extends RobotLogic {
 
 				// Discovery mode, move randomly
 				if (currentDestinationType > 0) {
+					dodgeBullets();
 					tryToMoveToDestinationTwo();
+					RobotInfo target = getHighestPriorityTarget(enemyRobots, false);
+					if (target != null && target.type != RobotType.ARCHON) {
+						// System.out.println("Found a target");
+						// Broadcast the location of the target
+						BroadcastManager.saveLocation(rc, target.location,
+								BroadcastManager.LocationInfoType.ENEMY);
+						tryAndFireAShot(target);
+					}
 					endTurn();
 				} else {
 					moveIntelligentlyRandomly();
@@ -269,14 +278,14 @@ public class CombatUnitLogic extends RobotLogic {
 		// System.out.println("End bytecode for highestPriorityTarget = " +
 		// Clock.getBytecodeNum());
 
-		if (target == null) {
+		if (target == null && enemySeenLastRound != null) {
 			target = enemySeenLastRound;
 		} else {
 			enemySeenLastRound = target;
 			enemyCounter = COMBAT_MEMORY;
 		}
 
-		if (target != null) {
+		if (target != null && target.type != RobotType.ARCHON) {
 			// System.out.println("Found a target");
 			// Broadcast the location of the target
 			BroadcastManager.saveLocation(rc, target.location, BroadcastManager.LocationInfoType.ENEMY);
@@ -286,7 +295,7 @@ public class CombatUnitLogic extends RobotLogic {
 			// Try to get closer to the enemy
 			// System.out.println("Found no target");
 			target = (RobotInfo) getClosestBody(enemyRobots);
-			if (target != null) {
+			if (target != null && target.type != RobotType.ARCHON) {
 				BroadcastManager.saveLocation(rc, target.location, LocationInfoType.ENEMY);
 				Direction toMove = getDirectionTowards(target.location);
 				if (toMove != null) {
@@ -305,37 +314,80 @@ public class CombatUnitLogic extends RobotLogic {
 	private boolean shouldFireTriShot(RobotInfo target) throws GameActionException {
 		MapLocation currLoc = rc.getLocation();
 
-		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(20), true) == rc
-				.getTeam()
-				|| getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateRightDegrees(20),
-						true) == rc.getTeam()) {
+		BodyInfo target1 = getFirstHitTargetAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(20));
+		BodyInfo target2 = getFirstHitTargetAprox(currLoc, currLoc.directionTo(target.location).rotateRightDegrees(20));
+		if (ally(target1) || ally(target2)) {
+			return false;
+		}
 
+		if (allyOrNeutralTree(target1) && allyOrNeutralTree(target2)) {
 			return false;
 		}
 
 		return rc.getLocation().distanceTo(target.location) >= 5 && rc.getLocation().distanceTo(target.location) < 12;
 	}
 
+	private boolean allyOrNeutralTree(BodyInfo target) {
+		if (target instanceof TreeInfo && (((TreeInfo) target).getTeam().equals(allyTeam)
+				|| ((TreeInfo) target).getTeam().equals(Team.NEUTRAL))) {
+			return true;
+		}
+		return false;
+	}
+
+	private boolean ally(BodyInfo target) {
+		if ((target instanceof RobotInfo && ((RobotInfo) target).getTeam().equals(allyTeam))) {
+			return true;
+		}
+		return false;
+	}
+
 	private boolean shouldFirePentadShot(RobotInfo target) throws GameActionException {
 		MapLocation currLoc = rc.getLocation();
 
 		int numAlliesHit = 0;
+		int numTreesHit = 0;
 
-		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(30), true) == rc.getTeam()) numAlliesHit++;
-		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(30), true) == rc.getTeam()) numAlliesHit++;
-		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(30), true) == rc.getTeam()) numAlliesHit++;
-		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(30), true) == rc.getTeam()) numAlliesHit++;
-
-		if (numAlliesHit > 1) {
-			return true;
+		BodyInfo target1 = getFirstHitTargetAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(15));
+		if (ally(target1)) {
+			numAlliesHit++;
+		}
+		if (allyOrNeutralTree(target1)) {
+			numTreesHit++;
+		}
+		BodyInfo target2 = getFirstHitTargetAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(30));
+		if (ally(target2)) {
+			numAlliesHit++;
+		}
+		if (allyOrNeutralTree(target2)) {
+			numTreesHit++;
+		}
+		BodyInfo target3 = getFirstHitTargetAprox(currLoc, currLoc.directionTo(target.location).rotateRightDegrees(15));
+		if (ally(target3)) {
+			numAlliesHit++;
+		}
+		if (allyOrNeutralTree(target3)) {
+			numTreesHit++;
+		}
+		BodyInfo target4 = getFirstHitTargetAprox(currLoc, currLoc.directionTo(target.location).rotateRightDegrees(30));
+		if (ally(target4)) {
+			numAlliesHit++;
+		}
+		if (allyOrNeutralTree(target4)) {
+			numTreesHit++;
 		}
 
+		if (numAlliesHit > 1 || numTreesHit > 2) {
+			return false;
+		}
 
-
-//		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(30), true) == rc.getTeam() || getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateRightDegrees(30),
-//						true) == rc.getTeam()) {
-//			return false;
-//		}
+		// if (getFirstHitTeamAprox(currLoc,
+		// currLoc.directionTo(target.location).rotateLeftDegrees(30), true) ==
+		// rc.getTeam() || getFirstHitTeamAprox(currLoc,
+		// currLoc.directionTo(target.location).rotateRightDegrees(30),
+		// true) == rc.getTeam()) {
+		// return false;
+		// }
 
 		return true;
 		// return rc.getLocation().distanceTo(target.location) < 5;
