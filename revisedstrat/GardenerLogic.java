@@ -11,22 +11,19 @@ public class GardenerLogic extends RobotLogic {
 	private final int NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE = 0;
 	private final int NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE = 2000;
 	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER = 50;
-	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = 125;
+	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = 75;
 	private final float MIN_FREE_SPACE_REQUIREMENT = 5;
 
 	private Direction moveDir;
 	private final boolean UNIT_SPAWNER_ELIGIBLE;
 	private final boolean DEGENERATE_ELIGIBLE;
 	private Direction unitSpawnDir;
-	private MapLocation birthLocation;
 
 	public GardenerLogic(RobotController rc) {
 		super(rc);
 		moveDir = Utils.diagonalDirection();
 		UNIT_SPAWNER_ELIGIBLE = rc.getRoundNum() > NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE;
 		DEGENERATE_ELIGIBLE = rc.getRoundNum() < NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE;
-		birthLocation = rc.getLocation()
-				.add(rc.getLocation().directionTo(rc.getInitialArchonLocations(rc.getTeam())[0]).opposite(), .3f);
 	}
 
 	// TODO: make gardener only send help broadcast every 50 rounds
@@ -88,16 +85,15 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private void createTreeRingAndSpawnUnits() throws GameActionException {
-		rc.setIndicatorDot(rc.getLocation(), 0, 256, 0);
 
 		if (unitSpawnDir == null) {
 			unitSpawnDir = rc.getLocation().directionTo(allyArchonLocations[0]).opposite();
-			for (int i = 0; i < 6; i++) {
+			for (int i = 0; i < 72; i++) {
 				MapLocation proposedLoc = rc.getLocation().add(unitSpawnDir, (float) (2 * type.bodyRadius + 0.1));
 				if (!rc.isCircleOccupied(proposedLoc, rc.getType().bodyRadius) && rc.onTheMap(proposedLoc)) {
 					break;
 				}
-				unitSpawnDir = unitSpawnDir.rotateLeftDegrees(60);
+				unitSpawnDir = unitSpawnDir.rotateLeftDegrees(5);
 			}
 		}
 		if (rc.getBuildCooldownTurns() == 0) {
@@ -242,7 +238,7 @@ public class GardenerLogic extends RobotLogic {
 				}
 			}
 		}
-		return ((double) locationsFoundWithTrees) / locationsFoundOnMap;
+		return (((double) locationsFoundWithTrees) / locationsFoundOnMap) * 1.5;
 	}
 
 	/*
@@ -253,11 +249,11 @@ public class GardenerLogic extends RobotLogic {
 		// Try to find a free space to settle until 20 turns have elapsed
 		if (!isGoodLocation()) {
 
-			TreeInfo[] trees = rc.senseNearbyTrees(-1, rc.getTeam());
+			/*TreeInfo[] trees = rc.senseNearbyTrees(-1, rc.getTeam());
 			if (trees.length > 0)
 				moveWithPathFinding();
-			else
-				moveDir = moveWithDiagonalBounce(moveDir);
+			else*/
+			moveDir = moveWithDiagonalBounce(moveDir);
 			return false;
 		} else {
 			return true;
