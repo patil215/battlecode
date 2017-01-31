@@ -18,7 +18,7 @@ public abstract class RobotLogic {
 
 	private static final float NO_INTERSECT = Float.NEGATIVE_INFINITY;
 
-	private static boolean isLeftUnit;
+	protected static boolean isLeftUnit;
 
 	private static MapLocation destination;
 

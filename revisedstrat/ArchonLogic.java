@@ -126,7 +126,7 @@ public class ArchonLogic extends RobotLogic {
 		int monteCarloDivisor = 0;
 		for (int i = 0; i < 50; i++) {
 			MapLocation location = rc.getLocation().add(Utils.randomDirection(),
-					(float) (Math.random() * (type.sensorRadius * 0.75)));
+					(float) (Math.random() * (type.sensorRadius)));
 			if (rc.onTheMap(location)) {
 				monteCarloDivisor++;
 				if (rc.senseTreeAtLocation(location) != null) {

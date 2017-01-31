@@ -25,10 +25,9 @@ public class BulletCollector extends RobotLogic {
 					Direction toMove = rc.getLocation().directionTo(goodTreeLocation);
 					toMove = getDirectionTowards(toMove);
 					move(toMove);
-				} else if (true || rc.getRoundNum() < 500) {
-					moveDir = this.moveWithRandomBounce(moveDir);
 				} else {
-					combatMode.run();
+					System.out.println("MOving with a random bounce");
+					moveDir = this.moveWithRandomBounce(moveDir);
 				}
 
 				senseAllyEnemyPairs();
@@ -85,13 +84,37 @@ public class BulletCollector extends RobotLogic {
 					if (this.getFirstHitTeamAprox(bulletSpawnPoint, ally.getLocation().directionTo(foe.location),
 							false) == enemyTeam) {
 						BroadcastManager.hashLocationToFire(rc, ally.ID, foe.location);
-						//rc.setIndicatorLine(ally.location, foe.location, 0, 255, 0);
+						// rc.setIndicatorLine(ally.location, foe.location, 0,
+						// 255, 0);
 					} else {
-						//rc.setIndicatorLine(ally.location, foe.location, 255, 0, 0);
+						// rc.setIndicatorLine(ally.location, foe.location, 255,
+						// 0, 0);
 					}
 				}
 			}
 		}
+	}
+
+	public Direction getDirectionTowards(Direction toMove) throws GameActionException {
+		if (smartCanMove(toMove)) {
+			return toMove;
+		} else {
+			BulletInfo[] bullets = rc.senseNearbyBullets();
+			for (int deltaAngle = 0; deltaAngle < 180; deltaAngle += 5) {
+				Direction leftDir = toMove.rotateLeftDegrees(deltaAngle);
+				if (smartCanMove(leftDir)
+						&& !willGetHitByABullet(rc.getLocation().add(leftDir, type.strideRadius), bullets)) {
+					return leftDir;
+				}
+				Direction rightDir = toMove.rotateRightDegrees(deltaAngle);
+				if (smartCanMove(rightDir)
+						&& !willGetHitByABullet(rc.getLocation().add(rightDir, type.strideRadius), bullets)) {
+					return rightDir;
+				}
+
+			}
+		}
+		return null;
 	}
 
 	private void move() throws GameActionException {
