@@ -692,7 +692,6 @@ public abstract class RobotLogic {
 			throws GameActionException {
 		Direction toBullet = rc.getLocation().directionTo(toDodge.location);
 		int bytecodeStart = Clock.getBytecodeNum();
-
 		Direction toMoveAvoidBullets = null;
 		Direction toMove = null;
 		for (int rotate = 85; rotate <= 130; rotate += 12) {
@@ -736,6 +735,8 @@ public abstract class RobotLogic {
 			System.out.println("doing bullet avoiding tangent");
 			move(toMoveAvoidBullets, type.strideRadius);
 			return true;
+		} else if (!bulletIntersecting(rc.getLocation(), segments)) {
+			return false;
 		} else if (toMove != null) {
 			System.out.println("doing bullet hitting tangent");
 			move(toMove, type.strideRadius);

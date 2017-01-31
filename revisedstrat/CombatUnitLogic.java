@@ -63,7 +63,7 @@ public class CombatUnitLogic extends RobotLogic {
 				if (enemyRobots.length > 0) {
 					currentDestinationType = 0;
 					setDestination(null);
-					executeCombat(enemyRobots);
+					executeCombat();
 					endTurn();
 					continue;
 				}
@@ -194,16 +194,18 @@ public class CombatUnitLogic extends RobotLogic {
 		moveWithRandomBounce(Utils.randomDirection());
 	}
 
-	private void executeCombat(RobotInfo[] enemyRobots) throws GameActionException {
+	private void executeCombat() throws GameActionException {
 
 		boolean result = dodgeBullets();
 		if (!result) {
 			// Move towards the enemy, especially if it's an econ unit
 			RobotInfo robotInfo = (RobotInfo) getClosestBody(rc.senseNearbyRobots(-1, enemyTeam));
-			if (robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON)
-					|| (robotInfo.getType().equals(RobotType.LUMBERJACK)
-							&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
-				move(getDirectionTowards(robotInfo.getLocation()));
+			if(robotInfo != null) {
+				if (robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON)
+						|| (robotInfo.getType().equals(RobotType.LUMBERJACK)
+								&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
+					move(getDirectionTowards(robotInfo.getLocation()));
+				}
 			}
 			/*
 			 * for (RobotInfo robotInfo : enemyRobots) { if
@@ -214,6 +216,8 @@ public class CombatUnitLogic extends RobotLogic {
 			 * move(getDirectionTowards(robotInfo.getLocation())); break; } }
 			 */
 		}
+
+		RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
 
 		// Shoot
 		// System.out.println("Start bytecode for highestPriorityTarget = " +
@@ -248,11 +252,12 @@ public class CombatUnitLogic extends RobotLogic {
 	}
 
 	private boolean shouldFireTriShot(RobotInfo target) throws GameActionException {
-		return rc.getLocation().distanceTo(target.location) >= 5 && rc.getLocation().distanceTo(target.location) < 10;
+		return rc.getLocation().distanceTo(target.location) >= 5 && rc.getLocation().distanceTo(target.location) < 12;
 	}
 
 	private boolean shouldFirePentadShot(RobotInfo target) throws GameActionException {
-		return rc.getLocation().distanceTo(target.location) < 5;
+		return true;
+		//return rc.getLocation().distanceTo(target.location) < 5;
 	}
 
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
