@@ -14,7 +14,7 @@ public abstract class RobotLogic {
 
 	public RobotController rc;
 
-	private static int ARCHON_IGNORE_ROUND = 175;
+	private static int ARCHON_IGNORE_ROUND = 200;
 
 	private static final float NO_INTERSECT = Float.NEGATIVE_INFINITY;
 
@@ -771,12 +771,12 @@ public abstract class RobotLogic {
 			}
 		}
 
-		if (toMoveAvoidBullets != null) {
+		if (!bulletIntersecting(rc.getLocation(), segments)) {
+			return false;
+		} else if (toMoveAvoidBullets != null) {
 			System.out.println("doing bullet avoiding tangent");
 			move(toMoveAvoidBullets, type.strideRadius);
 			return true;
-		} else if (!bulletIntersecting(rc.getLocation(), segments)) {
-			return false;
 		} else if (toMove != null) {
 			System.out.println("doing bullet hitting tangent");
 			move(toMove, type.strideRadius);

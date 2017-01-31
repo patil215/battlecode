@@ -269,8 +269,8 @@ public class CombatUnitLogic extends RobotLogic {
 						this.setDestination(robotInfo.location);
 						System.out.println("New destination 1 is: " + this.getDestination() );
 						currentDestinationType = IN_COMBAT_PRIORITY;
-					}*/
-					tryToMoveToDestinationTwo();
+					}
+					tryToMoveToDestinationTwo();*/
 				}
 			}
 			/*
@@ -300,10 +300,12 @@ public class CombatUnitLogic extends RobotLogic {
 			enemyCounter = COMBAT_MEMORY;
 		}
 
-		if (target != null && target.type != RobotType.ARCHON) {
+		if (target != null) {
 			// System.out.println("Found a target");
 			// Broadcast the location of the target
-			BroadcastManager.saveLocation(rc, target.location, BroadcastManager.LocationInfoType.ENEMY);
+			if(target.type != RobotType.ARCHON || rc.getRoundNum() > 500){
+				BroadcastManager.saveLocation(rc, target.location, BroadcastManager.LocationInfoType.ENEMY);
+			}
 			tryAndFireAShot(target);
 		} else {
 
