@@ -11,7 +11,7 @@ public class GardenerLogic extends RobotLogic {
 	private final int NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE = 0;
 	private final int NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE = 2000;
 	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER = 50;
-	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = 75;
+	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE;
 	private final float MIN_FREE_SPACE_REQUIREMENT = 5;
 
 	private Direction moveDir;
@@ -24,6 +24,7 @@ public class GardenerLogic extends RobotLogic {
 		moveDir = Utils.diagonalDirection();
 		UNIT_SPAWNER_ELIGIBLE = rc.getRoundNum() > NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE;
 		DEGENERATE_ELIGIBLE = rc.getRoundNum() < NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE;
+		NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = rc.getRoundNum() < 20 ? 20 : 75;
 	}
 
 	// TODO: make gardener only send help broadcast every 50 rounds

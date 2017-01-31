@@ -146,7 +146,7 @@ public class CombatUnitLogic extends RobotLogic {
 					endTurn();
 				}
 
-			} catch (Exception e) {
+			} catch (GameActionException e) {
 				e.printStackTrace();
 			}
 		}
@@ -194,8 +194,13 @@ public class CombatUnitLogic extends RobotLogic {
 		return null;
 	}
 
+	private Direction moveDir;
+
 	private void moveIntelligentlyRandomly() throws GameActionException {
-		moveWithRandomBounce(Utils.randomDirection());
+		if(moveDir == null) {
+			moveDir = Utils.randomDirection();
+		}
+		moveDir = moveWithRandomBounce(moveDir);
 	}
 
 	private void executeCombat() throws GameActionException {
@@ -204,21 +209,21 @@ public class CombatUnitLogic extends RobotLogic {
 		if (!result) {
 			// Move towards the enemy, especially if it's an econ unit
 			RobotInfo robotInfo = (RobotInfo) getClosestBody(rc.senseNearbyRobots(-1, enemyTeam));
-			if(robotInfo != null) {
+			if (robotInfo != null) {
 				if (robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON)
 						|| (robotInfo.getType().equals(RobotType.LUMBERJACK)
-								&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
+						&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 3.5)) {
 					move(getDirectionTowards(robotInfo.getLocation()));
 				}
 			}
-			/*
-			 * for (RobotInfo robotInfo : enemyRobots) { if
-			 * (robotInfo.getType().equals(RobotType.GARDENER) ||
-			 * robotInfo.getType().equals(RobotType.ARCHON) ||
-			 * (robotInfo.getType().equals(RobotType.LUMBERJACK) &&
-			 * robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
-			 * move(getDirectionTowards(robotInfo.getLocation())); break; } }
-			 */
+		/*
+		 * for (RobotInfo robotInfo : enemyRobots) { if
+		 * (robotInfo.getType().equals(RobotType.GARDENER) ||
+		 * robotInfo.getType().equals(RobotType.ARCHON) ||
+		 * (robotInfo.getType().equals(RobotType.LUMBERJACK) &&
+		 * robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
+		 * move(getDirectionTowards(robotInfo.getLocation())); break; } }
+		 */
 		}
 
 		RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);

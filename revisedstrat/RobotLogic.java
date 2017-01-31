@@ -771,6 +771,7 @@ public abstract class RobotLogic {
 			// Short term dodge
 			if (bulletIntersecting(rc.getLocation(), segments)) {
 				MapLocation safeLocation = getBulletAvoidingLocation(segments, 4000);
+				//MapLocation safeLocation = getBulletMinimizingLocation(segments, 9000);
 				if (safeLocation != null) {
 					System.out.println("dodging by random");
 					move(safeLocation);
@@ -865,10 +866,23 @@ public abstract class RobotLogic {
 		return false;
 	}
 
+	private int numBulletsIntersecting(MapLocation location, MapLocation[][] segments) {
+		float intersectDistance = type.bodyRadius + OTHER_OFFSET;
+
+		int numIntersecting = 0;
+		for (MapLocation[] segment : segments) {
+			if (shortestDistance(location, segment) < intersectDistance) {
+				numIntersecting++;
+			}
+		}
+
+		return numIntersecting;
+	}
+
 	public MapLocation getRandomLocation() {
 		float bodyRadius = type.strideRadius;
 		return rc.getLocation().add(Utils.randomDirection(),
-				(float) (Math.random() * (type.strideRadius - (bodyRadius / 2))) + bodyRadius / 2);
+				(float) (Math.random() * (type.strideRadius - (type.strideRadius / 2))) + type.strideRadius / 2);
 	}
 
 	/*
@@ -883,12 +897,36 @@ public abstract class RobotLogic {
 				break;
 			}
 			MapLocation startLoc = getRandomLocation();
+			rc.setIndicatorDot(startLoc, 255, 0, 0);
 			if (!bulletIntersecting(startLoc, bulletSegments) && smartCanMove(startLoc)) {
 				return startLoc;
 			}
 		}
 
 		return null;
+	}
+
+	private MapLocation getBulletMinimizingLocation(MapLocation[][] bulletSegments, int bytecodeToSpend) throws GameActionException {
+		int minBulletsHit = numBulletsIntersecting(rc.getLocation(), bulletSegments);
+		MapLocation mapLocation = rc.getLocation();
+
+		int byteCodeStart = Clock.getBytecodeNum();
+		while (Clock.getBytecodeNum() - byteCodeStart < bytecodeToSpend) {
+			if (Clock.getBytecodeNum() < byteCodeStart) {
+				break;
+			}
+			MapLocation startLoc = getRandomLocation();
+			int numBulletsIntersecting = numBulletsIntersecting(startLoc, bulletSegments);
+			rc.setIndicatorDot(startLoc, 255, 0, 0);
+			if (numBulletsIntersecting < minBulletsHit && smartCanMove(startLoc)) {
+				rc.setIndicatorDot(startLoc, 0, 255, 0);
+				System.out.println(numBulletsIntersecting);
+				minBulletsHit = numBulletsIntersecting;
+				mapLocation = startLoc;
+			}
+		}
+
+		return mapLocation;
 	}
 
 	private boolean smartCanMove(MapLocation startLoc) throws GameActionException {

@@ -1,7 +1,5 @@
 package revisedstrat;
 
-import java.time.Clock;
-
 import battlecode.common.*;
 
 public class BulletCollector extends RobotLogic {
