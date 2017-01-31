@@ -3,6 +3,8 @@ package revisedstrat;
 import battlecode.common.*;
 import revisedstrat.BroadcastManager.LocationInfoType;
 
+import java.util.Random;
+
 /**
  * Created by patil215 on 1/12/17.
  */
@@ -32,6 +34,7 @@ public class ArchonLogic extends RobotLogic {
 			}
 
 			while (true) {
+
 				try {
 					// Try to spawn gardener if should spawn gardener
 					if (shouldSpawnGardener()) {
@@ -231,7 +234,7 @@ public class ArchonLogic extends RobotLogic {
 		return allyArchonLocations.length >= rc.getRobotCount();
 	}
 
-	private final int ROUNDS_TO_WAIT_BEFORE_SPAWNING_MORE_THAN_INITIAL_GARDENER = 125;
+	private final int ROUNDS_TO_WAIT_BEFORE_SPAWNING_MORE_THAN_INITIAL_GARDENER = 110;
 	private final double GARDENER_SPAWN_CHANCE_EARLY = 0.3;
 	private final double GARDENER_SPAWN_CHANCE_LATE = 0.15;
 	private final int ROUNDS_WHEN_LATE = 500;
@@ -252,7 +255,7 @@ public class ArchonLogic extends RobotLogic {
 			}
 		}
 
-		if (gardenerCount >= rc.senseNearbyTrees(-1, allyTeam).length) {
+		if (gardenerCount > rc.senseNearbyTrees(-1, allyTeam).length) {
 			return false;
 		}
 
@@ -260,8 +263,13 @@ public class ArchonLogic extends RobotLogic {
 		 GARDENER_SPAWN_CHANCE_LATE : GARDENER_SPAWN_CHANCE_EARLY;
 
 		if (rc.getRoundNum() > ROUNDS_TO_WAIT_BEFORE_SPAWNING_MORE_THAN_INITIAL_GARDENER) {
-			if (Math.random() < spawnChance && (!inDanger() || rc.getTeamBullets() >= 200)) {
+			Random rand = new Random((long) (rc.getID() * rc.getTeamBullets()));
+			System.out.println(rand.nextFloat());
+			if (rand.nextFloat() < spawnChance && (!inDanger() || rc.getTeamBullets() >= 200)) {
+				System.out.println("spawning");
 				return true;
+			} else {
+				System.out.println("not spawning");
 			}
 		}
 		return false;

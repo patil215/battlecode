@@ -1057,7 +1057,7 @@ public abstract class RobotLogic {
 		 * isLeftUnit);
 		 */
 		if (currentDistance <= distanceToDestination && smartCanMove(toMove)) {
-			rc.move(toMove);
+			move(toMove);
 			distanceToDestination = currentDistance;
 			needToSetDirection = true;
 			lastDirection = toMove;
@@ -1066,7 +1066,7 @@ public abstract class RobotLogic {
 			toMove = findAngleThatBringsYouClosestToAnObstruction(lastDirection);
 			if (smartCanMove(toMove)) {
 				lastDirection = toMove;
-				rc.move(toMove);
+				move(toMove);
 				distanceToDestination = Math.min(distanceToDestination, currentDistance);
 				return true;
 			} else {

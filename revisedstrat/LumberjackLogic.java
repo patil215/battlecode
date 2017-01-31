@@ -88,7 +88,7 @@ public class LumberjackLogic extends RobotLogic {
 				Direction towardsEnemy = rc.getLocation().directionTo(archonLocation);
 				towardsEnemy = getDirectionTowards(towardsEnemy);
 				if (towardsEnemy != null) {
-					rc.move(towardsEnemy);
+					move(towardsEnemy);
 					if (rc.canSenseLocation(archonLocation)) {
 						respondToBroadcast = true;
 					}

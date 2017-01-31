@@ -19,12 +19,22 @@ public class GardenerLogic extends RobotLogic {
 	private final boolean DEGENERATE_ELIGIBLE;
 	private Direction unitSpawnDir;
 
+	private boolean builtInitialUnits;
+	private boolean builtInitialUnit1;
+	private boolean builtInitialUnit2;
+
+	private static boolean INITIAL;
+
 	public GardenerLogic(RobotController rc) {
 		super(rc);
 		moveDir = Utils.diagonalDirection();
 		UNIT_SPAWNER_ELIGIBLE = rc.getRoundNum() > NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE;
 		DEGENERATE_ELIGIBLE = rc.getRoundNum() < NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE;
 		NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = rc.getRoundNum() < 20 ? 20 : 50;
+		INITIAL = rc.getRobotCount() - allyArchonLocations.length == 1;
+		builtInitialUnits = false;
+		builtInitialUnit1 = false;
+		builtInitialUnit2 = false;
 	}
 
 	// TODO: make gardener only send help broadcast every 50 rounds
@@ -32,11 +42,6 @@ public class GardenerLogic extends RobotLogic {
 	@Override
 	public void run() {
 
-		try {
-			buildInitialRoundsUnits();
-		} catch (GameActionException e) {
-			e.printStackTrace();
-		}
 
 		int numRoundsSettling = 0;
 		boolean settled = false;
@@ -44,13 +49,16 @@ public class GardenerLogic extends RobotLogic {
 		while (true) {
 			try {
 
+				if(INITIAL) {
+					if (!builtInitialUnits) {
+						buildInitialRoundsUnits();
+						builtInitialUnits = builtInitialUnit1 && builtInitialUnit2;
+					}
+				}
+
 				beginTurn();
 
-				if (!settled /*
-								 * && !(DEGENERATE_ELIGIBLE && numRoundsSettling
-								 * >
-								 * NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE)
-								 */) {
+				if (!settled) {
 					settled = moveTowardsGoodSpot(numRoundsSettling);
 					if (numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER
 							&& UNIT_SPAWNER_ELIGIBLE) {
@@ -126,35 +134,75 @@ public class GardenerLogic extends RobotLogic {
 
 	private void buildInitialRoundsUnits() throws GameActionException {
 
+
 		int numLumberjacks = BroadcastManager.getLumberjackInitialCount(rc);
 
 		if (numLumberjacks == 0) {
-			if (BroadcastManager.getScoutInitialCount(rc) > 0) {
-				tryToBuildUnit(RobotType.SCOUT);
-			} else {
-				tryToBuildUnit(RobotType.SOLDIER);
+			if(!builtInitialUnit1) {
+				if (BroadcastManager.getScoutInitialCount(rc) > 0) {
+					boolean result = tryToBuildUnit(RobotType.SCOUT);
+					if(result) {
+						builtInitialUnit1 = true;
+						return;
+					}
+				} else {
+					boolean result = tryToBuildUnit(RobotType.SOLDIER);
+					if(result) {
+						builtInitialUnit1 = true;
+						return;
+					}
+				}
 			}
 			// Wait until we can build second unit
-			while (rc.getBuildCooldownTurns() != 0) {
+			/*while (rc.getBuildCooldownTurns() != 0) {
 				endTurn();
+			}*/
+			if(!builtInitialUnit2) {
+				boolean result = tryToBuildUnit(RobotType.SOLDIER);
+				if(result) {
+					builtInitialUnit2 = true;
+					return;
+				}
 			}
-			tryToBuildUnit(RobotType.SOLDIER);
 		} else if (numLumberjacks == 1) {
-			tryToBuildUnit(RobotType.LUMBERJACK);
-			// Wait until we can build second unit
-			while (rc.getBuildCooldownTurns() != 0) {
-				endTurn();
+			if(!builtInitialUnit1) {
+				boolean result = tryToBuildUnit(RobotType.LUMBERJACK);
+				if(result) {
+					builtInitialUnit1 = true;
+					return;
+				}
 			}
-			tryToBuildUnit(RobotType.SOLDIER);
+			// Wait until we can build second unit
+			/*while (rc.getBuildCooldownTurns() != 0) {
+				endTurn();
+			}*/
+			if(!builtInitialUnit2) {
+				boolean result = tryToBuildUnit(RobotType.SOLDIER);
+				if(result) {
+					builtInitialUnit2 = true;
+					return;
+				}
+			}
 		} else {
-			tryToBuildUnit(RobotType.LUMBERJACK);
-			// Wait until we can build second unit
+			if(!builtInitialUnit1) {
+				boolean result = tryToBuildUnit(RobotType.LUMBERJACK);
+				if(result) {
+					builtInitialUnit1 = true;
+					return;
+				}
+			}
+			/*// Wait until we can build second unit
 			while (rc.getBuildCooldownTurns() != 0) {
 				endTurn();
+			}*/
+			if(!builtInitialUnit2) {
+				boolean result = tryToBuildUnit(RobotType.LUMBERJACK);
+				if(result) {
+					builtInitialUnit2 = true;
+					return;
+				}
 			}
-			tryToBuildUnit(RobotType.LUMBERJACK);
 		}
-
 		/*
 		 * if (rc.getRobotCount() - 1 == allyArchonLocations.length) { // Build
 		 * first unit depending on tree density TreeInfo[] nearbyTrees =
@@ -179,15 +227,16 @@ public class GardenerLogic extends RobotLogic {
 		 */
 	}
 
-	private void tryToBuildUnit(RobotType toBuild) throws GameActionException {
+	private boolean tryToBuildUnit(RobotType toBuild) throws GameActionException {
 		Direction test = Direction.getNorth();
 		for (int deltaDegree = (int) (Math.random()
 				* 360), count = 0; count < 36; deltaDegree += 10, deltaDegree %= 360, count++) {
 			if (rc.canBuildRobot(toBuild, test.rotateLeftDegrees(deltaDegree))) {
 				rc.buildRobot(toBuild, test.rotateLeftDegrees(deltaDegree));
-				return;
+				return true;
 			}
 		}
+		return false;
 	}
 
 	private void spawnUnit(Direction direction) throws GameActionException {
@@ -244,7 +293,7 @@ public class GardenerLogic extends RobotLogic {
 				}
 			}
 		}
-		return (((double) locationsFoundWithTrees) / locationsFoundOnMap) * 1.5;
+		return (((double) locationsFoundWithTrees) / locationsFoundOnMap) * 1.25;
 	}
 
 	/*
@@ -325,12 +374,13 @@ public class GardenerLogic extends RobotLogic {
 				int settleSpots = 0;
 				TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
 				outer: for (int count = 0; count < 6; count++) {
-					MapLocation proposedLocation = rc.getLocation().add(start.rotateLeftDegrees(count * 60), (float) 2.01);
-					if(!notOnMapCircle(proposedLocation)) {
-						if (!rc.isCircleOccupiedExceptByThisRobot(proposedLocation, 1)){
+					MapLocation proposedLocation = rc.getLocation().add(start.rotateLeftDegrees(count * 60),
+							(float) 2.01);
+					if (!notOnMapCircle(proposedLocation)) {
+						if (!rc.isCircleOccupiedExceptByThisRobot(proposedLocation, 1)) {
 							rc.setIndicatorDot(proposedLocation, 255, 0, 0);
 							settleSpots++;
-						} else{
+						} else {
 							for (TreeInfo tree : nearbyTrees) {
 								if (tree.location.distanceTo(proposedLocation) <= (tree.radius + 1)) {
 									continue outer;
