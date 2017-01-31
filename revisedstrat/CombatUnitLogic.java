@@ -19,6 +19,9 @@ public class CombatUnitLogic extends RobotLogic {
 	private static MapLocation birthLocation;
 	private static int birthRound;
 
+	private static RobotInfo enemySeenLastRound;
+	private int enemyCounter = 0;
+
 	public CombatUnitLogic(RobotController rc) {
 		super(rc);
 		archonVisitedIndex = 0;
@@ -226,12 +229,24 @@ public class CombatUnitLogic extends RobotLogic {
 		RobotInfo target = getHighestPriorityTarget(enemyRobots, hitTrees);
 		// System.out.println("End bytecode for highestPriorityTarget = " +
 		// Clock.getBytecodeNum());
+
+		if (target == null) {
+			target = enemySeenLastRound;
+			enemyCounter--;
+			if (enemyCounter == 0) enemySeenLastRound = null;
+		} else {
+			enemySeenLastRound = target;
+			enemyCounter = 4;
+		}
+
 		if (target != null) {
 			// System.out.println("Found a target");
 			// Broadcast the location of the target
 			BroadcastManager.saveLocation(rc, target.location, BroadcastManager.LocationInfoType.ENEMY);
 			tryAndFireAShot(target);
 		} else {
+
+
 			// Try to get closer to the enemy
 			// System.out.println("Found no target");
 			target = (RobotInfo) getClosestBody(enemyRobots);
@@ -252,12 +267,29 @@ public class CombatUnitLogic extends RobotLogic {
 	}
 
 	private boolean shouldFireTriShot(RobotInfo target) throws GameActionException {
+		MapLocation currLoc = rc.getLocation();
+
+		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(20), true) ==
+				rc.getTeam() || getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location)
+				.rotateRightDegrees(20), true) == rc.getTeam()) {
+
+			return false;
+		}
+
 		return rc.getLocation().distanceTo(target.location) >= 5 && rc.getLocation().distanceTo(target.location) < 12;
 	}
 
 	private boolean shouldFirePentadShot(RobotInfo target) throws GameActionException {
+		MapLocation currLoc = rc.getLocation();
+		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(30), true) ==
+				rc.getTeam() || getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location)
+				.rotateRightDegrees(30), true) == rc.getTeam()) {
+
+			return false;
+		}
+
 		return true;
-		//return rc.getLocation().distanceTo(target.location) < 5;
+//		return rc.getLocation().distanceTo(target.location) < 5;
 	}
 
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
