@@ -311,10 +311,10 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private boolean notOnMapCircle(MapLocation proposedLocation) throws GameActionException {
-		return !rc.onTheMap(proposedLocation.add(Direction.NORTH, (float) 1))
-				|| !rc.onTheMap(proposedLocation.add(Direction.EAST, (float) 1))
-				|| !rc.onTheMap(proposedLocation.add(Direction.WEST, (float) 1))
-				|| !rc.onTheMap(proposedLocation.add(Direction.SOUTH, (float) 1));
+		return !rc.onTheMap(proposedLocation.add(Direction.NORTH, (float) 1.05))
+				|| !rc.onTheMap(proposedLocation.add(Direction.EAST, (float) 1.05))
+				|| !rc.onTheMap(proposedLocation.add(Direction.WEST, (float) 1.05))
+				|| !rc.onTheMap(proposedLocation.add(Direction.SOUTH, (float) 1.05));
 	}
 
 	private boolean isGoodLocation(int numRoundsSettling) {
@@ -325,7 +325,7 @@ public class GardenerLogic extends RobotLogic {
 				int settleSpots = 0;
 				TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
 				outer: for (int count = 0; count < 6; count++) {
-					MapLocation proposedLocation = rc.getLocation().add(start.rotateLeftDegrees(count * 60), 2);
+					MapLocation proposedLocation = rc.getLocation().add(start.rotateLeftDegrees(count * 60), (float) 2.01);
 					if(!notOnMapCircle(proposedLocation)) {
 						if (!rc.isCircleOccupiedExceptByThisRobot(proposedLocation, 1)){
 							rc.setIndicatorDot(proposedLocation, 255, 0, 0);

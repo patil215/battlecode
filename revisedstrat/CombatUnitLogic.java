@@ -37,6 +37,12 @@ public class CombatUnitLogic extends RobotLogic {
 
 			try {
 
+				enemyCounter--;
+				if (enemyCounter <= 0) {
+					enemyCounter = 0;
+					enemySeenLastRound = null;
+				}
+
 				// Check if visited archon location and invalidate it
 				checkVisitedArchonLocation();
 
@@ -119,7 +125,6 @@ public class CombatUnitLogic extends RobotLogic {
 							tryToMoveToDestinationTwo();
 							RobotInfo target = getHighestPriorityTarget(enemyRobots, false);
 							if (target != null) {
-								// System.out.println("Found a target");
 								// Broadcast the location of the target
 								BroadcastManager.saveLocation(rc, target.location,
 										BroadcastManager.LocationInfoType.ENEMY);
@@ -266,9 +271,6 @@ public class CombatUnitLogic extends RobotLogic {
 
 		if (target == null) {
 			target = enemySeenLastRound;
-			enemyCounter--;
-			if (enemyCounter == 0)
-				enemySeenLastRound = null;
 		} else {
 			enemySeenLastRound = target;
 			enemyCounter = COMBAT_MEMORY;
