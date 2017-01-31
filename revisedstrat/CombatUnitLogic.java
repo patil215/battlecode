@@ -14,6 +14,7 @@ public class CombatUnitLogic extends RobotLogic {
 	private final static int GARDENER_HELP_PRIORITY = 3;
 	private final static int ARCHON_HELP_PRIORITY = 2;
 	private final static int MOVE_TOWARDS_COMBAT_PRIORITY = 1;
+	private final static int COMBAT_MEMORY = 4;
 	private static int currentDestinationType;
 
 	private static MapLocation birthLocation;
@@ -236,7 +237,7 @@ public class CombatUnitLogic extends RobotLogic {
 			if (enemyCounter == 0) enemySeenLastRound = null;
 		} else {
 			enemySeenLastRound = target;
-			enemyCounter = 4;
+			enemyCounter = COMBAT_MEMORY;
 		}
 
 		if (target != null) {
