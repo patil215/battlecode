@@ -298,7 +298,7 @@ public class GardenerLogic extends RobotLogic {
 				}
 			}
 		}
-		return (((double) locationsFoundWithTrees) / locationsFoundOnMap) * 1.25;
+		return (((double) locationsFoundWithTrees) / locationsFoundOnMap) * 1.4;
 	}
 
 	/*
