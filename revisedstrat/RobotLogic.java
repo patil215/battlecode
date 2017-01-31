@@ -244,21 +244,21 @@ public abstract class RobotLogic {
 		if (Clock.getBytecodesLeft() > 120) {
 			BroadcastManager.broadcastSpam(rc);
 		}
-		try {
-			if (this instanceof CombatUnitLogic) {
-				if (!rc.hasAttacked()) {
-					MapLocation toAttack = BroadcastManager.getHashedLocationToFire(rc);
-					if (toAttack != null) {
-						System.out.println("Target at: " + toAttack);
-						rc.setIndicatorDot(toAttack, 255, 0, 0);
-						rc.fireSingleShot(rc.getLocation().directionTo(toAttack));
-						BroadcastManager.clearHashedLocation(rc);
-					}
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+//		try {
+//			if (this instanceof CombatUnitLogic) {
+//				if (!rc.hasAttacked()) {
+//					MapLocation toAttack = BroadcastManager.getHashedLocationToFire(rc);
+//					if (toAttack != null) {
+//						System.out.println("Target at: " + toAttack);
+//						rc.setIndicatorDot(toAttack, 255, 0, 0);
+//						rc.fireSingleShot(rc.getLocation().directionTo(toAttack));
+//						BroadcastManager.clearHashedLocation(rc);
+//					}
+//				}
+//			}
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
 
 		Clock.yield();
 	}
