@@ -217,7 +217,8 @@ public class ArchonLogic extends RobotLogic {
 
 	// Only spawn initial gardener if no other archons have spawned a unit.
 	private boolean shouldSpawnInitialGardener() {
-		return allyArchonLocations.length >= rc.getRobotCount();
+		return true;
+//		return allyArchonLocations.length >= rc.getRobotCount();
 	}
 
 	private final int ROUNDS_TO_WAIT_BEFORE_SPAWNING_MORE_THAN_INITIAL_GARDENER = 125;
