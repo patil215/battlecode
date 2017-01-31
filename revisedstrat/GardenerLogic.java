@@ -101,7 +101,8 @@ public class GardenerLogic extends RobotLogic {
 		if (unitSpawnDir == null) {
 			unitSpawnDir = rc.getLocation().directionTo(allyArchonLocations[0]).opposite();
 			for (int i = 0; i < 72; i++) {
-				MapLocation proposedLoc = rc.getLocation().add(unitSpawnDir, (float) (2 * type.bodyRadius + 0.1));
+				MapLocation proposedLoc = rc.getLocation().add(unitSpawnDir,
+						(float) ((float) ((2 * type.bodyRadius + 0.1)) + 0.3));
 				if (!rc.isCircleOccupied(proposedLoc, rc.getType().bodyRadius) && !notOnMapCircle(proposedLoc)) {
 					break;
 				}
@@ -299,19 +300,36 @@ public class GardenerLogic extends RobotLogic {
 		// TODO: Fix logical error with trees that are only partially in the
 		// sense radius.
 		int locationsFoundOnMap = 0;
-		int locationsFoundWithTrees = 0;
+		double locationsFoundWithTrees = 0;
 		for (int count = 0; count < 50; count++) {
-			MapLocation toTest = rc.getLocation().add(Utils.randomDirection(),
-					(float) (rc.getType().sensorRadius * Math.random()));
+
+			Direction dir = Utils.randomDirection();
+			float radius = (float)(rc.getType().sensorRadius * Math.random());
+			float jacobian = (float)(rc.getType().sensorRadius * Math.random());
+
+			while(jacobian > radius){
+				radius = (float)(rc.getType().sensorRadius * Math.random());
+				jacobian = (float)(rc.getType().sensorRadius * Math.random());
+			}
+
+			MapLocation toTest = rc.getLocation().add(dir,radius);
 			if (rc.onTheMap(toTest)) {
 				locationsFoundOnMap++;
 				TreeInfo foundTree = rc.senseTreeAtLocation(toTest);
-				if (foundTree != null && foundTree.team != rc.getTeam()) {
-					locationsFoundWithTrees++;
+				if (foundTree != null) {
+					/*if(foundTree.team != rc.getTeam()) {
+						locationsFoundWithTrees += 0.25;
+					} else {*/
+						locationsFoundWithTrees += 1;
+					//}
 				}
 			}
 		}
-		return (((double) locationsFoundWithTrees) / locationsFoundOnMap) * 1.5;
+		/*double monteCarloRatio = locationsFoundWithTrees / (double) locationsFoundOnMap;
+		double chance = monteCarloRatio * 3;
+		System.out.println(chance);
+		return chance;*/
+		return (locationsFoundWithTrees / locationsFoundOnMap) * 1.5;
 	}
 
 	/*

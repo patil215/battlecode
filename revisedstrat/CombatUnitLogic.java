@@ -24,12 +24,15 @@ public class CombatUnitLogic extends RobotLogic {
 	private static RobotInfo enemySeenLastRound;
 	private int enemyCounter = 0;
 
+	private boolean respondToHelp;
+
 	public CombatUnitLogic(RobotController rc) {
 		super(rc);
 		archonVisitedIndex = 0;
 		currentDestinationType = 0;
 		birthLocation = rc.getLocation();
 		birthRound = rc.getRoundNum();
+		respondToHelp = Math.random() > 0.4 || rc.getRoundNum() < 360;
 	}
 
 	@Override
@@ -90,7 +93,7 @@ public class CombatUnitLogic extends RobotLogic {
 							|| gardenerHelpLocation.y != getDestination().y) {
 
 						if ((getDestination() == null || (rc.getLocation().distanceTo(gardenerHelpLocation) * 1.5 < rc
-								.getLocation().distanceTo(getDestination()))) && rc.getLocation().distanceTo(gardenerHelpLocation) < 50) {
+								.getLocation().distanceTo(getDestination()))) && rc.getLocation().distanceTo(gardenerHelpLocation) < 50 && respondToHelp) {
 							setDestination(gardenerHelpLocation);
 							currentDestinationType = GARDENER_HELP_PRIORITY;
 							dodgeBullets();
@@ -121,7 +124,7 @@ public class CombatUnitLogic extends RobotLogic {
 					if (currentDestinationType < ARCHON_HELP_PRIORITY || archonHelpLocation.x != getDestination().x
 							|| archonHelpLocation.y != getDestination().y) {
 						if ((getDestination() == null || (rc.getLocation().distanceTo(archonHelpLocation) * 1.5 < rc
-								.getLocation().distanceTo(getDestination()))) && rc.getLocation().distanceTo(archonHelpLocation) < 50) {
+								.getLocation().distanceTo(getDestination()))) && rc.getLocation().distanceTo(archonHelpLocation) < 50 && respondToHelp) {
 							setDestination(archonHelpLocation);
 							currentDestinationType = ARCHON_HELP_PRIORITY;
 							dodgeBullets();
