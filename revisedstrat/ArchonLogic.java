@@ -184,16 +184,18 @@ public class ArchonLogic extends RobotLogic {
 			}
 		}
 
-		BroadcastManager.writeLumberjackInitialCount(rc, numLumberjacks);
 
 		float totalBulletCount = 0;
 		for (TreeInfo t : nearbyTrees) {
 			totalBulletCount += t.containedBullets;
 		}
 
+		System.out.println("BULLET COUNT: " + totalBulletCount);
 		if (totalBulletCount > 35) {
 			BroadcastManager.writeScoutInitialCount(rc, 1);
 		}
+
+		BroadcastManager.writeLumberjackInitialCount(rc, numLumberjacks);
 
 		System.out.println("Sight range ratio: " + sightRangeRatio);
 		System.out.println("Monte carlo ratio: " + monteCarloRatio);
@@ -272,7 +274,7 @@ public class ArchonLogic extends RobotLogic {
 			}
 		}
 
-		if (gardenerCount > rc.senseNearbyTrees(-1, allyTeam).length) {
+		if (gardenerCount > rc.senseNearbyTrees(-1, allyTeam).length / 2) {
 			return false;
 		}
 

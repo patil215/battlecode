@@ -10,7 +10,7 @@ public class GardenerLogic extends RobotLogic {
 
 	private final int NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE = 0;
 	private final int NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE = 2000;
-	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER = 50;
+	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER = 40;
 	private final int NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE;
 	private final float MIN_FREE_SPACE_REQUIREMENT = 5;
 
@@ -30,7 +30,7 @@ public class GardenerLogic extends RobotLogic {
 		moveDir = Utils.diagonalDirection();
 		UNIT_SPAWNER_ELIGIBLE = rc.getRoundNum() > NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE;
 		DEGENERATE_ELIGIBLE = rc.getRoundNum() < NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE;
-		NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = rc.getRoundNum() < 20 ? 20 : 50;
+		NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = rc.getRoundNum() < 20 ? 15 : 50;
 		INITIAL = rc.getRobotCount() - allyArchonLocations.length == 1;
 		builtInitialUnits = false;
 		builtInitialUnit1 = false;
@@ -147,6 +147,7 @@ public class GardenerLogic extends RobotLogic {
 				if (BroadcastManager.getScoutInitialCount(rc) > 0) {
 					boolean result = tryToBuildUnit(RobotType.SCOUT);
 					if(result) {
+						spawnedScout = true;
 						builtInitialUnit1 = true;
 						return;
 					}
@@ -270,7 +271,19 @@ public class GardenerLogic extends RobotLogic {
 		}
 	}
 
+	private boolean spawnedScout = false;
+
 	private RobotType determineUnitToSpawn(Direction intendedDirection) throws GameActionException {
+		float totalBulletCount = 0;
+		TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
+		for (TreeInfo t : nearbyTrees) {
+			totalBulletCount += t.containedBullets;
+		}
+		System.out.println(totalBulletCount);
+		if (totalBulletCount > 25 && !spawnedScout) {
+			spawnedScout = true;
+			return RobotType.SCOUT;
+		}
 		if (rc.canBuildRobot(RobotType.TANK, intendedDirection)) {
 			return RobotType.TANK;
 		}
@@ -378,6 +391,7 @@ public class GardenerLogic extends RobotLogic {
 				Direction start = rc.getLocation().directionTo(allyArchonLocations[0]).opposite();
 				int settleSpots = 0;
 				TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
+				RobotInfo[] nearbyRobots = rc.senseNearbyRobots(-1, allyTeam);
 				outer: for (int count = 0; count < 6; count++) {
 					MapLocation proposedLocation = rc.getLocation().add(start.rotateLeftDegrees(count * 60),
 							(float) 2.01);
@@ -388,6 +402,12 @@ public class GardenerLogic extends RobotLogic {
 						} else {
 							for (TreeInfo tree : nearbyTrees) {
 								if (tree.location.distanceTo(proposedLocation) <= (tree.radius + 1)) {
+									continue outer;
+								}
+							}
+							for (RobotInfo robot : nearbyRobots) {
+								if(robot.type == RobotType.ARCHON
+										 && robot.location.distanceTo(proposedLocation) <= (robot.type.bodyRadius + 1)) {
 									continue outer;
 								}
 							}
