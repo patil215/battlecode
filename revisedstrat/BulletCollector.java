@@ -23,8 +23,24 @@ public class BulletCollector extends RobotLogic {
 					Direction toMove = rc.getLocation().directionTo(goodTreeLocation);
 					toMove = getDirectionTowards(toMove);
 					move(toMove);
-				} else {
+
+					dodgeBullets();
+					RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
+					if (enemyRobots.length > 0) {
+						BroadcastManager.saveLocation(rc, enemyRobots[0].location,
+								BroadcastManager.LocationInfoType.ENEMY);
+					}
+				} else if(rc.getRoundNum() > 500) {
 					System.out.println("MOving with a random bounce");
+					CombatUnitLogic logic = new CombatUnitLogic(rc);
+					logic.run();
+				} else {
+					dodgeBullets();
+					RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
+					if (enemyRobots.length > 0) {
+						BroadcastManager.saveLocation(rc, enemyRobots[0].location,
+								BroadcastManager.LocationInfoType.ENEMY);
+					}
 					moveDir = this.moveWithRandomBounce(moveDir);
 				}
 
