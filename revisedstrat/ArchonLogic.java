@@ -252,7 +252,9 @@ public class ArchonLogic extends RobotLogic {
 			}
 		}
 
-		if (gardenerCount >= rc.getTreeCount()) return false;
+		if (gardenerCount >= rc.getTreeCount()) {
+			return false;
+		}
 
 		double spawnChance = (rc.getRoundNum() > ROUNDS_WHEN_LATE) ?
 		 GARDENER_SPAWN_CHANCE_LATE : GARDENER_SPAWN_CHANCE_EARLY;

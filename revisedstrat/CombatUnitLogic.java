@@ -322,7 +322,6 @@ public class CombatUnitLogic extends RobotLogic {
 				.getTeam()
 				|| getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateRightDegrees(30),
 						true) == rc.getTeam()) {
-
 			return false;
 		}
 
