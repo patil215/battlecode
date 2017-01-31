@@ -339,30 +339,38 @@ public abstract class RobotLogic {
 
 	public Team getFirstHitTeamAprox(MapLocation location, Direction direction, boolean hitTrees)
 			throws GameActionException {
+		BodyInfo bodyInfo = getFirstHitTargetAprox(location, direction);
+		if (bodyInfo != null) {
+			if (bodyInfo instanceof RobotInfo) {
+				return ((RobotInfo) bodyInfo).getTeam();
+			}
+			if (bodyInfo instanceof TreeInfo && hitTrees) {
+				return ((TreeInfo) bodyInfo).getTeam();
+			}
+		}
+		return Team.NEUTRAL;
+	}
+
+	public BodyInfo getFirstHitTargetAprox(MapLocation location, Direction direction) throws GameActionException {
 		MapLocation testLocation = location.add(direction, type.bodyRadius + GameConstants.BULLET_SPAWN_OFFSET);
 		while (rc.canSenseLocation(testLocation)) {
 			if (rc.isLocationOccupied(testLocation)) {
 				TreeInfo targetTree = rc.senseTreeAtLocation(testLocation);
 				if (targetTree != null) {
-					if (hitTrees) {
-						return targetTree.getTeam();
-					} else {
-						return Team.NEUTRAL;
-					}
+					return targetTree;
 				}
 				RobotInfo targetRobot = rc.senseRobotAtLocation(testLocation);
 				if (targetRobot != null) {
-					return targetRobot.team;
+					return targetRobot;
 				} else {
-					// System.out.println("This should never happen");
-					return Team.NEUTRAL;
+					return null;
 				}
 			} else {
 				float DELTA_BULLET_DISTANCE = .5f;
 				testLocation = testLocation.add(direction, DELTA_BULLET_DISTANCE);
 			}
 		}
-		return Team.NEUTRAL;
+		return null;
 	}
 
 	/*
@@ -522,9 +530,20 @@ public abstract class RobotLogic {
 				MapLocation bulletSpawnPoint = rc.getLocation().add(toEnemy, spawnOffset);
 
 				// Only attack if we will hit an enemy.
-				if (getFirstHitTeamAprox(bulletSpawnPoint, toEnemy, hitTrees) == enemyTeam) {
-					maxIndex = index;
-					maxPriority = priority;
+				BodyInfo firstHitObject = getFirstHitTargetAprox(bulletSpawnPoint, toEnemy);
+				if ((firstHitObject instanceof RobotInfo && ((RobotInfo) firstHitObject).getTeam().equals(enemyTeam))
+						|| (firstHitObject instanceof TreeInfo
+								&& ((TreeInfo) firstHitObject).getTeam().equals(enemyTeam) && hitTrees)) {
+					if (firstHitObject instanceof TreeInfo) {
+						maxIndex = index;
+						maxPriority = priority;
+					} else if (firstHitObject instanceof RobotInfo
+							&& firstHitObject.getID() == enemies[index].getID()) {
+						maxIndex = index;
+						maxPriority = priority;
+					}
+					// if (getFirstHitTeamAprox(bulletSpawnPoint, toEnemy,
+					// hitTrees) == enemyTeam) {
 					// System.out.println("We have found a new target");
 				}
 			}
@@ -771,7 +790,8 @@ public abstract class RobotLogic {
 			// Short term dodge
 			if (bulletIntersecting(rc.getLocation(), segments)) {
 				MapLocation safeLocation = getBulletAvoidingLocation(segments, 4000);
-				//MapLocation safeLocation = getBulletMinimizingLocation(segments, 9000);
+				// MapLocation safeLocation =
+				// getBulletMinimizingLocation(segments, 9000);
 				if (safeLocation != null) {
 					System.out.println("dodging by random");
 					move(safeLocation);
@@ -906,7 +926,8 @@ public abstract class RobotLogic {
 		return null;
 	}
 
-	private MapLocation getBulletMinimizingLocation(MapLocation[][] bulletSegments, int bytecodeToSpend) throws GameActionException {
+	private MapLocation getBulletMinimizingLocation(MapLocation[][] bulletSegments, int bytecodeToSpend)
+			throws GameActionException {
 		int minBulletsHit = numBulletsIntersecting(rc.getLocation(), bulletSegments);
 		MapLocation mapLocation = rc.getLocation();
 
