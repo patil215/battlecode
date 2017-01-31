@@ -126,6 +126,8 @@ public class GardenerLogic extends RobotLogic {
 
 	private void buildInitialRoundsUnits() throws GameActionException {
 
+		tryToBuildUnit(RobotType.SCOUT);
+		
 		int numLumberjacks = BroadcastManager.getLumberjackInitialCount(rc);
 
 		if (numLumberjacks == 0) {

@@ -103,10 +103,10 @@ public abstract class RobotLogic {
 		if (rc.getType() != RobotType.TANK) {
 			return rc.canMove(toMove);
 		} else if (rc.canMove(toMove)) {
-			//System.out.println("We can move, but we are a tank.");
+			// System.out.println("We can move, but we are a tank.");
 			if (rc.isCircleOccupiedExceptByThisRobot(rc.getLocation().add(toMove, rc.getType().strideRadius),
 					rc.getType().bodyRadius)) {
-				//System.out.println("The circle is occupied");
+				// System.out.println("The circle is occupied");
 				TreeInfo[] possibleHitAllyTrees = rc
 						.senseNearbyTrees(rc.getType().strideRadius + rc.getType().bodyRadius, rc.getTeam());
 				for (TreeInfo t : possibleHitAllyTrees) {
@@ -158,12 +158,13 @@ public abstract class RobotLogic {
 				return false;
 			}
 		}
-		//System.out.println("Reached. This should never happen if a unit is not trapped.");
+		// System.out.println("Reached. This should never happen if a unit is
+		// not trapped.");
 		return false;
 	}
 
 	public boolean move(MapLocation location) throws GameActionException {
-		if(location == null) {
+		if (location == null) {
 			return false;
 		}
 		if (!rc.hasMoved()) {
@@ -174,7 +175,7 @@ public abstract class RobotLogic {
 	}
 
 	public boolean move(Direction direction) throws GameActionException {
-		if(direction == null) {
+		if (direction == null) {
 			return false;
 		}
 		if (!rc.hasMoved() && smartCanMove(direction)) {
@@ -185,7 +186,7 @@ public abstract class RobotLogic {
 	}
 
 	public boolean move(Direction direction, float distance) throws GameActionException {
-		if(direction == null) {
+		if (direction == null) {
 			return false;
 		}
 		if (!rc.hasMoved() && smartCanMove(direction, distance)) {
@@ -235,12 +236,28 @@ public abstract class RobotLogic {
 			 */
 		// drawDots();
 		TreeInfo[] nearbyTrees = rc.senseNearbyTrees(5);
-		if(nearbyTrees.length==0){
+		if (nearbyTrees.length == 0) {
 			BroadcastManager.saveLocation(rc, rc.getLocation(), LocationInfoType.GOOD_SPOT);
 		}
-		if(Clock.getBytecodesLeft()>120){
+		if (Clock.getBytecodesLeft() > 120) {
 			BroadcastManager.broadcastSpam(rc);
 		}
+		try {
+			if (this instanceof CombatUnitLogic) {
+				if (!rc.hasAttacked()) {
+					MapLocation toAttack = BroadcastManager.getHashedLocationToFire(rc);
+					if (toAttack != null) {
+						System.out.println("Target at: " + toAttack);
+						rc.setIndicatorDot(toAttack, 255, 0, 0);
+						rc.fireSingleShot(rc.getLocation().directionTo(toAttack));
+						BroadcastManager.clearHashedLocation(rc);
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 		Clock.yield();
 	}
 
@@ -250,7 +267,7 @@ public abstract class RobotLogic {
 		float bullets = rc.getTeamBullets();
 		if (bullets > /* 250 */ BULLETS_TO_DONATE) {
 			int bulletCount = (int) ((bullets - BULLETS_TO_DONATE) / rc.getVictoryPointCost());
-			//System.out.println(bulletCount);
+			// System.out.println(bulletCount);
 			float donationAmount = ((float) (bulletCount)) * rc.getVictoryPointCost();
 			rc.donate(donationAmount + 0.01f);
 		}
@@ -309,7 +326,7 @@ public abstract class RobotLogic {
 		if (rc.canShake()) {
 			TreeInfo[] trees = rc.senseNearbyTrees();
 			for (TreeInfo t : trees) {
-				if (t.containedBullets>0&&rc.canShake(t.ID)) {
+				if (t.containedBullets > 0 && rc.canShake(t.ID)) {
 					rc.shake(t.ID);
 					System.out.println("We shook a tree");
 					return;
@@ -336,7 +353,7 @@ public abstract class RobotLogic {
 				if (targetRobot != null) {
 					return targetRobot.team;
 				} else {
-					//System.out.println("This should never happen");
+					// System.out.println("This should never happen");
 					return Team.NEUTRAL;
 				}
 			} else {
@@ -507,7 +524,7 @@ public abstract class RobotLogic {
 				if (getFirstHitTeamAprox(bulletSpawnPoint, toEnemy, hitTrees) == enemyTeam) {
 					maxIndex = index;
 					maxPriority = priority;
-					//System.out.println("We have found a new target");
+					// System.out.println("We have found a new target");
 				}
 			}
 		}
@@ -580,10 +597,13 @@ public abstract class RobotLogic {
 		for (BulletInfo bullet : bullets) {
 			float angleTolerance = (float) (Math.abs(
 					Math.asin(type.bodyRadius / bullet.getLocation().distanceTo(rc.getLocation()))) + ANGLE_EPSILON);
-			//System.out.println(angleTolerance);
+			// System.out.println(angleTolerance);
 			if (Math.abs(bullet.location.directionTo(rc.getLocation()).radiansBetween(bullet.dir)) < angleTolerance) {
-				/*System.out.println("incoming bullet "
-						+ Math.abs(bullet.location.directionTo(rc.getLocation()).radiansBetween(bullet.dir)));*/
+				/*
+				 * System.out.println("incoming bullet " +
+				 * Math.abs(bullet.location.directionTo(rc.getLocation()).
+				 * radiansBetween(bullet.dir)));
+				 */
 				rc.setIndicatorDot(bullet.location, 0, 255, 0);
 				return true;
 			}
@@ -873,24 +893,25 @@ public abstract class RobotLogic {
 		if (rc.getType() != RobotType.TANK) {
 			return rc.canMove(startLoc);
 		} else if (rc.canMove(startLoc)) {
-			//System.out.println("We can move, but we are a tank");
+			// System.out.println("We can move, but we are a tank");
 			if (rc.isCircleOccupiedExceptByThisRobot(startLoc, rc.getType().bodyRadius)) {
 				TreeInfo[] possibleHitAllyTrees = rc
 						.senseNearbyTrees(rc.getType().strideRadius + rc.getType().bodyRadius, rc.getTeam());
 				for (TreeInfo t : possibleHitAllyTrees) {
 					if (Math.abs((rc.getLocation().directionTo(startLoc))
 							.degreesBetween(rc.getLocation().directionTo(t.location))) < 90) {
-						//System.out.println("There is an ally tree that we can hit.");
+						// System.out.println("There is an ally tree that we can
+						// hit.");
 						return false;
 					}
 				}
-				//System.out.println("We will hit no ally trees");
+				// System.out.println("We will hit no ally trees");
 				return true;
 			} else {
 				return true;
 			}
 		}
-		//System.out.println("We can't move to the desired location.");
+		// System.out.println("We can't move to the desired location.");
 		return false;
 
 	}
@@ -961,7 +982,9 @@ public abstract class RobotLogic {
 		}
 		rc.setIndicatorLine(rc.getLocation(), destination, 0, 0, 40);
 		MapLocation currentLocation = rc.getLocation();
-		Direction toMove = new Direction( (float) (((int)(rc.getLocation().directionTo(destination).getAngleDegrees()/5)*5)*Math.PI/180));
+		Direction toMove = new Direction(
+				(float) (((int) (rc.getLocation().directionTo(destination).getAngleDegrees() / 5) * 5) * Math.PI
+						/ 180));
 		float currentDistance = currentLocation.distanceTo(destination);
 		/*
 		 * System.out.println("Current distance is: " + currentDistance +
@@ -1082,7 +1105,8 @@ public abstract class RobotLogic {
 			if (rc.canSenseLocation(proposedLocation) && rc.onTheMap(proposedLocation)) {
 				rc.setIndicatorDot(proposedLocation, 255, 255, 255);
 			}
-			//System.out.println("UOSEFIJE " + (Clock.getBytecodeNum() - bytecode));
+			// System.out.println("UOSEFIJE " + (Clock.getBytecodeNum() -
+			// bytecode));
 		}
 	}
 

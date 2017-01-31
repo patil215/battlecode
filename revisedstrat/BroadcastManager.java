@@ -21,7 +21,8 @@ public class BroadcastManager {
 	 * nonzero)
 	 */
 	public enum LocationInfoType {
-		ENEMY(0, 1, 1), ENEMY_NOT_ARCHON(2, 3, 3), ARCHON_HELP(21, 22, 22), GARDENER_HELP(25, 26, 26), LUMBERJACK_GET_HELP(31,32,32), GOOD_SPOT(40,41,41);
+		ENEMY(0, 1, 1), ENEMY_NOT_ARCHON(2, 3, 3), ARCHON_HELP(21, 22, 22), GARDENER_HELP(25, 26,
+				26), LUMBERJACK_GET_HELP(31, 32, 32), GOOD_SPOT(40, 41, 41);
 
 		// Represents the index that stores the pointer (i.e. index) of the most
 		// recently added/modified location
@@ -50,6 +51,10 @@ public class BroadcastManager {
 
 	private static int NUM_LUMBERJACK_INITIAL_INDEX = 100;
 
+	private static int START_HASH_CHANNEL = 200;
+
+	private static int FINISH_HASH_CHANNEL = 9999;
+
 	/*
 	 * Represents the count of a specific unit. All unit types can be written
 	 * directly except for ALLY_ROBOT_TOTAL and ALLY_ENEMY_TOTAL - these are
@@ -72,18 +77,44 @@ public class BroadcastManager {
 	}
 
 	/*
-	 * Sets up the initial values for the locationPointerIndex values
-	 * Returns true if this is the first time this method has been called.
+	 * Sets up the initial values for the locationPointerIndex values Returns
+	 * true if this is the first time this method has been called.
 	 */
-	public static boolean initializeLocationPointerIndexValues(RobotController rc) throws GameActionException{
-		if(rc.readBroadcast(SETUP_INDEX)==0){
+	public static boolean initializeLocationPointerIndexValues(RobotController rc) throws GameActionException {
+		if (rc.readBroadcast(SETUP_INDEX) == 0) {
 			rc.broadcast(SETUP_INDEX, 1);
-			for(LocationInfoType type : LocationInfoType.values()) {
+			for (LocationInfoType type : LocationInfoType.values()) {
 				rc.broadcast(type.locationPointerIndex, (type.locationStartIndex));
 			}
 			return true;
 		}
 		return false;
+	}
+
+	public static void hashLocationToFire(RobotController rc, int ID, MapLocation location)
+			throws GameActionException, Exception {
+		int hashedID = BroadcastManager.START_HASH_CHANNEL
+				+ ((BroadcastManager.FINISH_HASH_CHANNEL - BroadcastManager.START_HASH_CHANNEL) * ID) / 32000;
+		int x = ((int) location.x) * 10;
+		int y = ((int) location.y) * 10;
+		rc.broadcast(hashedID, BroadcastManager.zipValues(x, y));
+	}
+
+	public static MapLocation getHashedLocationToFire(RobotController rc) throws GameActionException, Exception {
+		int hashedID = hashID(rc);
+		int val = rc.readBroadcast(hashedID);
+		if (val != 0) {
+			int[] values = BroadcastManager.unzipValues(val, 2);
+			MapLocation toReturn = new MapLocation(values[0]/10f, values[1]/10f);
+			return toReturn;
+		}
+		return null;
+	}
+
+	private static int hashID(RobotController rc) {
+		int hashedID = BroadcastManager.START_HASH_CHANNEL
+				+ ((BroadcastManager.FINISH_HASH_CHANNEL - BroadcastManager.START_HASH_CHANNEL) * rc.getID()) / 32000;
+		return hashedID;
 	}
 
 	public static void writeLumberjackInitialCount(RobotController rc, int numLumberjacks) throws GameActionException {
@@ -262,6 +293,11 @@ public class BroadcastManager {
 		}
 
 		return resp;
+	}
+
+	public static void clearHashedLocation(RobotController rc) throws GameActionException {
+		int hashedVal = hashID(rc);
+		rc.broadcast(hashedVal, 0);
 	}
 
 }
