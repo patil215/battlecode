@@ -11,7 +11,7 @@ public class CombatUnitLogic extends RobotLogic {
 	private final int SOLDIER_UNIT_COUNT_ATTACK_THRESHOLD = 15;
 
 	private int archonVisitedIndex;
-	private final static int IN_COMBAT_PRIORITY = 4;
+	//private final static int IN_COMBAT_PRIORITY = 4;
 	private final static int GARDENER_HELP_PRIORITY = 3;
 	private final static int ARCHON_HELP_PRIORITY = 2;
 	private final static int MOVE_TOWARDS_COMBAT_PRIORITY = 1;
@@ -72,6 +72,8 @@ public class CombatUnitLogic extends RobotLogic {
 				// Combat mode
 				RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
 				if (enemyRobots.length > 0) {
+					currentDestinationType = 0;
+					setDestination(null);
 					executeCombat();
 					endTurn();
 					continue;
@@ -94,11 +96,13 @@ public class CombatUnitLogic extends RobotLogic {
 							dodgeBullets();
 							tryToMoveToDestinationTwo();
 							RobotInfo target = getHighestPriorityTarget(enemyRobots, false);
-							if (target != null && target.type != RobotType.ARCHON) {
+							if (target != null) {
 								// System.out.println("Found a target");
 								// Broadcast the location of the target
-								BroadcastManager.saveLocation(rc, target.location,
-										BroadcastManager.LocationInfoType.ENEMY);
+								if((target.type != RobotType.ARCHON || rc.getRoundNum() > 500)) {
+									BroadcastManager.saveLocation(rc, target.location,
+											BroadcastManager.LocationInfoType.ENEMY);
+								}
 								tryAndFireAShot(target);
 							}
 							endTurn();
@@ -123,10 +127,12 @@ public class CombatUnitLogic extends RobotLogic {
 							dodgeBullets();
 							tryToMoveToDestinationTwo();
 							RobotInfo target = getHighestPriorityTarget(enemyRobots, false);
-							if (target != null && target.type != RobotType.ARCHON) {
+							if (target != null) {
 								// Broadcast the location of the target
-								BroadcastManager.saveLocation(rc, target.location,
-										BroadcastManager.LocationInfoType.ENEMY);
+								if((target.type != RobotType.ARCHON || rc.getRoundNum() > 500)) {
+									BroadcastManager.saveLocation(rc, target.location,
+											BroadcastManager.LocationInfoType.ENEMY);
+								}
 								tryAndFireAShot(target);
 							}
 							endTurn();
@@ -151,11 +157,13 @@ public class CombatUnitLogic extends RobotLogic {
 								dodgeBullets();
 								boolean success = tryToMoveToDestinationTwo();
 								RobotInfo target = getHighestPriorityTarget(enemyRobots, false);
-								if (target != null && target.type != RobotType.ARCHON) {
+								if (target != null) {
 									// System.out.println("Found a target");
 									// Broadcast the location of the target
-									BroadcastManager.saveLocation(rc, target.location,
-											BroadcastManager.LocationInfoType.ENEMY);
+									if((target.type != RobotType.ARCHON || rc.getRoundNum() > 500)) {
+										BroadcastManager.saveLocation(rc, target.location,
+												BroadcastManager.LocationInfoType.ENEMY);
+									}
 									tryAndFireAShot(target);
 								}
 
@@ -173,11 +181,13 @@ public class CombatUnitLogic extends RobotLogic {
 					dodgeBullets();
 					tryToMoveToDestinationTwo();
 					RobotInfo target = getHighestPriorityTarget(enemyRobots, false);
-					if (target != null && target.type != RobotType.ARCHON) {
+					if (target != null) {
 						// System.out.println("Found a target");
 						// Broadcast the location of the target
-						BroadcastManager.saveLocation(rc, target.location,
-								BroadcastManager.LocationInfoType.ENEMY);
+						if((target.type != RobotType.ARCHON || rc.getRoundNum() > 500)) {
+							BroadcastManager.saveLocation(rc, target.location,
+									BroadcastManager.LocationInfoType.ENEMY);
+						}
 						tryAndFireAShot(target);
 					}
 					endTurn();
@@ -254,11 +264,12 @@ public class CombatUnitLogic extends RobotLogic {
 						&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 4.2)
 						|| (robotInfo.getType().equals(RobotType.LUMBERJACK)
 								&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 3.5)) {
-					if(currentDestinationType<IN_COMBAT_PRIORITY){
+					move(getDirectionTowards(robotInfo.getLocation()));
+					/*if(currentDestinationType<IN_COMBAT_PRIORITY){
 						this.setDestination(robotInfo.location);
 						System.out.println("New destination 1 is: " + this.getDestination() );
 						currentDestinationType = IN_COMBAT_PRIORITY;
-					}
+					}*/
 					tryToMoveToDestinationTwo();
 				}
 			}
@@ -299,15 +310,23 @@ public class CombatUnitLogic extends RobotLogic {
 			// Try to get closer to the enemy
 			// System.out.println("Found no target");
 			target = (RobotInfo) getClosestBody(enemyRobots);
-			if (target != null && target.type != RobotType.ARCHON) {
-				BroadcastManager.saveLocation(rc, target.location, LocationInfoType.ENEMY);
-				if(currentDestinationType< IN_COMBAT_PRIORITY){
+			if (target != null) {
+				if((target.type != RobotType.ARCHON || rc.getRoundNum() > 500)) {
+					BroadcastManager.saveLocation(rc, target.location, LocationInfoType.ENEMY);
+				}
+				Direction toMove = getDirectionTowards(target.location);
+				if (toMove != null) {
+					if (smartCanMove(toMove)) {
+						move(toMove);
+					}
+				} else {
+				/*if(currentDestinationType< IN_COMBAT_PRIORITY){
 					this.setDestination(target.location);
 					currentDestinationType = IN_COMBAT_PRIORITY;
 				}
 				System.out.println("My destination is : " + this.getDestination());
 				boolean hasMoved = this.tryToMoveToDestinationTwo();
-				if (!hasMoved) {
+				if (!hasMoved) {*/
 					moveWithRandomBounce(Utils.randomDirection());
 				}
 			} else {

@@ -165,15 +165,33 @@ public class ArchonLogic extends RobotLogic {
 			numLumberjacks++;
 		}
 
-		BroadcastManager.writeLumberjackInitialCount(rc, numLumberjacks);
-		
 		TreeInfo[] nearbyTrees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
-		float totalBulletCount = 0;
-		for(TreeInfo t: nearbyTrees){
-			totalBulletCount+=t.containedBullets;
+
+		// Spawn lumberjack if we gonna get goodies
+		if (numLumberjacks == 0) {
+			int goodieCount = 0;
+			for (TreeInfo tree : nearbyTrees) {
+				RobotType containedRobot = tree.containedRobot;
+				if (containedRobot != null && (containedRobot == RobotType.ARCHON
+						|| containedRobot == RobotType.LUMBERJACK || containedRobot == RobotType.TANK
+				|| containedRobot == RobotType.SOLDIER)) {
+					System.out.println("goodie! " + goodieCount);
+					goodieCount++;
+				}
+			}
+			if (goodieCount >= 3) {
+				numLumberjacks++;
+			}
 		}
-		
-		if(totalBulletCount>40){
+
+		BroadcastManager.writeLumberjackInitialCount(rc, numLumberjacks);
+
+		float totalBulletCount = 0;
+		for (TreeInfo t : nearbyTrees) {
+			totalBulletCount += t.containedBullets;
+		}
+
+		if (totalBulletCount > 35) {
 			BroadcastManager.writeScoutInitialCount(rc, 1);
 		}
 
@@ -230,7 +248,7 @@ public class ArchonLogic extends RobotLogic {
 
 	// Only spawn initial gardener if no other archons have spawned a unit.
 	private boolean shouldSpawnInitialGardener() {
-//		return true;
+		// return true;
 		return allyArchonLocations.length >= rc.getRobotCount();
 	}
 
@@ -240,7 +258,6 @@ public class ArchonLogic extends RobotLogic {
 	private final int ROUNDS_WHEN_LATE = 500;
 
 	private boolean shouldSpawnGardener() throws GameActionException {
-
 
 		if (rc.getRoundNum() > 100 && rc.getRobotCount() - allyArchonLocations.length == 0
 				&& (!inDanger() || rc.getTeamBullets() >= 200)) {
@@ -259,8 +276,8 @@ public class ArchonLogic extends RobotLogic {
 			return false;
 		}
 
-		double spawnChance = (rc.getRoundNum() > ROUNDS_WHEN_LATE) ?
-		 GARDENER_SPAWN_CHANCE_LATE : GARDENER_SPAWN_CHANCE_EARLY;
+		double spawnChance = (rc.getRoundNum() > ROUNDS_WHEN_LATE) ? GARDENER_SPAWN_CHANCE_LATE
+				: GARDENER_SPAWN_CHANCE_EARLY;
 
 		if (rc.getRoundNum() > ROUNDS_TO_WAIT_BEFORE_SPAWNING_MORE_THAN_INITIAL_GARDENER) {
 			Random rand = new Random((long) (rc.getID() * rc.getTeamBullets()));
@@ -344,7 +361,7 @@ public class ArchonLogic extends RobotLogic {
 	}
 
 	private void broadcastForHelpIfNeeded() throws GameActionException {
-		if(inDanger()) {
+		if (inDanger()) {
 			RobotInfo[] foes = rc.senseNearbyRobots(-1, enemyTeam);
 			BroadcastManager.saveLocation(rc, foes[0].location, LocationInfoType.ARCHON_HELP);
 		}

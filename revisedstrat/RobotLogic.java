@@ -14,7 +14,7 @@ public abstract class RobotLogic {
 
 	public RobotController rc;
 
-	private static int ARCHON_IGNORE_ROUND = 150;
+	private static int ARCHON_IGNORE_ROUND = 175;
 
 	private static final float NO_INTERSECT = Float.NEGATIVE_INFINITY;
 
