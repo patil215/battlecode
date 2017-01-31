@@ -244,7 +244,7 @@ public class ArchonLogic extends RobotLogic {
 			return true;
 		}
 
-		RobotInfo[] robots = rc.senseNearbyRobots();
+		RobotInfo[] robots = rc.senseNearbyRobots(-1, allyTeam);
 		int gardenerCount = 0;
 		for (RobotInfo robot : robots) {
 			if (robot.getType() == RobotType.GARDENER) {
@@ -252,7 +252,7 @@ public class ArchonLogic extends RobotLogic {
 			}
 		}
 
-		if (gardenerCount >= rc.getTreeCount()) {
+		if (gardenerCount >= rc.senseNearbyTrees(-1, allyTeam).length) {
 			return false;
 		}
 
