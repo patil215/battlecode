@@ -1045,9 +1045,10 @@ public abstract class RobotLogic {
 		}
 		rc.setIndicatorLine(rc.getLocation(), destination, 0, 0, 40);
 		MapLocation currentLocation = rc.getLocation();
-		Direction toMove = new Direction(
+		/*Direction toMove = new Direction(
 				(float) (((int) (rc.getLocation().directionTo(destination).getAngleDegrees() / 5) * 5) * Math.PI
-						/ 180));
+						/ 180));*/
+		Direction toMove = rc.getLocation().directionTo(destination);
 		float currentDistance = currentLocation.distanceTo(destination);
 		/*
 		 * System.out.println("Current distance is: " + currentDistance +
