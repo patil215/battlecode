@@ -125,7 +125,11 @@ public class GardenerLogic extends RobotLogic {
 		int numLumberjacks = BroadcastManager.getLumberjackInitialCount(rc);
 
 		if (numLumberjacks == 0) {
-			tryToBuildUnit(RobotType.SCOUT);
+			if(BroadcastManager.getScoutInitialCount(rc)>0){
+				tryToBuildUnit(RobotType.SCOUT);				
+			} else{
+				tryToBuildUnit(RobotType.SOLDIER);
+			}
 			// Wait until we can build second unit
 			while (rc.getBuildCooldownTurns() != 0) {
 				endTurn();

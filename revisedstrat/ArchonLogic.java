@@ -163,6 +163,16 @@ public class ArchonLogic extends RobotLogic {
 		}
 
 		BroadcastManager.writeLumberjackInitialCount(rc, numLumberjacks);
+		
+		TreeInfo[] nearbyTrees = rc.senseNearbyTrees(-1, Team.NEUTRAL);
+		float totalBulletCount = 0;
+		for(TreeInfo t: nearbyTrees){
+			totalBulletCount+=t.containedBullets;
+		}
+		
+		if(totalBulletCount>40){
+			BroadcastManager.writeScoutInitialCount(rc, 1);
+		}
 
 		System.out.println("Sight range ratio: " + sightRangeRatio);
 		System.out.println("Monte carlo ratio: " + monteCarloRatio);

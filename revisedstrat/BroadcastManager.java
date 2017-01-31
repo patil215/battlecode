@@ -120,11 +120,21 @@ public class BroadcastManager {
 	public static void writeLumberjackInitialCount(RobotController rc, int numLumberjacks) throws GameActionException {
 		rc.broadcast(NUM_LUMBERJACK_INITIAL_INDEX, numLumberjacks);
 	}
+	
+	private static int NUM_SCOUT_INITIAL_INDEX = 180;
+	
+	public static void writeScoutInitialCount(RobotController rc, int numLumberjacks) throws GameActionException {
+		rc.broadcast(NUM_SCOUT_INITIAL_INDEX, numLumberjacks);
+	}
 
 	public static int getLumberjackInitialCount(RobotController rc) throws GameActionException {
 		return rc.readBroadcast(NUM_LUMBERJACK_INITIAL_INDEX);
 	}
 
+	public static int getScoutInitialCount(RobotController rc) throws GameActionException {
+		return rc.readBroadcast(NUM_SCOUT_INITIAL_INDEX);
+	}
+	
 	public static void invalidateLocation(RobotController rc, LocationInfoType type) throws GameActionException {
 		int currentEnemyLocPointer = rc.readBroadcast(type.locationPointerIndex);
 		rc.broadcast(currentEnemyLocPointer, 0);
