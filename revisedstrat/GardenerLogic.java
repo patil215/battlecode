@@ -24,7 +24,7 @@ public class GardenerLogic extends RobotLogic {
 		moveDir = Utils.diagonalDirection();
 		UNIT_SPAWNER_ELIGIBLE = rc.getRoundNum() > NUM_ROUNDS_BEFORE_UNIT_SPAWNER_ELIGIBLE;
 		DEGENERATE_ELIGIBLE = rc.getRoundNum() < NUM_ROUNDS_BEFORE_NOT_DEGENERATE_ELIGIBLE;
-		NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = rc.getRoundNum() < 20 ? 20 : 75;
+		NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE = rc.getRoundNum() < 20 ? 20 : 50;
 	}
 
 	// TODO: make gardener only send help broadcast every 50 rounds
@@ -46,16 +46,19 @@ public class GardenerLogic extends RobotLogic {
 
 				beginTurn();
 
-				if (!settled && !(DEGENERATE_ELIGIBLE
-						&& numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE)) {
-					numRoundsSettling++;
-					settled = moveTowardsGoodSpot();
+				if (!settled /*
+								 * && !(DEGENERATE_ELIGIBLE && numRoundsSettling
+								 * >
+								 * NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE)
+								 */) {
+					settled = moveTowardsGoodSpot(numRoundsSettling);
 					if (numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_A_UNIT_SPAWNER
 							&& UNIT_SPAWNER_ELIGIBLE) {
 						if (rc.getBuildCooldownTurns() == 0 && rc.getRoundNum() > 150) {
 							tryToBuildUnit(determineUnitToSpawn(Utils.randomDirection()));
 						}
 					}
+					numRoundsSettling++;
 				} else {
 					settled = true;
 					if (inDanger()) {
@@ -91,7 +94,7 @@ public class GardenerLogic extends RobotLogic {
 			unitSpawnDir = rc.getLocation().directionTo(allyArchonLocations[0]).opposite();
 			for (int i = 0; i < 72; i++) {
 				MapLocation proposedLoc = rc.getLocation().add(unitSpawnDir, (float) (2 * type.bodyRadius + 0.1));
-				if (!rc.isCircleOccupied(proposedLoc, rc.getType().bodyRadius) && rc.onTheMap(proposedLoc)) {
+				if (!rc.isCircleOccupied(proposedLoc, rc.getType().bodyRadius) && !notOnMapCircle(proposedLoc)) {
 					break;
 				}
 				unitSpawnDir = unitSpawnDir.rotateLeftDegrees(5);
@@ -122,13 +125,13 @@ public class GardenerLogic extends RobotLogic {
 	}
 
 	private void buildInitialRoundsUnits() throws GameActionException {
-		
+
 		int numLumberjacks = BroadcastManager.getLumberjackInitialCount(rc);
 
 		if (numLumberjacks == 0) {
-			if(BroadcastManager.getScoutInitialCount(rc)>0){
-				tryToBuildUnit(RobotType.SCOUT);				
-			} else{
+			if (BroadcastManager.getScoutInitialCount(rc) > 0) {
+				tryToBuildUnit(RobotType.SCOUT);
+			} else {
 				tryToBuildUnit(RobotType.SOLDIER);
 			}
 			// Wait until we can build second unit
@@ -248,14 +251,13 @@ public class GardenerLogic extends RobotLogic {
 	 * Attempts to move to a good location. Returns true if a good location was
 	 * found after the move.
 	 */
-	private boolean moveTowardsGoodSpot() throws GameActionException {
+	private boolean moveTowardsGoodSpot(int numRoundsSettling) throws GameActionException {
 		// Try to find a free space to settle until 20 turns have elapsed
-		if (!isGoodLocation()) {
-
-			/*TreeInfo[] trees = rc.senseNearbyTrees(-1, rc.getTeam());
-			if (trees.length > 0)
-				moveWithPathFinding();
-			else*/
+		if (!isGoodLocation(numRoundsSettling)) {
+			/*
+			 * TreeInfo[] trees = rc.senseNearbyTrees(-1, rc.getTeam()); if
+			 * (trees.length > 0) moveWithPathFinding(); else
+			 */
 			moveDir = moveWithDiagonalBounce(moveDir);
 			return false;
 		} else {
@@ -308,12 +310,49 @@ public class GardenerLogic extends RobotLogic {
 		return trees.length > 0;
 	}
 
-	private boolean isGoodLocation() {
+	private boolean notOnMapCircle(MapLocation proposedLocation) throws GameActionException {
+		return !rc.onTheMap(proposedLocation.add(Direction.NORTH, (float) 1))
+				|| !rc.onTheMap(proposedLocation.add(Direction.EAST, (float) 1))
+				|| !rc.onTheMap(proposedLocation.add(Direction.WEST, (float) 1))
+				|| !rc.onTheMap(proposedLocation.add(Direction.SOUTH, (float) 1));
+	}
+
+	private boolean isGoodLocation(int numRoundsSettling) {
 		try {
-			// Check for free space of certain radius - gives space to spawn
-			// trees
-			return !isCircleOccupiedByTrees(MIN_FREE_SPACE_REQUIREMENT) && !edgeWithinRadius(MIN_FREE_SPACE_REQUIREMENT)
-					&& rc.onTheMap(rc.getLocation().add(0, (float) .01), MIN_FREE_SPACE_REQUIREMENT);
+			if (DEGENERATE_ELIGIBLE && numRoundsSettling > NUM_ROUNDS_BEFORE_GIVING_UP_TO_BECOME_DEGENERATE) {
+				System.out.println("DEGENERATE ELIGIBLE");
+				Direction start = rc.getLocation().directionTo(allyArchonLocations[0]).opposite();
+				int settleSpots = 0;
+				TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
+				outer: for (int count = 0; count < 6; count++) {
+					MapLocation proposedLocation = rc.getLocation().add(start.rotateLeftDegrees(count * 60), 2);
+					if(!notOnMapCircle(proposedLocation)) {
+						if (!rc.isCircleOccupiedExceptByThisRobot(proposedLocation, 1)){
+							rc.setIndicatorDot(proposedLocation, 255, 0, 0);
+							settleSpots++;
+						} else{
+							for (TreeInfo tree : nearbyTrees) {
+								if (tree.location.distanceTo(proposedLocation) <= (tree.radius + 1)) {
+									continue outer;
+								}
+							}
+							rc.setIndicatorDot(proposedLocation, 0, 255, 0);
+							settleSpots++;
+						}
+					}
+				}
+				if (settleSpots >= 3) {
+					return true;
+				}
+				return false;
+			} else {
+				System.out.println("NOT DEGENERATE ELIGIBLE");
+				// Check for free space of certain radius - gives space to spawn
+				// trees
+				return !isCircleOccupiedByTrees(MIN_FREE_SPACE_REQUIREMENT)
+						&& !edgeWithinRadius(MIN_FREE_SPACE_REQUIREMENT)
+						&& rc.onTheMap(rc.getLocation().add(0, (float) .01), MIN_FREE_SPACE_REQUIREMENT);
+			}
 		} catch (GameActionException e) {
 			return false;
 		}

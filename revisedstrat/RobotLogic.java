@@ -217,6 +217,7 @@ public abstract class RobotLogic {
 		return false;
 	}
 
+
 	public void endTurn() throws GameActionException {
 		tryAndShakeATree();
 		econWinIfPossible();
@@ -263,10 +264,11 @@ public abstract class RobotLogic {
 	}
 
 	private static final int BULLETS_TO_DONATE = 250;
+	private final int ROUNDS_TO_WAIT_BEFORE_DONATING = 500;
 
 	public void beginTurn() throws GameActionException {
 		float bullets = rc.getTeamBullets();
-		if (bullets > /* 250 */ BULLETS_TO_DONATE) {
+		if (bullets > /* 250 */ BULLETS_TO_DONATE && rc.getRoundNum() > ROUNDS_TO_WAIT_BEFORE_DONATING) {
 			int bulletCount = (int) ((bullets - BULLETS_TO_DONATE) / rc.getVictoryPointCost());
 			// System.out.println(bulletCount);
 			float donationAmount = ((float) (bulletCount)) * rc.getVictoryPointCost();
@@ -329,12 +331,12 @@ public abstract class RobotLogic {
 			for (TreeInfo t : trees) {
 				if (t.containedBullets > 0 && rc.canShake(t.ID)) {
 					rc.shake(t.ID);
-					System.out.println("We shook a tree");
+					//System.out.println("We shook a tree");
 					return;
 				}
 			}
 		}
-		System.out.println("We did not shake a tree");
+		//System.out.println("We did not shake a tree");
 	}
 
 	public Team getFirstHitTeamAprox(MapLocation location, Direction direction, boolean hitTrees)

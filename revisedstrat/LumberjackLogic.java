@@ -17,7 +17,7 @@ public class LumberjackLogic extends RobotLogic {
 		super(rc);
 		moveDir = Utils.randomDirection();
 		// TODO: Replace with actual logic
-		respondToBroadcast = (rc.getRobotCount() - 2 == allyArchonLocations.length) || Math.random() > .5;
+		respondToBroadcast = (rc.getRobotCount() - 2 == allyArchonLocations.length) || Math.random() > .3;
 	}
 
 	@Override

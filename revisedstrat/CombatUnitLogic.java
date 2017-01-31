@@ -82,8 +82,8 @@ public class CombatUnitLogic extends RobotLogic {
 					if (currentDestinationType < GARDENER_HELP_PRIORITY || gardenerHelpLocation.x != getDestination().x
 							|| gardenerHelpLocation.y != getDestination().y) {
 
-						if (getDestination() == null ||
-								(rc.getLocation().distanceTo(gardenerHelpLocation) * 1.5 < rc.getLocation().distanceTo(getDestination()))) {
+						if (getDestination() == null || (rc.getLocation().distanceTo(gardenerHelpLocation) * 1.5 < rc
+								.getLocation().distanceTo(getDestination()))) {
 							setDestination(gardenerHelpLocation);
 							currentDestinationType = GARDENER_HELP_PRIORITY;
 							tryToMoveToDestinationTwo();
@@ -102,8 +102,8 @@ public class CombatUnitLogic extends RobotLogic {
 
 					if (currentDestinationType < ARCHON_HELP_PRIORITY || archonHelpLocation.x != getDestination().x
 							|| archonHelpLocation.y != getDestination().y) {
-						if (getDestination() == null ||
-								(rc.getLocation().distanceTo(archonHelpLocation) * 1.5 < rc.getLocation().distanceTo(getDestination()))) {
+						if (getDestination() == null || (rc.getLocation().distanceTo(archonHelpLocation) * 1.5 < rc
+								.getLocation().distanceTo(getDestination()))) {
 							setDestination(archonHelpLocation);
 							currentDestinationType = ARCHON_HELP_PRIORITY;
 							tryToMoveToDestinationTwo();
@@ -122,8 +122,8 @@ public class CombatUnitLogic extends RobotLogic {
 
 						if (currentDestinationType < MOVE_TOWARDS_COMBAT_PRIORITY
 								|| enemyLocation.x != getDestination().x || enemyLocation.y != getDestination().y) {
-							if (getDestination() == null ||
-									(rc.getLocation().distanceTo(enemyLocation) * 1.5 < rc.getLocation().distanceTo(getDestination()))) {
+							if (getDestination() == null || (rc.getLocation().distanceTo(enemyLocation) * 1.5 < rc
+									.getLocation().distanceTo(getDestination()))) {
 								setDestination(enemyLocation);
 								currentDestinationType = MOVE_TOWARDS_COMBAT_PRIORITY;
 								boolean success = tryToMoveToDestinationTwo();
@@ -197,7 +197,7 @@ public class CombatUnitLogic extends RobotLogic {
 	private Direction moveDir;
 
 	private void moveIntelligentlyRandomly() throws GameActionException {
-		if(moveDir == null) {
+		if (moveDir == null) {
 			moveDir = Utils.randomDirection();
 		}
 		moveDir = moveWithRandomBounce(moveDir);
@@ -210,20 +210,21 @@ public class CombatUnitLogic extends RobotLogic {
 			// Move towards the enemy, especially if it's an econ unit
 			RobotInfo robotInfo = (RobotInfo) getClosestBody(rc.senseNearbyRobots(-1, enemyTeam));
 			if (robotInfo != null) {
-				if (robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON)
+				if (((robotInfo.getType().equals(RobotType.GARDENER) || robotInfo.getType().equals(RobotType.ARCHON))
+						&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 4.2)
 						|| (robotInfo.getType().equals(RobotType.LUMBERJACK)
-						&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 3.5)) {
+								&& robotInfo.getLocation().distanceTo(rc.getLocation()) > 3.5)) {
 					move(getDirectionTowards(robotInfo.getLocation()));
 				}
 			}
-		/*
-		 * for (RobotInfo robotInfo : enemyRobots) { if
-		 * (robotInfo.getType().equals(RobotType.GARDENER) ||
-		 * robotInfo.getType().equals(RobotType.ARCHON) ||
-		 * (robotInfo.getType().equals(RobotType.LUMBERJACK) &&
-		 * robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
-		 * move(getDirectionTowards(robotInfo.getLocation())); break; } }
-		 */
+			/*
+			 * for (RobotInfo robotInfo : enemyRobots) { if
+			 * (robotInfo.getType().equals(RobotType.GARDENER) ||
+			 * robotInfo.getType().equals(RobotType.ARCHON) ||
+			 * (robotInfo.getType().equals(RobotType.LUMBERJACK) &&
+			 * robotInfo.getLocation().distanceTo(rc.getLocation()) > 3)) {
+			 * move(getDirectionTowards(robotInfo.getLocation())); break; } }
+			 */
 		}
 
 		RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1, enemyTeam);
@@ -239,7 +240,8 @@ public class CombatUnitLogic extends RobotLogic {
 		if (target == null) {
 			target = enemySeenLastRound;
 			enemyCounter--;
-			if (enemyCounter == 0) enemySeenLastRound = null;
+			if (enemyCounter == 0)
+				enemySeenLastRound = null;
 		} else {
 			enemySeenLastRound = target;
 			enemyCounter = COMBAT_MEMORY;
@@ -251,7 +253,6 @@ public class CombatUnitLogic extends RobotLogic {
 			BroadcastManager.saveLocation(rc, target.location, BroadcastManager.LocationInfoType.ENEMY);
 			tryAndFireAShot(target);
 		} else {
-
 
 			// Try to get closer to the enemy
 			// System.out.println("Found no target");
@@ -275,9 +276,10 @@ public class CombatUnitLogic extends RobotLogic {
 	private boolean shouldFireTriShot(RobotInfo target) throws GameActionException {
 		MapLocation currLoc = rc.getLocation();
 
-		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(20), true) ==
-				rc.getTeam() || getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location)
-				.rotateRightDegrees(20), true) == rc.getTeam()) {
+		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(20), true) == rc
+				.getTeam()
+				|| getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateRightDegrees(20),
+						true) == rc.getTeam()) {
 
 			return false;
 		}
@@ -287,15 +289,16 @@ public class CombatUnitLogic extends RobotLogic {
 
 	private boolean shouldFirePentadShot(RobotInfo target) throws GameActionException {
 		MapLocation currLoc = rc.getLocation();
-		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(30), true) ==
-				rc.getTeam() || getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location)
-				.rotateRightDegrees(30), true) == rc.getTeam()) {
+		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(30), true) == rc
+				.getTeam()
+				|| getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateRightDegrees(30),
+						true) == rc.getTeam()) {
 
 			return false;
 		}
 
 		return true;
-//		return rc.getLocation().distanceTo(target.location) < 5;
+		// return rc.getLocation().distanceTo(target.location) < 5;
 	}
 
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
