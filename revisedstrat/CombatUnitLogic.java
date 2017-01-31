@@ -86,7 +86,16 @@ public class CombatUnitLogic extends RobotLogic {
 								.getLocation().distanceTo(getDestination()))) {
 							setDestination(gardenerHelpLocation);
 							currentDestinationType = GARDENER_HELP_PRIORITY;
+							dodgeBullets();
 							tryToMoveToDestinationTwo();
+							RobotInfo target = getHighestPriorityTarget(enemyRobots, false);
+							if (target != null) {
+								// System.out.println("Found a target");
+								// Broadcast the location of the target
+								BroadcastManager.saveLocation(rc, target.location,
+										BroadcastManager.LocationInfoType.ENEMY);
+								tryAndFireAShot(target);
+							}
 							endTurn();
 							continue;
 						}
@@ -106,7 +115,16 @@ public class CombatUnitLogic extends RobotLogic {
 								.getLocation().distanceTo(getDestination()))) {
 							setDestination(archonHelpLocation);
 							currentDestinationType = ARCHON_HELP_PRIORITY;
+							dodgeBullets();
 							tryToMoveToDestinationTwo();
+							RobotInfo target = getHighestPriorityTarget(enemyRobots, false);
+							if (target != null) {
+								// System.out.println("Found a target");
+								// Broadcast the location of the target
+								BroadcastManager.saveLocation(rc, target.location,
+										BroadcastManager.LocationInfoType.ENEMY);
+								tryAndFireAShot(target);
+							}
 							endTurn();
 							continue;
 						}
@@ -126,7 +144,16 @@ public class CombatUnitLogic extends RobotLogic {
 									.getLocation().distanceTo(getDestination()))) {
 								setDestination(enemyLocation);
 								currentDestinationType = MOVE_TOWARDS_COMBAT_PRIORITY;
+								dodgeBullets();
 								boolean success = tryToMoveToDestinationTwo();
+								RobotInfo target = getHighestPriorityTarget(enemyRobots, false);
+								if (target != null) {
+									// System.out.println("Found a target");
+									// Broadcast the location of the target
+									BroadcastManager.saveLocation(rc, target.location,
+											BroadcastManager.LocationInfoType.ENEMY);
+									tryAndFireAShot(target);
+								}
 
 								if (success) {
 									endTurn();
@@ -302,7 +329,17 @@ public class CombatUnitLogic extends RobotLogic {
 	}
 
 	private void tryAndFireAShot(RobotInfo target) throws GameActionException {
+		if (target == null) {
+			return;
+		}
 		Direction shotDir = rc.getLocation().directionTo(target.location);
+
+		if (target.type.equals(RobotType.ARCHON)) {
+			if (rc.canFireSingleShot()) {
+				rc.fireSingleShot(shotDir);
+				return;
+			}
+		}
 		/*
 		 * float randSpread = (float) (Math.random() * 1); if (Math.random() <
 		 * .5) { shotDir = shotDir.rotateLeftDegrees(randSpread); } else {

@@ -151,7 +151,7 @@ public abstract class RobotLogic {
 
 	private boolean findBestDirection(MapLocation destination) throws GameActionException {
 		Direction toMove = rc.getLocation().directionTo(destination);
-		for (int count = 0; count < 180; count += 1) {
+		for (int count = 0; count < 180; count += 5) {
 			if (smartCanMove(toMove.rotateLeftDegrees(count))) {
 				return true;
 			} else if (smartCanMove(toMove.rotateRightDegrees(count))) {
@@ -804,7 +804,7 @@ public abstract class RobotLogic {
 			BulletInfo hittingBullet = getTargetingBullet(surroundingBullets);
 			if (hittingBullet != null) {
 				System.out.println("dodging by tangent");
-				boolean result = dodgeTangent(hittingBullet, segments, 5000);
+				boolean result = dodgeTangent(hittingBullet, segments, 4000);
 				if (result) {
 					return true;
 				}
@@ -1071,7 +1071,10 @@ public abstract class RobotLogic {
 				return true;
 			} else {
 				toMove = getDirectionTowards(toMove);
-				distanceToDestination = Math.min(distanceToDestination, currentDistance);
+				if(toMove != null) {
+					move(toMove);
+					distanceToDestination = Math.min(distanceToDestination, currentDistance);
+				}
 				return false;
 			}
 		} else {
