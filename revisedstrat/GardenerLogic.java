@@ -114,8 +114,13 @@ public class GardenerLogic extends RobotLogic {
 				startAngle = startAngle.rotateLeftDegrees(60);
 				if (rc.canPlantTree(startAngle)) {
 					rc.plantTree(startAngle);
+
+//					if ((i == 3 && rc.getTeamBullets() > 175 )|| (rc.getRoundNum() < 500 && rc.getTeamBullets() > 125)) {
+//						spawnUnit(unitSpawnDir);
+//					}
 					return;
 				}
+
 			}
 			spawnUnit(unitSpawnDir);
 		}
