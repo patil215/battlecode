@@ -318,12 +318,24 @@ public class CombatUnitLogic extends RobotLogic {
 
 	private boolean shouldFirePentadShot(RobotInfo target) throws GameActionException {
 		MapLocation currLoc = rc.getLocation();
-		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(30), true) == rc
-				.getTeam()
-				|| getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateRightDegrees(30),
-						true) == rc.getTeam()) {
-			return false;
+
+		int numAlliesHit = 0;
+
+		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(30), true) == rc.getTeam()) numAlliesHit++;
+		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(30), true) == rc.getTeam()) numAlliesHit++;
+		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(30), true) == rc.getTeam()) numAlliesHit++;
+		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(30), true) == rc.getTeam()) numAlliesHit++;
+
+		if (numAlliesHit > 1) {
+			return true;
 		}
+
+
+
+//		if (getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateLeftDegrees(30), true) == rc.getTeam() || getFirstHitTeamAprox(currLoc, currLoc.directionTo(target.location).rotateRightDegrees(30),
+//						true) == rc.getTeam()) {
+//			return false;
+//		}
 
 		return true;
 		// return rc.getLocation().distanceTo(target.location) < 5;
