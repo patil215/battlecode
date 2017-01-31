@@ -237,10 +237,22 @@ public class ArchonLogic extends RobotLogic {
 	private final int ROUNDS_WHEN_LATE = 500;
 
 	private boolean shouldSpawnGardener() throws GameActionException {
+
+
 		if (rc.getRoundNum() > 100 && rc.getRobotCount() - allyArchonLocations.length == 0
 				&& (!inDanger() || rc.getTeamBullets() >= 200)) {
 			return true;
 		}
+
+		RobotInfo[] robots = rc.senseNearbyRobots();
+		int gardenerCount = 0;
+		for (RobotInfo robot : robots) {
+			if (robot.getType() == RobotType.GARDENER) {
+				gardenerCount++;
+			}
+		}
+
+		if (gardenerCount >= rc.getTreeCount()) return false;
 
 		double spawnChance = (rc.getRoundNum() > ROUNDS_WHEN_LATE) ?
 		 GARDENER_SPAWN_CHANCE_LATE : GARDENER_SPAWN_CHANCE_EARLY;
