@@ -120,9 +120,7 @@ public class LumberjackLogic extends RobotLogic {
 					move(toMove);
 				}
 			}
-		} else {
-			System.out.println("***REMOVED***");
-		}
+		} 
 	}
 
 	private void moveTowardsAndChop(MapLocation destination) throws GameActionException {
